@@ -131,6 +131,11 @@
   }
 
   function successRegistration(kind) {
+    if (kind === "영상·음성") {
+      window.location.href = "evidence_video_complete.html";
+      return;
+    }
+
     const isUrl = kind === "웹페이지";
     const title = isUrl ? "웹페이지 증거가 저장되었습니다." : `${kind} 증거가 등록되었습니다.`;
     const layer = showDialog(`
@@ -436,6 +441,15 @@
     bind("로그아웃", logoutDialog);
   }
 
+  function setupVideoCompletion() {
+    if (page !== "evidence_video_complete.html") return;
+    const selected = sessionStorage.getItem("evidence-file:evidence_video.html");
+    if (!selected) return;
+    document.querySelectorAll("[data-evidence-filename]").forEach(function (element) {
+      element.textContent = selected;
+    });
+  }
+
   document.addEventListener("keydown", function (event) {
     if (event.key === "Escape" && activeLayer) closeDialog();
   });
@@ -444,4 +458,5 @@
   setupVerification();
   setupReport();
   setupMyPage();
+  setupVideoCompletion();
 })();

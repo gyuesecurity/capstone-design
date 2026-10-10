@@ -161,7 +161,9 @@
       ["증거 상세보기", "evidence.html", true]
     ],
     "evidence_video.html": [
-      ["취소", "chose_evidence.html", false],
+      ["취소", "chose_evidence.html", false]
+    ],
+    "evidence_video_complete.html": [
       ["증거 관리로 이동", "evidence.html", true],
       ["증거 상세보기", "evidence.html", true]
     ],
