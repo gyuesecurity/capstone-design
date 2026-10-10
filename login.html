@@ -14,147 +14,212 @@
         body {
             margin: 0;
             min-height: 100vh;
-            background: #F6F8FB;
-            font-family: "Noto Sans KR", sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
+            background: #F6F8FB;
+            font-family: "DM Sans", "Noto Sans KR", sans-serif;
         }
 
-        .login-box {
-            width: 420px;
+        .login-card {
+            width: 400px;
             max-width: calc(100% - 32px);
-            padding: 40px;
+            min-height: 434px;
+            padding: 32px;
             background: white;
-            border: 1px solid #E2E7EF;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
             border-radius: 16px;
-            box-shadow: 0 12px 32px rgba(32, 60, 112, 0.08);
+            position: relative;
         }
 
         .logo {
-            color: #2E63E8;
-            font-size: 28px;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 8px;
+            width: 48px;
+            height: 48px;
+            border: 4px solid #8A89EC;
+            margin: 0 auto 16px;
         }
 
-        .subtitle {
-            color: #647187;
+        .heading {
             text-align: center;
-            font-size: 13px;
-            margin-bottom: 32px;
         }
 
-        h2 {
-            color: #18243A;
+        .heading h1 {
+            margin: 0;
+            color: #17181C;
             font-size: 24px;
-            text-align: center;
-            margin-bottom: 30px;
+            font-weight: 500;
+            line-height: 31.2px;
+        }
+
+        .heading p {
+            margin: 4px 0 0;
+            color: #5E6470;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 21.7px;
+        }
+
+        form {
+            margin-top: 36px;
+        }
+
+        .field {
+            margin-bottom: 14px;
         }
 
         label {
             display: block;
-            color: #18243A;
-            font-size: 14px;
             margin-bottom: 8px;
+            color: #17181C;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .required {
+            color: #C00C0C;
         }
 
         input {
             width: 100%;
-            padding: 14px;
-            border: 1px solid #E2E7EF;
+            height: 44px;
+            padding: 0 14px;
+            background: white;
+            border: 1px solid #E5E8EC;
             border-radius: 8px;
+            color: #17181C;
             font-size: 14px;
-            margin-bottom: 20px;
+            font-family: inherit;
         }
 
         input:focus {
-            outline: 2px solid #2E63E8;
+            outline: 2px solid #8A89EC;
             outline-offset: 1px;
         }
 
-        .login-btn {
-            display: block;
+        .account-links {
+            margin-top: 36px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: #5E6470;
+        }
+
+        .account-links a {
+            color: #5E6470;
+            text-decoration: none;
+        }
+
+        .login-button {
             width: 100%;
-            padding: 15px;
-            background: #2E63E8;
-            color: white;
+            height: 44px;
+            margin-top: 8px;
+            background: #8A89EC;
             border: none;
             border-radius: 8px;
-            font-size: 15px;
-            font-weight: 700;
+            color: #0F1830;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: inherit;
             cursor: pointer;
         }
 
-        .login-btn:hover {
-            background: #2454C6;
+        .login-button:hover {
+            background: #7776DB;
         }
 
-        .signup {
-            text-align: center;
-            margin-top: 24px;
-            font-size: 13px;
-            color: #647187;
-        }
-
-        .signup a {
-            color: #2454C6;
+        .close-button {
+            position: absolute;
+            right: 32px;
+            top: 32px;
+            width: 32px;
+            height: 32px;
+            background: white;
+            border: 1px solid #E5E8EC;
+            border-radius: 16px;
+            color: #5E6470;
             text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
 
 <body>
 
-    <main class="login-box">
+    <main class="login-card">
 
-        <div class="logo">EVIDENCE</div>
-        <div class="subtitle">디지털 증거 수집 · 위변조 검증 플랫폼</div>
+        <div class="logo"></div>
 
-        <h2>로그인</h2>
+        <div class="heading">
+            <h1>Log in</h1>
+            <p>Enter your credentials to continue.</p>
+        </div>
 
         <form id="login-form">
 
-            <label for="email">이메일</label>
-            <input
-                type="email"
-                id="email"
-                placeholder="이메일을 입력하세요"
-                autocomplete="username"
-                required
-            >
+            <div class="field">
+                <label for="email">
+                    Email <span class="required">*</span>
+                </label>
 
-            <label for="password">비밀번호</label>
-            <input
-                type="password"
-                id="password"
-                placeholder="비밀번호를 입력하세요"
-                autocomplete="current-password"
-                required
-            >
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="you@example.com"
+                    autocomplete="username"
+                    required
+                >
+            </div>
 
-            <button type="submit" class="login-btn">
+            <div class="field">
+                <label for="password">
+                    Password <span class="required">*</span>
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
+
+            <div class="account-links">
+                <span>아이디 찾기</span>
+                <span>|</span>
+                <span>비밀번호 찾기</span>
+                <span>|</span>
+                <span>회원가입</span>
+            </div>
+
+            <button type="submit" class="login-button">
                 로그인
             </button>
 
         </form>
 
-        <div class="signup">
-            계정이 없으신가요?
-            <a href="signup.html">회원가입</a>
-        </div>
+        <a href="index.html"
+           class="close-button"
+           aria-label="로그인 창 닫기">
+            ×
+        </a>
 
     </main>
 
     <script>
-        // 화면 이동 테스트용 코드입니다.
+        // 화면 연결 테스트용입니다.
         // 실제 사용자 인증은 수행하지 않습니다.
         document.getElementById("login-form")
             .addEventListener("submit", function(event) {
                 event.preventDefault();
 
-                // 실제 비밀번호를 처리하거나 저장하지 않습니다.
+                // 이메일 형식과 필수 입력 여부는
+                // 브라우저가 기본적으로 확인합니다.
+                // 입력값을 저장하거나 서버로 전송하지 않습니다.
                 window.location.href = "index.html";
             });
     </script>
