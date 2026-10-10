@@ -5,74 +5,117 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EVIDENCE - 로그인</title>
+
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            font-family: "Noto Sans KR", sans-serif;
+            min-height: 100vh;
             background: #F6F8FB;
+            font-family: "Noto Sans KR", sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
         }
 
-        .login-container {
-            width: 360px;
-            max-width: calc(100% - 48px);
-            background: white;
+        .login-box {
+            width: 420px;
+            max-width: calc(100% - 32px);
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            background: white;
+            border: 1px solid #E2E7EF;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(32, 60, 112, 0.08);
         }
 
-        h1 {
-            color: #2454C6;
+        .logo {
+            color: #2E63E8;
+            font-size: 28px;
+            font-weight: 700;
             text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #647187;
+            text-align: center;
+            font-size: 13px;
+            margin-bottom: 32px;
         }
 
         h2 {
-            text-align: center;
             color: #18243A;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 30px;
         }
 
         label {
             display: block;
-            margin-top: 20px;
+            color: #18243A;
+            font-size: 14px;
+            margin-bottom: 8px;
         }
 
         input {
-            box-sizing: border-box;
-            width: 100%;
-            padding: 12px;
-            margin-top: 8px;
-            border: 1px solid #D5DCE5;
-            border-radius: 6px;
-        }
-
-        button {
             width: 100%;
             padding: 14px;
-            margin-top: 28px;
-            background: #2454C6;
+            border: 1px solid #E2E7EF;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        input:focus {
+            outline: 2px solid #2E63E8;
+            outline-offset: 1px;
+        }
+
+        .login-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #2E63E8;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
             cursor: pointer;
+        }
+
+        .login-btn:hover {
+            background: #2454C6;
         }
 
         .signup {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 24px;
+            font-size: 13px;
+            color: #647187;
+        }
+
+        .signup a {
+            color: #2454C6;
+            text-decoration: none;
         }
     </style>
 </head>
+
 <body>
 
-    <main class="login-container">
-        <h1>EVIDENCE</h1>
+    <main class="login-box">
+
+        <div class="logo">EVIDENCE</div>
+        <div class="subtitle">디지털 증거 수집 · 위변조 검증 플랫폼</div>
+
         <h2>로그인</h2>
 
         <form id="login-form">
+
             <label for="email">이메일</label>
             <input
                 type="email"
@@ -91,20 +134,28 @@
                 required
             >
 
-            <button type="submit">로그인</button>
+            <button type="submit" class="login-btn">
+                로그인
+            </button>
+
         </form>
 
         <div class="signup">
             계정이 없으신가요?
             <a href="signup.html">회원가입</a>
         </div>
+
     </main>
 
     <script>
+        // 화면 이동 테스트용 코드입니다.
+        // 실제 사용자 인증은 수행하지 않습니다.
         document.getElementById("login-form")
             .addEventListener("submit", function(event) {
                 event.preventDefault();
-                alert("현재 로그인 화면만 구현된 상태입니다.");
+
+                // 실제 비밀번호를 처리하거나 저장하지 않습니다.
+                window.location.href = "index.html";
             });
     </script>
 
