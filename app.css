@@ -645,6 +645,11 @@ body > div:first-of-type {
   border-top-color: #b8ccf7 !important;
 }
 
+[data-evidence-list-row][hidden],
+[data-verification-evidence-row][hidden] {
+  display: none !important;
+}
+
 @media (max-width: 720px) {
   .evidence-dialog-layer {
     padding: 14px;
