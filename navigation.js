@@ -169,13 +169,7 @@
     ],
     "verification.html": [
       ["증거 상세보기", "evidence.html", true],
-      ["보고서 생성", "report.html", false]
-    ],
-    "report.html": [
-      ["+ 보고서 생성", "scroll:새 보고서 생성", false],
-      ["보기", "scroll:보고서 상세 보기 예시", true],
-      ["보고서 보기", "scroll:보고서 상세 보기 예시", true],
-      ["증거 관리로 이동", "evidence.html", true]
+      ["보고서 생성", "report_select.html", false]
     ],
     "mypage.html": [
       ["프로필 수정", "scroll:프로필 수정 상태 예시", false],

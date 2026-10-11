@@ -269,68 +269,6 @@
     });
   }
 
-  function reportFlow() {
-    runProgress({
-      start: 68,
-      title: "PDF 보고서 생성 중…",
-      description: "선택한 증거와 무결성 검증 정보를 문서에 포함하고 있습니다.",
-      item: "디지털 증거 검증 보고서_001.pdf",
-      meta: "선택 증거 2건 · 무결성 검증 정보 포함",
-      status: "문서 구성 및 PDF 변환 중",
-      onComplete: reportSuccess
-    });
-  }
-
-  function reportSuccess() {
-    const layer = showDialog(`
-      <div class="evidence-dialog__head">
-        <div class="evidence-dialog__icon evidence-dialog__icon--success">✓</div>
-        <div><h2>보고서가 생성되었습니다.</h2><p>디지털 증거 검증 보고서_001.pdf</p></div>
-      </div>
-      ${detailsMarkup([["보고서 ID", "RPT-20261008-001"], ["포함 증거", "2건"], ["검증 결과", "정상 2건"]])}
-      <div class="evidence-dialog__actions">
-        ${button("증거 관리로 이동", "evidence")}
-        ${button("보고서 보기", "view")}
-        ${button("PDF 다운로드", "download", "primary")}
-      </div>
-    `, { wide: true });
-    layer.querySelector('[data-dialog-action="evidence"]').addEventListener("click", () => { window.location.href = "evidence.html"; });
-    layer.querySelector('[data-dialog-action="view"]').addEventListener("click", function () {
-      closeDialog();
-      const target = exactTextElements("보고서 상세 보기 예시")[0];
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-    layer.querySelector('[data-dialog-action="download"]').addEventListener("click", function () {
-      const lines = ["EVIDENCE", "Digital Evidence Verification Report", "Report ID: RPT-20261008-001", "Included evidence: 2", "Integrity result: 2 verified"];
-      const escapePdf = (value) => value.replace(/([\\()])/g, "\\$1");
-      const stream = `BT /F1 18 Tf 72 760 Td (${escapePdf(lines[0])}) Tj /F1 12 Tf 0 -34 Td (${escapePdf(lines[1])}) Tj 0 -28 Td (${escapePdf(lines[2])}) Tj 0 -22 Td (${escapePdf(lines[3])}) Tj 0 -22 Td (${escapePdf(lines[4])}) Tj ET`;
-      const objects = [
-        "<< /Type /Catalog /Pages 2 0 R >>",
-        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
-        `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
-        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
-      ];
-      let pdf = "%PDF-1.4\n";
-      const offsets = [0];
-      objects.forEach((object, index) => {
-        offsets.push(pdf.length);
-        pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
-      });
-      const xref = pdf.length;
-      pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-      offsets.slice(1).forEach((offset) => { pdf += `${String(offset).padStart(10, "0")} 00000 n \n`; });
-      pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-      const blob = new Blob([pdf], { type: "application/pdf" });
-      const anchor = document.createElement("a");
-      anchor.href = URL.createObjectURL(blob);
-      anchor.download = "digital-evidence-report.pdf";
-      anchor.click();
-      URL.revokeObjectURL(anchor.href);
-      toast("데모 보고서 파일을 다운로드했습니다.");
-    });
-  }
-
   function profileDialog() {
     const layer = showDialog(`
       <h2>프로필 정보 수정</h2>
@@ -419,21 +357,6 @@
     ["증거 검증", "검증 시작", "다시 검증"].forEach((label) => bind(label, verificationFlow, { primaryOnly: true, all: true }));
   }
 
-  function setupReport() {
-    if (page !== "report.html") return;
-    const scrollTo = (label) => {
-      const target = exactTextElements(label)[0];
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-    bind("다음: 보고서 정보", () => scrollTo("2. 보고서 정보"));
-    bind("다음: 포함 내용 확인", () => scrollTo("3. 보고서 포함 내용"));
-    bind("다음: 미리보기", () => scrollTo("보고서 미리보기"));
-    bind("PDF 보고서 생성", reportFlow, { primaryOnly: true, all: true });
-    bind("PDF 다운로드", function () {
-      reportSuccess();
-    }, { primaryOnly: true, all: true });
-  }
-
   function setupMyPage() {
     if (page !== "mypage.html") return;
     bind("프로필 수정", profileDialog, { all: true });
@@ -456,7 +379,6 @@
 
   setupRegistration();
   setupVerification();
-  setupReport();
   setupMyPage();
   setupVideoCompletion();
 })();
