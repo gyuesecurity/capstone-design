@@ -139,6 +139,102 @@
   renderValues(report);
   if (page === 'preview' || page === 'detail') renderEvidence(report);
 
+  function setupPreviewNavigation() {
+    if (page !== 'preview') return;
+    const documentPreview = select('[data-report-document]');
+    const tocHeading = all('div').find((element) => element.textContent.trim() === '목차');
+    const toc = tocHeading?.parentElement;
+    if (!documentPreview || !toc) return;
+
+    const overview = select('[data-report-value="title"]')?.parentElement;
+    const evidenceCard = select('[data-report-preview-evidence="0"]');
+    const sections = [
+      { label: '1. 보고서 개요', target: overview },
+      { label: '2. 증거 기본 정보', target: evidenceCard, option: 'basic' },
+      { label: '3. 증거 수집 정보', target: evidenceCard, option: 'basic' },
+      { label: '4. 메타데이터', target: documentPreview.querySelector('[data-report-option-section="metadata"]'), option: 'metadata' },
+      { label: '5. SHA-256 무결성 검증', target: documentPreview.querySelector('[data-report-option-section="hash"]'), option: 'hash' },
+      { label: '6. Chain of Custody', target: documentPreview.querySelector('[data-report-option-section="custody"]'), option: 'custody' },
+      { label: '7. 검증 결과', target: documentPreview.querySelector('[data-report-option-section="results"]'), option: 'results' },
+      { label: '8. 결론', target: select('[data-report-value="footer"]')?.parentElement }
+    ];
+    const buttons = [];
+    sections.forEach((section, index) => {
+      const existing = Array.from(toc.children).find((element) => element.textContent.trim() === section.label);
+      if (!existing) return;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'report-preview-toc';
+      button.textContent = section.label;
+      button.dataset.reportPreviewSection = String(index);
+      button.setAttribute('aria-controls', 'report-preview-document');
+      if (section.option && !report.options.includes(section.option)) button.hidden = true;
+      existing.replaceWith(button);
+      buttons[index] = button;
+    });
+    documentPreview.id = 'report-preview-document';
+
+    const previewHeader = documentPreview.previousElementSibling;
+    const counter = previewHeader && Array.from(previewHeader.children).find((element) => /1\s*\/\s*8/.test(element.textContent));
+    let pageCounter = counter;
+    let previous;
+    let next;
+    if (counter) {
+      const controls = document.createElement('div');
+      controls.className = 'report-preview-controls';
+      previous = document.createElement('button');
+      previous.type = 'button';
+      previous.className = 'report-preview-control';
+      previous.textContent = '이전';
+      pageCounter = document.createElement('span');
+      pageCounter.className = 'report-preview-page';
+      next = document.createElement('button');
+      next.type = 'button';
+      next.className = 'report-preview-control';
+      next.textContent = '다음';
+      controls.append(previous, pageCounter, next);
+      counter.replaceWith(controls);
+    }
+
+    let activeIndex = 0;
+    function availableIndexes() {
+      return sections.map((section, index) => index).filter((index) => sections[index].target && !sections[index].target.hidden);
+    }
+    function adjacentIndex(from, direction) {
+      const available = availableIndexes();
+      const position = available.indexOf(from);
+      if (position < 0) return available[0] ?? from;
+      return available[Math.min(Math.max(position + direction, 0), available.length - 1)];
+    }
+    function selectSection(index, shouldScroll) {
+      const nextIndex = (index + sections.length) % sections.length;
+      const section = sections[nextIndex];
+      if (!section.target || section.target.hidden) return;
+      sections.forEach((item) => item.target?.classList.remove('report-preview-section-focus'));
+      section.target.classList.add('report-preview-section-focus');
+      buttons.forEach((button, buttonIndex) => {
+        if (!button) return;
+        const active = buttonIndex === nextIndex;
+        button.classList.toggle('report-preview-toc--active', active);
+        if (active) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+      });
+      activeIndex = nextIndex;
+      if (pageCounter) pageCounter.textContent = `${nextIndex + 1} / ${sections.length}`;
+      const available = availableIndexes();
+      if (previous) previous.disabled = nextIndex === available[0];
+      if (next) next.disabled = nextIndex === available[available.length - 1];
+      if (shouldScroll) section.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    buttons.forEach((button, index) => button?.addEventListener('click', () => selectSection(index, true)));
+    previous?.addEventListener('click', () => selectSection(adjacentIndex(activeIndex, -1), true));
+    next?.addEventListener('click', () => selectSection(adjacentIndex(activeIndex, 1), true));
+    selectSection(0, false);
+  }
+
+  setupPreviewNavigation();
+
   all('[data-report-new]').forEach((link) => link.addEventListener('click', (event) => {
     draft = defaults();
     remove(GENERATION_KEY);

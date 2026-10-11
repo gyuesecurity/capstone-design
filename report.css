@@ -67,6 +67,15 @@ textarea.report-field { resize: vertical; min-height: 56px; }
 .report-checkbox input:focus-visible + .report-checkbox-mark { outline: 3px solid #9bb7fc; outline-offset: 3px; }
 .report-option { cursor: pointer; }
 .report-option:has(input:not(:checked)) { outline-color: var(--evidence-line) !important; }
+.report-preview-toc { width: 100%; padding: 12px; border: 0; border-radius: 8px; background: white; color: #647187; cursor: pointer; font: 500 14px/1.55 'DM Sans', 'Noto Sans KR', sans-serif; text-align: left; }
+.report-preview-toc:hover { background: #f3f6fc; color: var(--evidence-blue); }
+.report-preview-toc--active { background: #edf3ff; color: #2454c6; }
+.report-preview-controls { display: inline-flex; align-items: center; gap: 8px; color: #647187; font-size: 12px; }
+.report-preview-control { min-width: 44px; height: 30px; border: 1px solid #d8e0eb; border-radius: 6px; background: white; color: #42526a; cursor: pointer; font: inherit; }
+.report-preview-control:hover:not(:disabled) { border-color: var(--evidence-blue); color: var(--evidence-blue); }
+.report-preview-control:disabled { cursor: default; opacity: .45; }
+.report-preview-page { min-width: 38px; text-align: center; }
+.report-preview-section-focus { outline: 3px solid rgba(46, 99, 232, .35) !important; outline-offset: 5px; scroll-margin-top: 32px; }
 [data-report-evidence-row] { background: white !important; }
 [data-report-evidence-row]:has(input:checked) { background: var(--evidence-blue-soft) !important; }
 [data-report-document] { height: auto !important; min-height: 990px; max-width: 100%; }
