@@ -440,6 +440,25 @@
     return select;
   }
 
+  function createEvidenceFilterActions(container) {
+    if (!container) return {};
+    const actions = document.createElement("div");
+    actions.className = "evidence-filter-actions";
+    const apply = document.createElement("button");
+    apply.type = "button";
+    apply.className = "evidence-filter-apply";
+    apply.textContent = "검색";
+    apply.setAttribute("aria-label", "검색 조건 적용");
+    const reset = document.createElement("button");
+    reset.type = "button";
+    reset.className = "evidence-filter-reset";
+    reset.textContent = "초기화";
+    reset.setAttribute("aria-label", "검색 조건 초기화");
+    actions.append(apply, reset);
+    container.appendChild(actions);
+    return { apply, reset };
+  }
+
   function findEvidenceRow(name, id) {
     const nameElement = exactTextElements(name)[0];
     let row = nameElement;
@@ -515,6 +534,7 @@
     const sortFilter = createEvidenceListFilter("최신순", [
       { value: "latest", label: "최신순" }, { value: "oldest", label: "오래된순" }, { value: "name", label: "파일명순" }
     ], "sort");
+    const filterActions = createEvidenceFilterActions(dateFilter && dateFilter.parentElement && dateFilter.parentElement.parentElement);
 
     const title = exactTextElements("증거 목록")[0];
     const count = title && title.parentElement && Array.from(title.parentElement.children).find(function (element) {
@@ -599,8 +619,18 @@
         updateSelection();
       });
     }
-    [search, typeFilter, statusFilter, dateFilter].filter(Boolean).forEach(function (control) {
-      control.addEventListener(control === search ? "input" : "change", applyFilters);
+    filterActions.apply?.addEventListener("click", applyFilters);
+    filterActions.reset?.addEventListener("click", function () {
+      if (search) search.value = "";
+      [typeFilter, statusFilter, dateFilter].filter(Boolean).forEach(function (control) { control.value = ""; });
+      applyFilters();
+      search?.focus();
+    });
+    search?.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        applyFilters();
+      }
     });
     if (sortFilter) sortFilter.addEventListener("change", applySort);
     function beginVerification(event) {

@@ -538,6 +538,37 @@ body > div:first-of-type {
   cursor: pointer;
 }
 
+.evidence-filter-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.evidence-filter-apply,
+.evidence-filter-reset {
+  height: 46px;
+  padding: 0 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: 500 13px/1 "Noto Sans KR", "DM Sans", Arial, sans-serif;
+}
+
+.evidence-filter-apply {
+  border: 1px solid var(--evidence-blue);
+  background: var(--evidence-blue);
+  color: #fff;
+}
+
+.evidence-filter-reset {
+  border: 1px solid var(--evidence-line);
+  background: #fff;
+  color: var(--evidence-ink);
+}
+
+.evidence-filter-apply:hover { background: #2454c6; }
+.evidence-filter-reset:hover { border-color: var(--evidence-blue); color: var(--evidence-blue); }
+
 .evidence-list-checkbox {
   position: relative;
   display: inline-flex;
