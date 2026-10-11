@@ -3,8 +3,45 @@
 
   const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
   const normalize = (value) => String(value || "").replace(/\s+/g, " ").trim();
+  const profileNameKey = "evidence-profile-name";
+  const defaultProfileName = "소연";
   let activeLayer = null;
   let activeTimer = null;
+
+  function getProfileName() {
+    try {
+      return normalize(localStorage.getItem(profileNameKey)) || defaultProfileName;
+    } catch (error) {
+      return defaultProfileName;
+    }
+  }
+
+  function applyProfileName() {
+    const name = getProfileName();
+    document.querySelectorAll("[data-profile-name]").forEach(function (element) {
+      element.textContent = name;
+    });
+    document.querySelectorAll("[data-profile-greeting]").forEach(function (element) {
+      element.textContent = `안녕하세요, ${name}님 👋`;
+    });
+  }
+
+  function saveProfileName(value) {
+    const name = normalize(value);
+    if (!name) return false;
+    try {
+      localStorage.setItem(profileNameKey, name);
+    } catch (error) {
+      // Keep the current page responsive when browser storage is unavailable.
+    }
+    document.querySelectorAll("[data-profile-name]").forEach(function (element) {
+      element.textContent = name;
+    });
+    document.querySelectorAll("[data-profile-greeting]").forEach(function (element) {
+      element.textContent = `안녕하세요, ${name}님 👋`;
+    });
+    return true;
+  }
 
   function exactTextElements(label) {
     return Array.from(document.querySelectorAll("a, button, div, span"))
@@ -260,20 +297,25 @@
     const layer = showDialog(`
       <h2>프로필 정보 수정</h2>
       <form class="evidence-dialog__form" id="profile-form">
-        <label>이름<input name="name" value="소연" autocomplete="name"></label>
-        <label>이메일<input name="email" type="email" value="soyeon@example.com" autocomplete="email"></label>
+        <label>이름<input name="name" required maxlength="30" autocomplete="name"></label>
       </form>
       <div class="evidence-dialog__actions">
         ${button("취소", "cancel")}
         ${button("저장", "save", "primary")}
       </div>
     `);
+    const form = layer.querySelector("#profile-form");
+    const nameInput = form.elements.name;
+    nameInput.value = getProfileName();
     layer.querySelector('[data-dialog-action="cancel"]').addEventListener("click", closeDialog);
     layer.querySelector('[data-dialog-action="save"]').addEventListener("click", function () {
-      const form = layer.querySelector("#profile-form");
+      const name = normalize(nameInput.value);
+      nameInput.value = name;
+      nameInput.setCustomValidity(name ? "" : "이름을 입력해 주세요.");
       if (!form.reportValidity()) return;
+      saveProfileName(name);
       closeDialog();
-      toast("프로필 정보를 저장했습니다.");
+      toast("이름을 저장했습니다.");
     });
   }
 
@@ -370,6 +412,10 @@
     if (event.key === "Escape" && activeLayer) closeDialog();
   });
 
+  applyProfileName();
+  window.addEventListener("storage", function (event) {
+    if (event.key === profileNameKey) applyProfileName();
+  });
   setupRegistration();
   setupVerification();
   setupMyPage();
