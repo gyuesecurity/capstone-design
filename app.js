@@ -131,30 +131,17 @@
   }
 
   function successRegistration(kind) {
-    if (kind === "영상·음성") {
-      window.location.href = "evidence_video_complete.html";
+    const completionPages = {
+      "파일": "evidence_file_complete.html",
+      "이미지": "evidence_img_complete.html",
+      "웹페이지": "evidence_url_complete.html",
+      "영상·음성": "evidence_video_complete.html"
+    };
+    const completionPage = completionPages[kind];
+    if (completionPage) {
+      window.location.href = completionPage;
       return;
     }
-
-    const isUrl = kind === "웹페이지";
-    const title = isUrl ? "웹페이지 증거가 저장되었습니다." : `${kind} 증거가 등록되었습니다.`;
-    const layer = showDialog(`
-      <div class="evidence-dialog__head">
-        <div class="evidence-dialog__icon evidence-dialog__icon--success">✓</div>
-        <div><h2>${title}</h2><p>증거와 무결성 확인을 위한 기록이 안전하게 보존되었습니다.</p></div>
-      </div>
-      ${detailsMarkup([
-        ["증거 ID", `EV-${localDateStamp()}-001`],
-        ["SHA-256", "a8f5f167…9c21"],
-        ["수집 시간", new Date().toLocaleString("ko-KR")]
-      ])}
-      <div class="evidence-dialog__actions">
-        ${button("증거 관리로 이동", "evidence")}
-        ${button("증거 상세보기", "detail", "primary")}
-      </div>
-    `, { wide: true });
-    layer.querySelector('[data-dialog-action="evidence"]').addEventListener("click", () => { window.location.href = "evidence.html"; });
-    layer.querySelector('[data-dialog-action="detail"]').addEventListener("click", () => { window.location.href = "evidence.html"; });
   }
 
   function runProgress(config) {
@@ -364,9 +351,15 @@
     bind("로그아웃", logoutDialog);
   }
 
-  function setupVideoCompletion() {
-    if (page !== "evidence_video_complete.html") return;
-    const selected = sessionStorage.getItem("evidence-file:evidence_video.html");
+  function setupEvidenceCompletion() {
+    const completionSources = {
+      "evidence_file_complete.html": "evidence_file.html",
+      "evidence_img_complete.html": "evidence_img.html",
+      "evidence_video_complete.html": "evidence_video.html"
+    };
+    const sourcePage = completionSources[page];
+    if (!sourcePage) return;
+    const selected = sessionStorage.getItem(`evidence-file:${sourcePage}`);
     if (!selected) return;
     document.querySelectorAll("[data-evidence-filename]").forEach(function (element) {
       element.textContent = selected;
@@ -380,5 +373,5 @@
   setupRegistration();
   setupVerification();
   setupMyPage();
-  setupVideoCompletion();
+  setupEvidenceCompletion();
 })();

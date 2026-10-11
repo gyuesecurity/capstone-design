@@ -146,19 +146,13 @@
       ["상세보기 →", ["evidence_url.html", "evidence_img.html", "evidence_file.html", "evidence_img.html", "evidence_url.html"], true]
     ],
     "evidence_file.html": [
-      ["취소", "chose_evidence.html", false],
-      ["증거 관리로 이동", "evidence.html", true],
-      ["증거 상세보기", "evidence.html", true]
+      ["취소", "chose_evidence.html", false]
     ],
     "evidence_img.html": [
-      ["취소", "chose_evidence.html", false],
-      ["증거 관리로 이동", "evidence.html", true],
-      ["증거 상세보기", "evidence.html", true]
+      ["취소", "chose_evidence.html", false]
     ],
     "evidence_url.html": [
-      ["취소", "chose_evidence.html", false],
-      ["증거 관리로 이동", "evidence.html", true],
-      ["증거 상세보기", "evidence.html", true]
+      ["취소", "chose_evidence.html", false]
     ],
     "evidence_video.html": [
       ["취소", "chose_evidence.html", false]
@@ -167,6 +161,18 @@
       ["증거 관리로 이동", "evidence.html", true],
       ["증거 상세보기", "evidence.html", true]
     ],
+  "evidence_file_complete.html": [
+    ["증거 관리로 이동", "evidence.html", true],
+    ["증거 상세보기", "evidence.html", true]
+  ],
+  "evidence_img_complete.html": [
+    ["증거 관리로 이동", "evidence.html", true],
+    ["증거 상세보기", "evidence.html", true]
+  ],
+  "evidence_url_complete.html": [
+    ["증거 관리로 이동", "evidence.html", true],
+    ["증거 상세보기", "evidence.html", true]
+  ],
     "verification.html": [
       ["증거 상세보기", "evidence.html", true],
       ["보고서 생성", "report_select.html", false]

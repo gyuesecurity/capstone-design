@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>웹페이지 증거 저장 완료 | EVIDENCE</title>
+  <link rel="stylesheet" href="app.css">
+  <script src="navigation.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="completion-shell">
+    <header class="completion-header">
+      <div class="completion-brand">EVIDENCE</div>
+      <nav class="completion-nav" aria-label="주 메뉴">
+        <span>증거 관리</span><span>수집 도구</span><span>감사 로그</span><span>내 계정</span>
+      </nav>
+    </header>
+    <main class="completion-main">
+      <div class="completion-breadcrumb">증거 관리 &gt; 증거 등록 &gt; URL 수집 &gt; 저장 완료</div>
+      <section class="completion-intro">
+        <div class="completion-check" aria-hidden="true">✓</div>
+        <div>
+          <h1>웹페이지 증거가 저장되었습니다.</h1>
+          <p>원본 URL과 웹페이지 상태, 무결성 확인을 위한 기록이 보존되었습니다.</p>
+        </div>
+      </section>
+      <section class="completion-card" aria-label="저장된 증거 정보">
+        <div class="completion-details">
+          <div><span>증거 ID</span><strong>EV-20261008-006</strong></div>
+          <div><span>원본 URL</span><strong>https://example.com/article/123</strong></div>
+          <div><span>SHA-256</span><strong>9f86d081884c7d659a2feaa0c55ad015...4f2a</strong></div>
+          <div><span>수집 시간</span><strong>2026/10/08 14:56:11</strong></div>
+        </div>
+        <div class="completion-status">
+          <span>처리 완료</span>
+          <div><b>원본 URL 기록</b><b>HTML 보존</b><b>화면 캡처 생성</b><b>메타데이터 추출</b><b>SHA-256 생성</b><b>Chain of Custody 기록</b></div>
+        </div>
+      </section>
+      <div class="completion-actions">
+        <button type="button">증거 관리로 이동</button>
+        <button type="button" class="primary">증거 상세보기</button>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
