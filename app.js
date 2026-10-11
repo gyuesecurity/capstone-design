@@ -56,9 +56,15 @@
     return textElement;
   }
 
+  function actionTargets(label) {
+    const targets = Array.from(new Set(exactTextElements(label).map(actionSurface)));
+    const exactTargets = targets.filter((element) => normalize(element.textContent) === label);
+    return exactTargets.length ? exactTargets : targets;
+  }
+
   function bind(label, handler, options) {
     const settings = Object.assign({ all: false, primaryOnly: false }, options || {});
-    let targets = exactTextElements(label).map(actionSurface);
+    let targets = actionTargets(label);
     if (settings.primaryOnly) {
       targets = targets.filter((element) => /#2E63E8|#2454C6/i.test(element.getAttribute("style") || ""));
     }
@@ -227,7 +233,104 @@
     });
   }
 
-  function chooseFile(accept) {
+  function createEditableField(label, settings) {
+    const options = Object.assign({ multiline: false, select: null }, settings || {});
+    const labelElement = exactTextElements(label).find(function (element) {
+      return element.parentElement && Array.from(element.parentElement.children).some(function (child) {
+        return child !== element && child.tagName === "DIV";
+      });
+    });
+    if (!labelElement) return null;
+    const field = Array.from(labelElement.parentElement.children).find(function (child) {
+      return child !== labelElement && child.tagName === "DIV";
+    });
+    if (!field) return null;
+    const existing = field.querySelector("input, textarea, select");
+    if (existing) return existing;
+
+    const value = normalize(field.textContent).replace(/\s*▼$/, "");
+    const control = options.select ? document.createElement("select") : document.createElement(options.multiline ? "textarea" : "input");
+    control.className = `evidence-inline-${options.multiline ? "textarea" : options.select ? "select" : "input"}`;
+    control.setAttribute("aria-label", label);
+    control.dataset.evidenceField = options.name || label;
+    if (options.select) {
+      options.select.forEach(function (option) {
+        const optionElement = document.createElement("option");
+        optionElement.value = option;
+        optionElement.textContent = option;
+        optionElement.selected = option === value;
+        control.appendChild(optionElement);
+      });
+    } else {
+      control.value = options.value === undefined ? value : options.value;
+      control.placeholder = options.placeholder || "";
+      if (!options.multiline) control.type = options.type || "text";
+      if (options.required) control.required = true;
+    }
+    field.textContent = "";
+    field.classList.add("evidence-editable-field");
+    field.appendChild(control);
+    return control;
+  }
+
+  function createUrlField(defaultUrl) {
+    const textElement = exactTextElements(defaultUrl)[0];
+    if (!textElement) return null;
+    let field = textElement.parentElement;
+    for (let depth = 0; depth < 3 && field; depth += 1) {
+      const style = field.getAttribute("style") || "";
+      if (/height\s*:\s*48px/.test(style) && /border-radius/.test(style)) break;
+      field = field.parentElement;
+    }
+    if (!field) return null;
+    const existing = field.querySelector("input");
+    if (existing) return existing;
+    const input = document.createElement("input");
+    input.className = "evidence-inline-input";
+    input.type = "url";
+    input.required = true;
+    input.value = defaultUrl;
+    input.placeholder = "https://example.com/page";
+    input.setAttribute("aria-label", "수집할 웹페이지 URL");
+    input.dataset.evidenceField = "url";
+    field.textContent = "";
+    field.classList.add("evidence-editable-field");
+    field.appendChild(input);
+    return input;
+  }
+
+  function setupEvidenceFields(config) {
+    const fields = {
+      name: createEditableField("증거 이름", { name: "name" }),
+      source: createEditableField("수집 출처", { name: "source", select: ["직접 수집", "제공 받음", "웹에서 수집"] }),
+      description: createEditableField("설명", { name: "description", multiline: true, value: "", placeholder: "증거에 대한 설명을 입력하세요" }),
+      memo: createEditableField("메모", { name: "memo", multiline: true, value: "", placeholder: "필요한 내용을 입력하세요" })
+    };
+    if (config.kind === "웹페이지") fields.url = createUrlField(config.defaultUrl);
+    return fields;
+  }
+
+  function readSelectedFile() {
+    try {
+      return sessionStorage.getItem(`evidence-file:${page}`) || "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function setSelectedFile(file, fields) {
+    try {
+      sessionStorage.setItem(`evidence-file:${page}`, file.name);
+    } catch (error) {
+      // The page remains usable when session storage is unavailable.
+    }
+    if (fields.name) {
+      fields.name.value = file.name.replace(/\.[^.]+$/, "");
+    }
+    toast(`${file.name} 파일을 선택했습니다.`);
+  }
+
+  function chooseEvidenceFile(accept, fields) {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = accept || "*/*";
@@ -235,13 +338,74 @@
     document.body.appendChild(input);
     input.addEventListener("change", function () {
       const file = input.files && input.files[0];
-      if (file) {
-        sessionStorage.setItem(`evidence-file:${page}`, file.name);
-        toast(`${file.name} 파일이 선택되었습니다.`);
-      }
+      if (file) setSelectedFile(file, fields);
       input.remove();
     }, { once: true });
     input.click();
+  }
+
+  function removeSelectedFile(fields) {
+    try {
+      sessionStorage.removeItem(`evidence-file:${page}`);
+    } catch (error) {
+      // The selected file stays cleared in the current form when storage is unavailable.
+    }
+    if (fields.name) fields.name.value = "";
+    toast("선택한 파일을 제거했습니다.");
+  }
+
+  function setupDropZone(config, fields) {
+    const hint = config.kind === "이미지" ? "이미지를 이곳으로 드래그하거나 파일을 선택하세요." : config.kind === "영상·음성" ? "파일을 이곳으로 드래그하거나 파일을 선택하세요." : "파일을 이곳으로 드래그하거나 파일을 선택하세요.";
+    const hintElement = exactTextElements(hint)[0];
+    if (!hintElement) return;
+    let dropZone = hintElement.parentElement;
+    for (let depth = 0; depth < 3 && dropZone; depth += 1) {
+      const style = dropZone.getAttribute("style") || "";
+      if (/border-radius/.test(style) && /padding/.test(style)) break;
+      dropZone = dropZone.parentElement;
+    }
+    if (!dropZone) return;
+    dropZone.classList.add("evidence-drop-zone");
+    dropZone.addEventListener("dragover", function (event) {
+      event.preventDefault();
+      dropZone.classList.add("evidence-drop-zone--active");
+    });
+    dropZone.addEventListener("dragleave", function () {
+      dropZone.classList.remove("evidence-drop-zone--active");
+    });
+    dropZone.addEventListener("drop", function (event) {
+      event.preventDefault();
+      dropZone.classList.remove("evidence-drop-zone--active");
+      const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+      if (file) setSelectedFile(file, fields);
+    });
+  }
+
+  function isHttpUrl(value) {
+    try {
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function collectUrl(input, defaultUrl) {
+    if (!input) return false;
+    const value = normalize(input.value);
+    input.value = value;
+    input.setCustomValidity(isHttpUrl(value) ? "" : "http 또는 https로 시작하는 웹페이지 주소를 입력해 주세요.");
+    if (!input.reportValidity()) return false;
+    try {
+      sessionStorage.setItem(`evidence-url:${page}`, value);
+    } catch (error) {
+      // The preview remains available in the current page when storage is unavailable.
+    }
+    exactTextElements(defaultUrl).forEach(function (element) {
+      element.textContent = value;
+    });
+    toast("웹페이지 미리보기를 준비했습니다.");
+    return true;
   }
 
   function verificationFlow() {
@@ -278,27 +442,52 @@
 
   function setupRegistration() {
     const configs = {
-      "evidence_file.html": { kind: "파일", item: "contract_2026.pdf", meta: "1.8 MB · 문서", submit: "증거 등록", select: "파일 선택", accept: "*/*" },
-      "evidence_img.html": { kind: "이미지", item: "screenshot_001.png", meta: "1.8 MB · 이미지", submit: "이미지 증거 등록", select: "이미지 선택", accept: "image/*" },
-      "evidence_video.html": { kind: "영상·음성", item: "evidence_video_001.mp4", meta: "18.6 MB · 미디어", submit: "영상·음성 증거 등록", select: "파일 선택", accept: "video/*,audio/*" },
-      "evidence_url.html": { kind: "웹페이지", item: "https://example.com/article", meta: "본문과 메타데이터 수집", submit: "웹페이지 증거 저장", select: "URL 수집" }
+      "evidence_file.html": { kind: "파일", meta: "문서 · 파일", submit: "증거 등록", select: "파일 선택", accept: "*/*" },
+      "evidence_img.html": { kind: "이미지", meta: "이미지 파일", submit: "이미지 증거 등록", select: "이미지 선택", accept: "image/*" },
+      "evidence_video.html": { kind: "영상·음성", meta: "영상 · 음성 파일", submit: "영상·음성 증거 등록", select: "파일 선택", accept: "video/*,audio/*" },
+      "evidence_url.html": { kind: "웹페이지", meta: "본문과 메타데이터 수집", submit: "웹페이지 증거 저장", select: "URL 수집", defaultUrl: "https://example.com/article/123" }
     };
     const config = configs[page];
     if (!config) return;
-    if (config.kind !== "웹페이지") {
-      bind(config.select, () => chooseFile(config.accept));
+    const fields = setupEvidenceFields(config);
+    if (config.kind === "웹페이지") {
+      bind(config.select, () => collectUrl(fields.url, config.defaultUrl), { primaryOnly: true });
     } else {
-      bind(config.select, () => toast("웹페이지 미리보기를 준비했습니다."), { primaryOnly: true });
+      const openPicker = () => chooseEvidenceFile(config.accept, fields);
+      bind(config.select, openPicker, { primaryOnly: true });
+      if (config.kind === "이미지") bind("이미지 변경", openPicker, { all: true });
+      if (config.kind === "영상·음성") bind("파일 변경", openPicker, { all: true });
+      bind("삭제", () => removeSelectedFile(fields), { all: true });
+      setupDropZone(config, fields);
     }
     bind(config.submit, function () {
-      const selected = sessionStorage.getItem(`evidence-file:${page}`);
-      registerEvidence(config.kind, selected || config.item, config.meta);
+      if (config.kind === "웹페이지") {
+        let selectedUrl = "";
+        try {
+          selectedUrl = sessionStorage.getItem(`evidence-url:${page}`) || "";
+        } catch (error) {
+          // Validation below keeps the action clear when browser storage is unavailable.
+        }
+        if (!selectedUrl) {
+          toast("URL 수집을 먼저 눌러 미리보기를 확인해 주세요.");
+          return;
+        }
+        registerEvidence(config.kind, selectedUrl, config.meta);
+        return;
+      }
+      const selected = readSelectedFile();
+      if (!selected) {
+        toast("등록할 파일을 먼저 선택해 주세요.");
+        return;
+      }
+      registerEvidence(config.kind, selected, config.meta);
     }, { primaryOnly: true });
   }
 
   function setupVerification() {
     if (page !== "verification.html") return;
-    ["증거 검증", "검증 시작", "다시 검증"].forEach((label) => bind(label, verificationFlow, { primaryOnly: true, all: true }));
+    ["증거 검증", "검증 시작", "다시 검증", "무결성 검증 시작"].forEach((label) => bind(label, verificationFlow, { primaryOnly: true, all: true }));
+    bind("검증 결과 저장", () => toast("검증 결과를 증거 이력에 저장했습니다."), { all: true });
   }
 
   function setupEvidenceCompletion() {

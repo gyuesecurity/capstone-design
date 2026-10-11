@@ -470,6 +470,50 @@ body > div:first-of-type {
   color: #fff;
 }
 
+.evidence-editable-field {
+  padding: 0 !important;
+}
+
+.evidence-inline-input,
+.evidence-inline-select,
+.evidence-inline-textarea {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--evidence-ink);
+  font: 500 14px/1.55 "Noto Sans KR", "DM Sans", Arial, sans-serif;
+}
+
+.evidence-inline-input,
+.evidence-inline-select {
+  height: 100%;
+  padding: 0 14px;
+}
+
+.evidence-inline-textarea {
+  height: 100%;
+  min-height: 72px;
+  padding: 11px 14px;
+  resize: vertical;
+}
+
+.evidence-editable-field:focus-within {
+  outline: 2px solid var(--evidence-blue) !important;
+  outline-offset: -2px !important;
+}
+
+.evidence-drop-zone {
+  transition: box-shadow .16s ease, outline-color .16s ease;
+}
+
+.evidence-drop-zone--active {
+  outline: 2px dashed var(--evidence-blue) !important;
+  outline-offset: -4px !important;
+  box-shadow: 0 0 0 5px rgba(46, 99, 232, .12);
+}
+
 @media (max-width: 720px) {
   .evidence-dialog-layer {
     padding: 14px;
