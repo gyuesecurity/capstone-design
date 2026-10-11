@@ -590,6 +590,30 @@ body > div:first-of-type {
   color: #fff !important;
 }
 
+.verification-evidence-search {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--evidence-ink);
+  font: 500 14px/1.5 "Noto Sans KR", "DM Sans", Arial, sans-serif;
+}
+
+.verification-evidence-search::placeholder {
+  color: var(--evidence-muted);
+}
+
+.verification-evidence-row {
+  background: #fff !important;
+  border-top-color: #e2e7ef !important;
+}
+
+.verification-evidence-row--selected {
+  background: #edf3ff !important;
+  border-top-color: #b8ccf7 !important;
+}
+
 @media (max-width: 720px) {
   .evidence-dialog-layer {
     padding: 14px;

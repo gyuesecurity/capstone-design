@@ -445,7 +445,7 @@
     let row = nameElement;
     for (let depth = 0; depth < 5 && row; depth += 1) {
       const style = row.getAttribute && row.getAttribute("style") || "";
-      if (/height\s*:\s*80px/.test(style) && normalize(row.textContent).includes(id)) return row;
+      if (/height\s*:\s*(70|80)px/.test(style) && normalize(row.textContent).includes(id)) return row;
       row = row.parentElement;
     }
     return null;
@@ -473,6 +473,14 @@
       return Array.isArray(value) ? value : [];
     } catch (error) {
       return [];
+    }
+  }
+
+  function saveVerificationSelection(records) {
+    try {
+      sessionStorage.setItem("evidence-verification-selection", JSON.stringify(records));
+    } catch (error) {
+      // Selection is still available while the current page remains open.
     }
   }
 
@@ -605,11 +613,7 @@
       const selectedRecords = records.filter(function (record) { return selected.has(record.id); }).map(function (record) {
         return { name: record.name, id: record.id, type: record.type };
       });
-      try {
-        sessionStorage.setItem("evidence-verification-selection", JSON.stringify(selectedRecords));
-      } catch (error) {
-        // The selected items remain available until navigation when storage is unavailable.
-      }
+      saveVerificationSelection(selectedRecords);
       window.location.href = "verification.html";
     }
     if (verifyButton) {
@@ -622,7 +626,12 @@
   }
 
   function verificationFlow() {
-    const selectedEvidence = readVerificationSelection()[0];
+    const selectedRecords = readVerificationSelection();
+    if (!selectedRecords.length && sessionStorage.getItem("evidence-verification-selection") !== null) {
+      toast("검증할 증거를 한 개 이상 선택해 주세요.");
+      return;
+    }
+    const selectedEvidence = selectedRecords[0];
     const evidence = selectedEvidence || { name: "evidence_video_001.mp4", id: "EV-20261008-001", type: "영상", size: "18.6 MB" };
     runProgress({
       start: 22,
@@ -633,6 +642,131 @@
       status: "해시 계산 및 비교 중",
       onComplete: function () { verificationSuccess(evidence); }
     });
+  }
+
+  function findVerificationSelectionCell(row) {
+    if (!row) return null;
+    return Array.from(row.children).find(function (child) {
+      return /width\s*:\s*54px/.test(child.getAttribute("style") || "");
+    }) || null;
+  }
+
+  function replaceVerificationSearch() {
+    const placeholder = "증거명 또는 EV-20261008-001 입력";
+    const placeholderElement = exactTextElements(placeholder)[0];
+    if (!placeholderElement) return null;
+    const input = document.createElement("input");
+    input.type = "search";
+    input.className = "verification-evidence-search";
+    input.placeholder = "파일명 또는 증거 ID 검색";
+    input.setAttribute("aria-label", "파일명 또는 증거 ID 검색");
+    placeholderElement.replaceWith(input);
+    return input;
+  }
+
+  function removeAlternativeVerificationState() {
+    const heading = exactTextElements("대안 상태 예시 · 위변조 의심")[0];
+    const section = heading && heading.parentElement && heading.parentElement.parentElement;
+    if (section && normalize(section.textContent).includes("대안 상태 예시")) section.remove();
+  }
+
+  function setupVerificationPicker() {
+    const records = [
+      { name: "evidence_001.html", id: "EV-20261006-001", type: "HTML", status: "정상", date: "2026/10/06 10:32", captured: "2026/10/06 10:32:00", size: "42 KB" },
+      { name: "screenshot_001.png", id: "EV-20261006-002", type: "이미지", status: "정상", date: "2026/10/06 10:21", captured: "2026/10/06 10:21:00", size: "1.8 MB" },
+      { name: "evidence_video_001.mp4", id: "EV-20261008-008", type: "영상", status: "검증 필요", date: "2026/10/08 15:32", captured: "2026/10/08 15:32:21", size: "18.6 MB · 00:02:34" },
+      { name: "report_001.pdf", id: "EV-20261005-003", type: "PDF", status: "검증 필요", date: "2026/10/05 18:40", captured: "2026/10/05 18:40:00", size: "856 KB" }
+    ].map(function (record) {
+      const row = findEvidenceRow(record.name, record.id);
+      if (row) {
+        row.dataset.verificationEvidenceRow = record.id;
+        row.classList.add("verification-evidence-row");
+      }
+      return Object.assign(record, { row });
+    }).filter(function (record) { return record.row; });
+    if (!records.length) return;
+
+    const search = replaceVerificationSearch();
+    const typeFilter = createEvidenceListFilter("전체 유형", [
+      { value: "", label: "전체 유형" }, { value: "HTML", label: "HTML" }, { value: "이미지", label: "이미지" },
+      { value: "영상", label: "영상" }, { value: "PDF", label: "PDF" }
+    ], "verification-type");
+    const statusFilter = createEvidenceListFilter("전체 상태", [
+      { value: "", label: "전체 상태" }, { value: "정상", label: "정상" }, { value: "검증 필요", label: "검증 필요" }
+    ], "verification-status");
+    records.forEach(function (record) {
+      record.checkbox = createEvidenceCheckbox(findVerificationSelectionCell(record.row), `${record.name} 선택`, record.id);
+    });
+
+    const storedSelection = readVerificationSelection();
+    const selected = new Set([storedSelection.length ? storedSelection[0].id : "EV-20261008-008"]);
+    const count = exactTextElements("4개 증거 · 1개 선택됨")[0];
+    const targetTitle = exactTextElements("검증 대상 증거")[0];
+    const targetCard = targetTitle && targetTitle.parentElement && targetTitle.parentElement.parentElement;
+
+    function visibleRecords() {
+      return records.filter(function (record) { return !record.row.hidden; });
+    }
+
+    function updateTargetCard(record) {
+      if (!targetCard || !record) return;
+      const nameElement = Array.from(targetCard.querySelectorAll("div")).find(function (element) {
+        return normalize(element.textContent) === "evidence_video_001.mp4" || records.some(function (item) { return normalize(element.textContent) === item.name; });
+      });
+      if (nameElement) nameElement.textContent = record.name;
+      const metaElement = Array.from(targetCard.querySelectorAll("div")).find(function (element) {
+        return /^(영상|HTML|이미지|PDF) · /.test(normalize(element.textContent));
+      });
+      if (metaElement) metaElement.textContent = `${record.type} · ${record.size}`;
+      const idElement = Array.from(targetCard.querySelectorAll("div")).find(function (element) {
+        return records.some(function (item) { return normalize(element.textContent) === item.id; });
+      });
+      if (idElement) idElement.textContent = record.id;
+      const capturedElement = Array.from(targetCard.querySelectorAll("div")).find(function (element) {
+        return /^2026\/10\/\d{2} \d{2}:\d{2}:\d{2}$/.test(normalize(element.textContent));
+      });
+      if (capturedElement) capturedElement.textContent = record.captured;
+    }
+
+    function updateSelection() {
+      records.forEach(function (record) {
+        const checked = selected.has(record.id);
+        record.checkbox.checked = checked;
+        record.row.classList.toggle("verification-evidence-row--selected", checked);
+      });
+      if (count) count.textContent = `${records.length}개 증거 · ${selected.size}개 선택됨`;
+      const primary = records.find(function (record) { return selected.has(record.id); });
+      updateTargetCard(primary);
+      saveVerificationSelection(records.filter(function (record) { return selected.has(record.id); }).map(function (record) {
+        return { name: record.name, id: record.id, type: record.type, size: record.size };
+      }));
+    }
+
+    function applyFilters() {
+      const query = normalize(search && search.value).toLowerCase();
+      const type = typeFilter && typeFilter.value;
+      const status = statusFilter && statusFilter.value;
+      records.forEach(function (record) {
+        record.row.hidden = !((!query || `${record.name} ${record.id}`.toLowerCase().includes(query)) &&
+          (!type || record.type === type) && (!status || record.status === status));
+      });
+      updateSelection();
+    }
+
+    records.forEach(function (record) {
+      record.checkbox.addEventListener("change", function () {
+        if (record.checkbox.checked) {
+          selected.clear();
+          selected.add(record.id);
+        }
+        else selected.delete(record.id);
+        updateSelection();
+      });
+    });
+    [search, typeFilter, statusFilter].filter(Boolean).forEach(function (control) {
+      control.addEventListener(control === search ? "input" : "change", applyFilters);
+    });
+    updateSelection();
   }
 
   function verificationSuccess(evidence) {
@@ -702,6 +836,8 @@
 
   function setupVerification() {
     if (page !== "verification.html") return;
+    removeAlternativeVerificationState();
+    setupVerificationPicker();
     ["증거 검증", "검증 시작", "다시 검증", "무결성 검증 시작"].forEach((label) => bind(label, verificationFlow, { primaryOnly: true, all: true }));
     bind("검증 결과 저장", () => toast("검증 결과를 증거 이력에 저장했습니다."), { all: true });
   }
