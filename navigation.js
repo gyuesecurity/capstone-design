@@ -103,7 +103,7 @@
     });
   }
 
-  const publicPages = new Set(["index.html", "login.html"]);
+  const publicPages = new Set(["index.html", "login.html", "signup.html", "signup_terms.html"]);
   connectFirst("EVIDENCE", publicPages.has(currentPage) ? "index.html" : "index_home.html", true);
 
   if (!publicPages.has(currentPage)) {
