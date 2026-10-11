@@ -178,10 +178,10 @@
       ["보고서 생성", "report_select.html", false]
     ],
     "mypage.html": [
-      ["프로필 수정", "scroll:프로필 수정 상태 예시", false],
+      ["프로필 수정", "profile_edit.html", false],
       ["로그인 기록 확인", "scroll:계정 및 보안", false],
       ["상세보기 →", ["report.html", "verification.html", "evidence.html", "verification.html"], true],
-      ["로그아웃", ["scroll:로그아웃 확인 모달 예시", "login.html"], false]
+      ["로그아웃", "logout_confirm.html", false]
     ]
   };
 

@@ -26,23 +26,6 @@
     });
   }
 
-  function saveProfileName(value) {
-    const name = normalize(value);
-    if (!name) return false;
-    try {
-      localStorage.setItem(profileNameKey, name);
-    } catch (error) {
-      // Keep the current page responsive when browser storage is unavailable.
-    }
-    document.querySelectorAll("[data-profile-name]").forEach(function (element) {
-      element.textContent = name;
-    });
-    document.querySelectorAll("[data-profile-greeting]").forEach(function (element) {
-      element.textContent = `안녕하세요, ${name}님 👋`;
-    });
-    return true;
-  }
-
   function exactTextElements(label) {
     return Array.from(document.querySelectorAll("a, button, div, span"))
       .filter((element) => normalize(element.textContent) === label)
@@ -293,74 +276,6 @@
     });
   }
 
-  function profileDialog() {
-    const layer = showDialog(`
-      <h2>프로필 정보 수정</h2>
-      <form class="evidence-dialog__form" id="profile-form">
-        <label>이름<input name="name" required maxlength="30" autocomplete="name"></label>
-      </form>
-      <div class="evidence-dialog__actions">
-        ${button("취소", "cancel")}
-        ${button("저장", "save", "primary")}
-      </div>
-    `);
-    const form = layer.querySelector("#profile-form");
-    const nameInput = form.elements.name;
-    nameInput.value = getProfileName();
-    layer.querySelector('[data-dialog-action="cancel"]').addEventListener("click", closeDialog);
-    layer.querySelector('[data-dialog-action="save"]').addEventListener("click", function () {
-      const name = normalize(nameInput.value);
-      nameInput.value = name;
-      nameInput.setCustomValidity(name ? "" : "이름을 입력해 주세요.");
-      if (!form.reportValidity()) return;
-      saveProfileName(name);
-      closeDialog();
-      toast("이름을 저장했습니다.");
-    });
-  }
-
-  function passwordDialog() {
-    const layer = showDialog(`
-      <h2>비밀번호 변경</h2>
-      <form class="evidence-dialog__form" id="password-form">
-        <label>현재 비밀번호<input name="current" type="password" required autocomplete="current-password" placeholder="현재 비밀번호를 입력하세요"></label>
-        <label>새 비밀번호<input name="next" type="password" required minlength="8" autocomplete="new-password" placeholder="8자 이상 입력하세요"></label>
-        <label>새 비밀번호 확인<input name="confirm" type="password" required minlength="8" autocomplete="new-password" placeholder="새 비밀번호를 다시 입력하세요"></label>
-      </form>
-      <div class="evidence-dialog__actions">
-        ${button("취소", "cancel")}
-        ${button("비밀번호 변경", "save", "primary")}
-      </div>
-    `);
-    layer.querySelector('[data-dialog-action="cancel"]').addEventListener("click", closeDialog);
-    layer.querySelector('[data-dialog-action="save"]').addEventListener("click", function () {
-      const form = layer.querySelector("#password-form");
-      if (!form.reportValidity()) return;
-      const values = new FormData(form);
-      if (values.get("next") !== values.get("confirm")) {
-        toast("새 비밀번호가 서로 일치하지 않습니다.");
-        return;
-      }
-      closeDialog();
-      toast("비밀번호가 변경되었습니다.");
-    });
-  }
-
-  function logoutDialog() {
-    const layer = showDialog(`
-      <div class="evidence-dialog__head">
-        <div class="evidence-dialog__icon evidence-dialog__icon--danger">↪</div>
-        <div><h2>로그아웃하시겠습니까?</h2><p>현재 계정에서 로그아웃합니다.</p></div>
-      </div>
-      <div class="evidence-dialog__actions">
-        ${button("취소", "cancel")}
-        ${button("로그아웃", "logout", "danger")}
-      </div>
-    `);
-    layer.querySelector('[data-dialog-action="cancel"]').addEventListener("click", closeDialog);
-    layer.querySelector('[data-dialog-action="logout"]').addEventListener("click", () => { window.location.href = "index.html"; });
-  }
-
   function setupRegistration() {
     const configs = {
       "evidence_file.html": { kind: "파일", item: "contract_2026.pdf", meta: "1.8 MB · 문서", submit: "증거 등록", select: "파일 선택", accept: "*/*" },
@@ -384,13 +299,6 @@
   function setupVerification() {
     if (page !== "verification.html") return;
     ["증거 검증", "검증 시작", "다시 검증"].forEach((label) => bind(label, verificationFlow, { primaryOnly: true, all: true }));
-  }
-
-  function setupMyPage() {
-    if (page !== "mypage.html") return;
-    bind("프로필 수정", profileDialog, { all: true });
-    bind("비밀번호 변경", passwordDialog, { all: true });
-    bind("로그아웃", logoutDialog);
   }
 
   function setupEvidenceCompletion() {
@@ -418,6 +326,5 @@
   });
   setupRegistration();
   setupVerification();
-  setupMyPage();
   setupEvidenceCompletion();
 })();
