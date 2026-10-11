@@ -408,25 +408,241 @@
     return true;
   }
 
+  function createEvidenceListSearch() {
+    const placeholder = "파일명 또는 증거 ID 검색";
+    const placeholderElement = exactTextElements(placeholder)[0];
+    if (!placeholderElement) return null;
+    const input = document.createElement("input");
+    input.className = "evidence-list-search";
+    input.type = "search";
+    input.placeholder = placeholder;
+    input.setAttribute("aria-label", placeholder);
+    placeholderElement.replaceWith(input);
+    return input;
+  }
+
+  function createEvidenceListFilter(label, options, fieldName) {
+    const labelElement = exactTextElements(label)[0];
+    if (!labelElement) return null;
+    const container = labelElement.parentElement;
+    const select = document.createElement("select");
+    select.className = "evidence-list-filter";
+    select.setAttribute("aria-label", label);
+    select.dataset.evidenceListFilter = fieldName;
+    options.forEach(function (option) {
+      const element = document.createElement("option");
+      element.value = option.value;
+      element.textContent = option.label;
+      select.appendChild(element);
+    });
+    container.textContent = "";
+    container.appendChild(select);
+    return select;
+  }
+
+  function findEvidenceRow(name, id) {
+    const nameElement = exactTextElements(name)[0];
+    let row = nameElement;
+    for (let depth = 0; depth < 5 && row; depth += 1) {
+      const style = row.getAttribute && row.getAttribute("style") || "";
+      if (/height\s*:\s*80px/.test(style) && normalize(row.textContent).includes(id)) return row;
+      row = row.parentElement;
+    }
+    return null;
+  }
+
+  function createEvidenceCheckbox(cell, label, id) {
+    if (!cell) return null;
+    cell.textContent = "";
+    const controlLabel = document.createElement("label");
+    controlLabel.className = "evidence-list-checkbox";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = id;
+    input.setAttribute("aria-label", label);
+    const mark = document.createElement("span");
+    mark.setAttribute("aria-hidden", "true");
+    controlLabel.append(input, mark);
+    cell.appendChild(controlLabel);
+    return input;
+  }
+
+  function readVerificationSelection() {
+    try {
+      const value = JSON.parse(sessionStorage.getItem("evidence-verification-selection"));
+      return Array.isArray(value) ? value : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function setupEvidenceManagement() {
+    if (page !== "evidence.html") return;
+    const records = [
+      { name: "evidence_001.html", id: "EV-20261006-001", type: "HTML", status: "정상", date: "2026-10-06" },
+      { name: "screenshot_001.png", id: "EV-20261006-002", type: "PNG", status: "정상", date: "2026-10-06" },
+      { name: "report_001.pdf", id: "EV-20261005-003", type: "PDF", status: "검증 필요", date: "2026-10-05" },
+      { name: "image_002.jpg", id: "EV-20261005-004", type: "JPG", status: "위변조 의심", date: "2026-10-05" },
+      { name: "web_capture_001", id: "EV-20261004-005", type: "URL", status: "정상", date: "2026-10-04" }
+    ].map(function (record) {
+      const row = findEvidenceRow(record.name, record.id);
+      if (row) row.dataset.evidenceListRow = record.id;
+      return Object.assign(record, { row });
+    }).filter(function (record) { return record.row; });
+    if (!records.length) return;
+
+    const search = createEvidenceListSearch();
+    const typeFilter = createEvidenceListFilter("전체 유형", [
+      { value: "", label: "전체 유형" }, { value: "HTML", label: "HTML" }, { value: "PNG", label: "PNG" },
+      { value: "PDF", label: "PDF" }, { value: "JPG", label: "JPG" }, { value: "URL", label: "URL" }
+    ], "type");
+    const statusFilter = createEvidenceListFilter("전체 상태", [
+      { value: "", label: "전체 상태" }, { value: "정상", label: "정상" },
+      { value: "검증 필요", label: "검증 필요" }, { value: "위변조 의심", label: "위변조 의심" }
+    ], "status");
+    const dateFilter = createEvidenceListFilter("수집 기간", [
+      { value: "", label: "수집 기간" }, { value: "2026-10-06", label: "2026년 10월 6일" },
+      { value: "2026-10-05", label: "2026년 10월 5일" }, { value: "2026-10-04", label: "2026년 10월 4일" }
+    ], "date");
+    const sortFilter = createEvidenceListFilter("최신순", [
+      { value: "latest", label: "최신순" }, { value: "oldest", label: "오래된순" }, { value: "name", label: "파일명순" }
+    ], "sort");
+
+    const title = exactTextElements("증거 목록")[0];
+    const count = title && title.parentElement && Array.from(title.parentElement.children).find(function (element) {
+      return normalize(element.textContent) === "24개";
+    });
+    const tableHeader = records[0].row.previousElementSibling;
+    const allCheckbox = createEvidenceCheckbox(tableHeader && tableHeader.firstElementChild, "표시된 증거 전체 선택", "all");
+    const selected = new Set();
+    records.forEach(function (record) {
+      record.checkbox = createEvidenceCheckbox(record.row.firstElementChild, `${record.name} 선택`, record.id);
+    });
+
+    const verifyText = exactTextElements("선택 항목 검증")[0];
+    const verifyButton = verifyText && actionSurface(verifyText);
+    if (verifyButton) {
+      verifyButton.classList.add("evidence-selection-action");
+      verifyButton.setAttribute("role", "button");
+    }
+
+    function visibleRecords() {
+      return records.filter(function (record) { return !record.row.hidden; });
+    }
+
+    function updateSelection() {
+      const visible = visibleRecords();
+      if (allCheckbox) {
+        allCheckbox.checked = visible.length > 0 && visible.every(function (record) { return selected.has(record.id); });
+        allCheckbox.indeterminate = visible.some(function (record) { return selected.has(record.id); }) && !allCheckbox.checked;
+      }
+      if (verifyButton) {
+        verifyButton.classList.toggle("evidence-selection-action--ready", selected.size > 0);
+        verifyButton.setAttribute("aria-disabled", String(selected.size === 0));
+        verifyButton.setAttribute("title", selected.size ? `${selected.size}개 증거 검증하기` : "검증할 증거를 선택해 주세요");
+      }
+    }
+
+    function applyFilters() {
+      const query = normalize(search && search.value).toLowerCase();
+      const type = typeFilter && typeFilter.value;
+      const status = statusFilter && statusFilter.value;
+      const date = dateFilter && dateFilter.value;
+      records.forEach(function (record) {
+        const matched = (!query || `${record.name} ${record.id}`.toLowerCase().includes(query)) &&
+          (!type || record.type === type) && (!status || record.status === status) && (!date || record.date === date);
+        record.row.hidden = !matched;
+      });
+      if (count) {
+        const visibleCount = visibleRecords().length;
+        count.textContent = visibleCount === records.length ? "24개" : `${visibleCount}개 표시`;
+      }
+      updateSelection();
+    }
+
+    function applySort() {
+      const mode = sortFilter && sortFilter.value;
+      const sorted = records.slice().sort(function (left, right) {
+        if (mode === "oldest") return left.date.localeCompare(right.date);
+        if (mode === "name") return left.name.localeCompare(right.name);
+        return right.date.localeCompare(left.date);
+      });
+      let anchor = tableHeader;
+      sorted.forEach(function (record) {
+        anchor.after(record.row);
+        anchor = record.row;
+      });
+    }
+
+    records.forEach(function (record) {
+      record.checkbox.addEventListener("change", function () {
+        if (record.checkbox.checked) selected.add(record.id);
+        else selected.delete(record.id);
+        updateSelection();
+      });
+    });
+    if (allCheckbox) {
+      allCheckbox.addEventListener("change", function () {
+        visibleRecords().forEach(function (record) {
+          record.checkbox.checked = allCheckbox.checked;
+          if (allCheckbox.checked) selected.add(record.id);
+          else selected.delete(record.id);
+        });
+        updateSelection();
+      });
+    }
+    [search, typeFilter, statusFilter, dateFilter].filter(Boolean).forEach(function (control) {
+      control.addEventListener(control === search ? "input" : "change", applyFilters);
+    });
+    if (sortFilter) sortFilter.addEventListener("change", applySort);
+    function beginVerification(event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (!selected.size) {
+        toast("검증할 증거를 한 개 이상 선택해 주세요.");
+        return;
+      }
+      const selectedRecords = records.filter(function (record) { return selected.has(record.id); }).map(function (record) {
+        return { name: record.name, id: record.id, type: record.type };
+      });
+      try {
+        sessionStorage.setItem("evidence-verification-selection", JSON.stringify(selectedRecords));
+      } catch (error) {
+        // The selected items remain available until navigation when storage is unavailable.
+      }
+      window.location.href = "verification.html";
+    }
+    if (verifyButton) {
+      verifyButton.addEventListener("click", beginVerification, true);
+      verifyButton.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" || event.key === " ") beginVerification(event);
+      }, true);
+    }
+    applyFilters();
+  }
+
   function verificationFlow() {
+    const selectedEvidence = readVerificationSelection()[0];
+    const evidence = selectedEvidence || { name: "evidence_video_001.mp4", id: "EV-20261008-001", type: "영상", size: "18.6 MB" };
     runProgress({
       start: 22,
       title: "무결성 검증 중…",
       description: "현재 SHA-256 값을 계산하고 원본 기록과 비교하고 있습니다.",
-      item: "evidence_video_001.mp4",
-      meta: "EV-20261008-001 · 영상 · 18.6 MB",
+      item: evidence.name,
+      meta: `${evidence.id} · ${evidence.type}${evidence.size ? ` · ${evidence.size}` : ""}`,
       status: "해시 계산 및 비교 중",
-      onComplete: verificationSuccess
+      onComplete: function () { verificationSuccess(evidence); }
     });
   }
 
-  function verificationSuccess() {
+  function verificationSuccess(evidence) {
+    const selectedEvidence = evidence || { name: "evidence_video_001.mp4", id: "EV-20261008-001", type: "영상", size: "18.6 MB" };
     const layer = showDialog(`
       <div class="evidence-dialog__head">
         <div class="evidence-dialog__icon evidence-dialog__icon--success">✓</div>
         <div><h2>무결성 검증 완료</h2><p>현재 파일의 SHA-256이 등록 당시의 SHA-256과 일치합니다.</p></div>
       </div>
-      <div class="evidence-dialog__item"><div><strong>evidence_video_001.mp4</strong><small>EV-20261008-001 · 영상 · 18.6 MB</small></div></div>
+      <div class="evidence-dialog__item"><div><strong>${selectedEvidence.name}</strong><small>${selectedEvidence.id} · ${selectedEvidence.type}${selectedEvidence.size ? ` · ${selectedEvidence.size}` : ""}</small></div></div>
       ${detailsMarkup([["검증 결과", "일치 · SHA-256"], ["검증 일시", new Date().toLocaleString("ko-KR")], ["기록 상태", "이력 저장 완료"]])}
       <div class="evidence-dialog__actions">
         ${button("증거 상세", "evidence")}
@@ -514,6 +730,7 @@
     if (event.key === profileNameKey) applyProfileName();
   });
   setupRegistration();
+  setupEvidenceManagement();
   setupVerification();
   setupEvidenceCompletion();
 })();

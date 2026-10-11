@@ -514,6 +514,82 @@ body > div:first-of-type {
   box-shadow: 0 0 0 5px rgba(46, 99, 232, .12);
 }
 
+.evidence-list-search,
+.evidence-list-filter {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--evidence-ink);
+  font: 500 13px/1.5 "Noto Sans KR", "DM Sans", Arial, sans-serif;
+}
+
+.evidence-list-search {
+  flex: 1 1 0;
+}
+
+.evidence-list-search::placeholder {
+  color: var(--evidence-muted);
+}
+
+.evidence-list-filter {
+  cursor: pointer;
+}
+
+.evidence-list-checkbox {
+  position: relative;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.evidence-list-checkbox input {
+  position: absolute;
+  inset: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.evidence-list-checkbox span {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #c8d1df;
+  border-radius: 4px;
+  background: #fff;
+  pointer-events: none;
+}
+
+.evidence-list-checkbox input:checked + span {
+  border-color: var(--evidence-blue);
+  background: var(--evidence-blue);
+  box-shadow: inset 0 0 0 4px #fff;
+}
+
+.evidence-list-checkbox input:focus-visible + span {
+  outline: 3px solid #9bb7fc;
+  outline-offset: 3px;
+}
+
+.evidence-selection-action {
+  cursor: pointer;
+  transition: background .16s ease, border-color .16s ease, color .16s ease;
+}
+
+.evidence-selection-action--ready {
+  border-color: var(--evidence-blue) !important;
+  background: var(--evidence-blue) !important;
+}
+
+.evidence-selection-action--ready * {
+  color: #fff !important;
+}
+
 @media (max-width: 720px) {
   .evidence-dialog-layer {
     padding: 14px;
