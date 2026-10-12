@@ -1,0 +1,41 @@
+.mypage-main { width: min(1248px, calc(100% - 48px)); margin: 0 auto; padding: 40px 0 64px; }
+.mypage-intro h1 { margin: 0; font-size: 28px; font-weight: 600; }
+.mypage-intro p { margin: 8px 0 32px; color: var(--evidence-muted); font-size: 14px; }
+.mypage-message { margin: 0 0 20px; padding: 14px 18px; border: 1px solid var(--evidence-line); border-radius: 10px; background: var(--evidence-blue-soft); color: var(--evidence-ink); font-size: 13px; }
+.mypage-message[hidden] { display: none; }
+.mypage-card { border: 1px solid var(--evidence-line); border-radius: 16px; background: #fff; box-shadow: 0 6px 20px rgba(32, 60, 112, .04); }
+.mypage-profile { display: flex; align-items: center; gap: 24px; padding: 32px; }
+.mypage-avatar { display: grid; place-items: center; flex: none; width: 78px; height: 78px; border-radius: 50%; background: var(--evidence-blue-soft); font-size: 34px; }
+.mypage-profile-details { flex: 1; min-width: 0; }
+.mypage-profile-details h2 { margin: 0 0 6px; font-size: 23px; overflow-wrap: anywhere; }
+.mypage-profile-details p { margin: 0 0 7px; color: var(--evidence-muted); overflow-wrap: anywhere; }
+.mypage-profile-details small { color: var(--evidence-muted); }
+.mypage-outline-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; border: 1px solid var(--evidence-line); border-radius: 8px; color: var(--evidence-ink); text-decoration: none; white-space: nowrap; }
+.mypage-outline-button:hover, .mypage-settings a:hover { background: var(--evidence-blue-soft); }
+.mypage-section-title { margin: 36px 0 18px; font-size: 23px; font-weight: 600; }
+.mypage-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.mypage-stat { min-height: 128px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; }
+.mypage-stat span { color: var(--evidence-muted); font-size: 14px; }
+.mypage-stat strong { font-size: 29px; }
+.mypage-stat .mypage-stat-date { font-size: 19px; }
+.mypage-columns { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(260px, 1fr); gap: 22px; margin-top: 32px; align-items: start; }
+.mypage-card-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 24px; }
+.mypage-card-heading h2, .mypage-security h2 { margin: 0; font-size: 22px; font-weight: 600; }
+.mypage-card-heading span { color: var(--evidence-muted); font-size: 12px; }
+.mypage-activity ul { margin: 0; padding: 0; list-style: none; }
+.mypage-activity li { border-top: 1px solid var(--evidence-line); }
+.mypage-activity li > a, .mypage-activity li > div { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 17px 24px; color: inherit; text-decoration: none; }
+.mypage-activity li > a:hover { background: var(--evidence-blue-soft); }
+.mypage-activity li strong { display: block; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.mypage-activity li small { display: block; margin-top: 5px; color: var(--evidence-muted); font-size: 12px; overflow-wrap: anywhere; }
+.mypage-activity time { flex: none; color: var(--evidence-muted); font-size: 12px; }
+.mypage-empty { padding: 24px; color: var(--evidence-muted); font-size: 13px; }
+.mypage-settings a { display: flex; flex-direction: column; gap: 5px; padding: 18px 24px; border-top: 1px solid var(--evidence-line); color: inherit; text-decoration: none; }
+.mypage-settings a strong { font-size: 14px; font-weight: 500; }
+.mypage-settings a span { color: var(--evidence-muted); font-size: 12px; }
+.mypage-security { margin-top: 32px; padding: 24px; }
+.mypage-security dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 22px 0 0; }
+.mypage-security dt { color: var(--evidence-muted); font-size: 12px; }
+.mypage-security dd { margin: 7px 0 0; font-size: 14px; overflow-wrap: anywhere; }
+@media (max-width: 900px) { .mypage-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mypage-columns { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .mypage-main { width: min(calc(100% - 32px), 500px); padding-top: 28px; } .mypage-profile { flex-wrap: wrap; padding: 22px; gap: 16px; } .mypage-avatar { width: 60px; height: 60px; font-size: 28px; } .mypage-outline-button { width: 100%; } .mypage-stats { gap: 10px; } .mypage-stat { min-height: 112px; padding: 16px; } .mypage-stat strong { font-size: 24px; } .mypage-security dl { grid-template-columns: 1fr; } .mypage-activity li > a, .mypage-activity li > div { align-items: flex-start; flex-direction: column; gap: 6px; } }
