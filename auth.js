@@ -31,6 +31,17 @@
     status.hidden = false;
     status.textContent = message;
   }
+  function showStaticDemoLink(form) {
+    showAuthError(form, "이 배포에는 인증 서버가 없습니다. 실제 계정과 파일은 로컬 서버에서 사용할 수 있습니다. ");
+    const status = form.querySelector("[role=status]");
+    let link = status.querySelector("a");
+    if (!link) {
+      link = document.createElement("a");
+      link.href = "index_home.html";
+      link.textContent = "화면 시연 계속하기";
+      status.append(link);
+    }
+  }
   function destination() {
     const next = new URLSearchParams(location.search).get("next");
     return next && /^[a-zA-Z0-9_-]+\.html(?:\?[a-zA-Z0-9_=&%-]*)?$/.test(next) ? next : "Dashboard.html";
@@ -44,7 +55,7 @@
     login.addEventListener("submit", async function (event) {
       event.preventDefault();
       if (!await backendEnabled()) {
-        showAuthError(login, "서버에 연결할 수 없습니다. README의 실행 방법으로 서버를 시작해 주세요.");
+        showStaticDemoLink(login);
         return;
       }
       try {
@@ -155,7 +166,7 @@
       }
       if (!signup.reportValidity()) return;
       if (!await backendEnabled()) {
-        showAuthError(signup, "서버에 연결할 수 없습니다. README의 실행 방법으로 서버를 시작해 주세요.");
+        showStaticDemoLink(signup);
         return;
       }
       try {
