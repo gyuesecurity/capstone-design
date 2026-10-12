@@ -14,7 +14,7 @@ python -m pip install -r requirements.txt
 python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
 ```
 
-브라우저에서 `http://127.0.0.1:8000/`을 엽니다. `python -m http.server`로 열면 서버 API 대신 이전 IndexedDB 시연 모드가 실행됩니다. 실제 서버 저장 기능은 위 명령으로 확인해야 합니다. 외부 공개 시에는 HTTPS, 백업, 운영용 메일 인증과 배포 설정이 필요합니다. `EVIDENCE_DATA_DIR` 환경 변수로 데이터 폴더를 바꿀 수 있습니다. `data/`는 Git에서 제외됩니다.
+브라우저에서 `http://127.0.0.1:8000/`을 엽니다. `python -m http.server`나 GitHub Pages로 열면 서버 API 대신 이전 IndexedDB 시연 모드가 실행됩니다. 로그인 화면의 시연 링크로 진입할 수 있지만 실제 계정은 생성되지 않습니다. 실제 서버 저장 기능은 위 명령으로 확인해야 합니다. 외부 공개 시에는 HTTPS, 백업, 운영용 메일 인증과 배포 설정이 필요합니다. `EVIDENCE_DATA_DIR` 환경 변수로 데이터 폴더를 바꿀 수 있습니다. `data/`는 Git에서 제외됩니다.
 
 ## 주요 기능
 
