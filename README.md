@@ -24,6 +24,8 @@ python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
 4. 검증 시 서버가 저장 파일을 다시 읽어 SHA-256을 계산합니다. `일치`, `불일치`, `검증 불가` 상태와 실행 이력이 저장됩니다. 대시보드의 건수와 최근 활동, 보고서의 증거 선택에도 최신 상태가 표시됩니다.
 5. 등록·로그인·업로드·다운로드·검증·비밀번호 변경·로그아웃은 감사 기록에 남습니다. `/api/audit`에서 현재 사용자 기록을 확인할 수 있습니다.
 
+`mypage.html`은 `/api/me`, `/api/evidence`, `/api/audit`를 읽어 가입 시 입력한 이름·이메일·가입일, 증거·검증 건수, 최근 이용 내역을 표시합니다. `profile_edit.html`에서 이름을 바꾸면 서버 계정에도 저장되고 다음 로그인에도 유지됩니다. 최근 활동에는 현재 사용자의 서버 작업만 표시됩니다. 보고서 생성은 아직 브라우저 시연 기능이므로 마이페이지의 서버 활동 건수에 포함되지 않습니다.
+
 등록 해시와 재검증 해시의 일치는 서버에 저장된 파일 바이트가 등록 시점과 같다는 뜻입니다. 등록 이전의 조작 여부나 내용의 진실성까지 증명하지는 않습니다. 읽기 전용 파일 권한은 일반적인 실수에 의한 수정을 줄이지만 서버 관리자나 파일 시스템 관리자의 변경까지 막지는 못합니다.
 
 ## API와 데이터 구조
@@ -31,7 +33,7 @@ python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
 | API | 기능 |
 | --- | --- |
 | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout` | 계정과 세션 |
-| `PUT /api/auth/password`, `GET /api/me` | 비밀번호 변경, 내 계정 |
+| `PUT /api/auth/password`, `GET /api/me`, `PUT /api/me` | 비밀번호 변경, 내 계정 조회·이름 수정 |
 | `POST /api/evidence`, `GET /api/evidence` | 파일 등록, 내 증거 목록 |
 | `GET /api/evidence/{id}`, `GET /api/evidence/{id}/download` | 상세, 원본 다운로드 |
 | `POST /api/evidence/{id}/verify`, `GET /api/audit` | 재검증, 작업 이력 |

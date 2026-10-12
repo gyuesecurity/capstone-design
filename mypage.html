@@ -2,307 +2,68 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
-  <title>캡디아메리카</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EVIDENCE - 마이페이지</title>
   <link rel="stylesheet" href="app.css">
-  <script src="navigation.js" defer></script>
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="account.css">
+  <link rel="stylesheet" href="mypage.css">
+  <script src="account.js" defer></script>
+  <script src="mypage.js" defer></script>
 </head>
 <body>
+  <div class="account-shell">
+    <header class="account-header">
+      <a class="account-brand" href="index_home.html"><span class="account-brand__mark" aria-hidden="true"></span><span class="account-brand__name">EVIDENCE</span><span class="account-brand__detail">디지털 증거 플랫폼</span></a>
+      <nav class="account-nav" aria-label="주 메뉴">
+        <a href="Dashboard.html">대시보드</a><a href="evidence.html">증거 관리</a><a href="verification.html">검증</a><a href="report.html">보고서</a><a class="account-nav__mypage" href="mypage.html" aria-current="page">My page</a>
+      </nav>
+    </header>
+    <main class="mypage-main">
+      <div class="mypage-intro"><h1>My page</h1><p>계정 정보와 서비스 이용 내역을 확인하세요.</p></div>
+      <p class="mypage-message" data-mypage-message role="status" hidden></p>
 
-  <!-- 여기에 피그마에서 복사한 HTML 코드 넣기 -->
-<div style="width: 1440px; min-height: 1024px; background: #F6F8FB; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-  <div style="align-self: stretch; height: 88px; padding-left: 96px; padding-right: 96px; background: white; overflow: hidden; border-bottom: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex">
-    <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex">
-      <div style="width: 32px; height: 36px; overflow: hidden; justify-content: center; align-items: center; display: flex">
-        <div style="width: 20px; height: 25px; border: 1.70px #2E63E8 solid"></div>
-      </div>
-      <div style="color: #18243A; font-size: 23px; font-family: Inter; font-weight: 400; word-wrap: break-word">EVIDENCE</div>
-      <div style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">디지털 증거 플랫폼</div>
-    </div>
-    <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 32px; display: flex">
-      <div style="height: 88px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
-        <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">대시보드</div>
-      </div>
-      <div style="height: 88px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
-        <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">증거 관리</div>
-      </div>
-      <div style="height: 88px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
-        <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">검증</div>
-      </div>
-      <div style="height: 88px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
-        <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">보고서</div>
-      </div>
-      <div style="height: 88px; position: relative; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
-        <div style="height: 40px; padding-left: 16px; padding-right: 16px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: flex-start; align-items: center; display: flex">
-          <div style="color: #2454C6; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">My page</div>
+      <section class="mypage-card mypage-profile" aria-labelledby="mypage-profile-title">
+        <div class="mypage-avatar" aria-hidden="true">👤</div>
+        <div class="mypage-profile-details">
+          <h2 id="mypage-profile-title" data-profile-name>불러오는 중</h2>
+          <p data-profile-email>—</p>
+          <small>가입일 <time data-profile-created>—</time></small>
         </div>
-        <div style="width: 87px; height: 3px; left: 0px; top: 85px; position: absolute; background: #2E63E8; border-radius: 2px"></div>
+        <a class="mypage-outline-button" href="profile_edit.html">프로필 수정</a>
+      </section>
+
+      <section aria-labelledby="mypage-summary-title">
+        <h2 id="mypage-summary-title" class="mypage-section-title">서비스 이용 현황</h2>
+        <div class="mypage-stats">
+          <div class="mypage-card mypage-stat"><span>전체 증거</span><strong data-mypage-stat="evidence">—</strong></div>
+          <div class="mypage-card mypage-stat"><span>해시 일치</span><strong data-mypage-stat="matched">—</strong></div>
+          <div class="mypage-card mypage-stat"><span>검증 실행</span><strong data-mypage-stat="verifications">—</strong></div>
+          <div class="mypage-card mypage-stat"><span>최근 활동</span><strong class="mypage-stat-date" data-mypage-stat="latest">—</strong></div>
+        </div>
+      </section>
+
+      <div class="mypage-columns">
+        <section class="mypage-card mypage-activity" aria-labelledby="mypage-activity-title">
+          <div class="mypage-card-heading"><h2 id="mypage-activity-title">최근 활동</h2><span data-mypage-activity-count>불러오는 중</span></div>
+          <ul data-mypage-activities></ul>
+        </section>
+        <section class="mypage-card mypage-settings" aria-labelledby="mypage-settings-title">
+          <div class="mypage-card-heading"><h2 id="mypage-settings-title">계정 설정</h2></div>
+          <a href="profile_edit.html"><strong>프로필 정보</strong><span>가입 정보 확인 및 이름 수정</span></a>
+          <a href="password_change.html"><strong>비밀번호 변경</strong><span>로그인 비밀번호 변경</span></a>
+          <a href="logout_confirm.html"><strong>로그아웃</strong><span>현재 세션 종료</span></a>
+        </section>
       </div>
-    </div>
+
+      <section class="mypage-card mypage-security" aria-labelledby="mypage-security-title">
+        <h2 id="mypage-security-title">계정 정보</h2>
+        <dl>
+          <div><dt>이메일</dt><dd data-profile-email>—</dd></div>
+          <div><dt>가입일</dt><dd data-profile-created>—</dd></div>
+          <div><dt>최근 로그인</dt><dd data-mypage-last-login>—</dd></div>
+        </dl>
+      </section>
+    </main>
   </div>
-  <div style="align-self: stretch; padding-top: 48px; padding-bottom: 64px; padding-left: 96px; padding-right: 96px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 32px; display: flex">
-    <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 32px; display: flex">
-      <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: flex">
-        <div style="align-self: stretch; color: #18243A; font-size: 28px; font-family: DM Sans; font-weight: 500; line-height: 36.40px; word-wrap: break-word">My page</div>
-        <div style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.84px; word-wrap: break-word">계정 정보와 서비스 이용 현황을 확인하고 관리하세요.</div>
-      </div>
-      <div style="align-self: stretch; padding: 32px; background: white; box-shadow: 0px 6px 20px rgba(32, 60, 112, 0.04); overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; justify-content: flex-start; align-items: center; gap: 24px; display: inline-flex">
-        <div style="width: 88px; height: 88px; background: #EDF3FF; overflow: hidden; border-radius: 100px; justify-content: center; align-items: center; display: flex">
-          <div style="width: 38.72px; height: 38.72px; position: relative; overflow: hidden">
-            <div style="width: 25.81px; height: 29.04px; left: 6.46px; top: 4.84px; position: absolute; outline: 1.70px #2E63E8 solid; outline-offset: -0.85px"></div>
-          </div>
-        </div>
-        <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex">
-          <div data-profile-name style="color: #18243A; font-size: 24px; font-family: Noto Sans KR; font-weight: 700; word-wrap: break-word">소연</div>
-          <div style="color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">soyeon@example.com</div>
-          <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 24px; display: inline-flex">
-            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">가입일  2026/03/15</div>
-            <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
-              <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">계정 상태</div>
-              <div style="padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; background: #EAF7F0; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: center; gap: 6px; display: flex">
-                <div style="width: 14px; height: 14px; position: relative; overflow: hidden">
-                  <div style="width: 11.67px; height: 11.67px; left: 1.17px; top: 1.17px; position: absolute; outline: 1.70px #21815A solid; outline-offset: -0.85px"></div>
-                </div>
-                <div style="color: #21815A; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">정상</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <a href="profile_edit.html" style="height: 44px; padding-left: 20px; padding-right: 20px; background: white; overflow: hidden; border-radius: 8px; outline: 1px #E2E7EF solid; outline-offset: -1px; justify-content: center; align-items: center; gap: 8px; display: flex; color: inherit; text-decoration: none">
-          <div style="width: 17px; height: 17px; position: relative; overflow: hidden">
-            <div style="width: 14.17px; height: 14.17px; left: 1.42px; top: 1.42px; position: absolute; outline: 1.70px #647187 solid; outline-offset: -0.85px"></div>
-          </div>
-          <div style="color: #18243A; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">프로필 수정</div>
-        </a>
-      </div>
-      <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 18px; display: flex">
-        <div style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">서비스 이용 현황</div>
-        <div style="align-self: stretch; justify-content: flex-start; align-items: flex-start; gap: 20px; display: inline-flex">
-          <div style="flex: 1 1 0; padding: 24px; background: white; box-shadow: 0px 6px 20px rgba(32, 60, 112, 0.04); overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: inline-flex">
-            <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
-              <div style="color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">전체 증거</div>
-              <div style="width: 32px; height: 32px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-                <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
-                  <div style="width: 15px; height: 12.75px; left: 1.50px; top: 2.25px; position: absolute; outline: 1.70px #2E63E8 solid; outline-offset: -0.85px"></div>
-                </div>
-              </div>
-            </div>
-            <div><span style="color: #18243A; font-size: 28px; font-family: Noto Sans KR; font-weight: 700; line-height: 36.40px; word-wrap: break-word">24</span><span style="color: #647187; font-size: 15px; font-family: Noto Sans KR; font-weight: 400; line-height: 19.50px; word-wrap: break-word"> 건</span></div>
-          </div>
-          <div style="flex: 1 1 0; padding: 24px; background: white; box-shadow: 0px 6px 20px rgba(32, 60, 112, 0.04); overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: inline-flex">
-            <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
-              <div style="color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">검증 완료</div>
-              <div style="width: 32px; height: 32px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-                <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
-                  <div style="width: 12px; height: 15px; left: 3px; top: 1.50px; position: absolute; outline: 1.70px #2E63E8 solid; outline-offset: -0.85px"></div>
-                </div>
-              </div>
-            </div>
-            <div><span style="color: #18243A; font-size: 28px; font-family: Noto Sans KR; font-weight: 700; line-height: 36.40px; word-wrap: break-word">18</span><span style="color: #647187; font-size: 15px; font-family: Noto Sans KR; font-weight: 400; line-height: 19.50px; word-wrap: break-word"> 건</span></div>
-          </div>
-          <div style="flex: 1 1 0; padding: 24px; background: white; box-shadow: 0px 6px 20px rgba(32, 60, 112, 0.04); overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: inline-flex">
-            <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
-              <div style="color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">보고서 생성</div>
-              <div style="width: 32px; height: 32px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-                <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
-                  <div style="width: 12px; height: 15px; left: 3px; top: 1.50px; position: absolute; outline: 1.70px #2E63E8 solid; outline-offset: -0.85px"></div>
-                </div>
-              </div>
-            </div>
-            <div><span style="color: #18243A; font-size: 28px; font-family: Noto Sans KR; font-weight: 700; line-height: 36.40px; word-wrap: break-word">6</span><span style="color: #647187; font-size: 15px; font-family: Noto Sans KR; font-weight: 400; line-height: 19.50px; word-wrap: break-word"> 건</span></div>
-          </div>
-          <div style="flex: 1 1 0; padding: 24px; background: white; box-shadow: 0px 6px 20px rgba(32, 60, 112, 0.04); overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: inline-flex">
-            <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
-              <div style="color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">최근 활동</div>
-              <div style="width: 32px; height: 32px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-                <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
-                  <div style="width: 15px; height: 15px; left: 1.50px; top: 1.50px; position: absolute; outline: 1.70px #2E63E8 solid; outline-offset: -0.85px"></div>
-                </div>
-              </div>
-            </div>
-            <div style="color: #18243A; font-size: 28px; font-family: Noto Sans KR; font-weight: 700; line-height: 36.40px; word-wrap: break-word">오늘</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex">
-      <div style="align-self: stretch; justify-content: flex-start; align-items: flex-start; gap: 24px; display: inline-flex">
-        <div style="width: 744px; background: white; box-shadow: 0px 6px 20px rgba(32, 60, 112, 0.04); overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-          <div style="align-self: stretch; padding: 28px; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
-            <div style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">최근 활동</div>
-            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">최근 기록 4건</div>
-          </div>
-          <div style="align-self: stretch; padding-left: 28px; padding-right: 28px; padding-top: 20px; padding-bottom: 20px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: center; gap: 16px; display: inline-flex">
-            <div style="width: 36px; height: 36px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-              <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
-                <div style="width: 12px; height: 15px; left: 3px; top: 1.50px; position: absolute; outline: 1.70px #2E63E8 solid; outline-offset: -0.85px"></div>
-              </div>
-            </div>
-            <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 7px; display: inline-flex">
-              <div style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">디지털 증거 검증 보고서 생성</div>
-              <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex">
-                <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">10/08 15:45</div>
-                <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">RPT-20261008-001</div>
-              </div>
-            </div>
-            <div style="color: #2454C6; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">상세보기 →</div>
-          </div>
-          <div style="align-self: stretch; padding-left: 28px; padding-right: 28px; padding-top: 20px; padding-bottom: 20px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: center; gap: 16px; display: inline-flex">
-            <div style="width: 36px; height: 36px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-              <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
-                <div style="width: 12px; height: 15px; left: 3px; top: 1.50px; position: absolute; outline: 1.70px #2E63E8 solid; outline-offset: -0.85px"></div>
-              </div>
-            </div>
-            <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 7px; display: inline-flex">
-              <div style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">evidence_video_001.mp4 무결성 검증</div>
-              <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex">
-                <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">10/08 15:40</div>
-                <div style="padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; background: #EAF7F0; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: center; gap: 6px; display: flex">
-                  <div style="width: 14px; height: 14px; position: relative; overflow: hidden">
-                    <div style="width: 11.67px; height: 11.67px; left: 1.17px; top: 1.17px; position: absolute; outline: 1.70px #21815A solid; outline-offset: -0.85px"></div>
-                  </div>
-                  <div style="color: #21815A; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">정상</div>
-                </div>
-              </div>
-            </div>
-            <div style="color: #2454C6; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">상세보기 →</div>
-          </div>
-          <div style="align-self: stretch; padding-left: 28px; padding-right: 28px; padding-top: 20px; padding-bottom: 20px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: center; gap: 16px; display: inline-flex">
-            <div style="width: 36px; height: 36px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-              <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
-                <div style="width: 15px; height: 12.75px; left: 1.50px; top: 2.25px; position: absolute; outline: 1.70px #2E63E8 solid; outline-offset: -0.85px"></div>
-              </div>
-            </div>
-            <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 7px; display: inline-flex">
-              <div style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">evidence_video_001.mp4 증거 등록</div>
-              <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex">
-                <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">10/08 15:32</div>
-                <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">EV-20261008-008</div>
-              </div>
-            </div>
-            <div style="color: #2454C6; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">상세보기 →</div>
-          </div>
-          <div style="align-self: stretch; padding-left: 28px; padding-right: 28px; padding-top: 20px; padding-bottom: 20px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: center; gap: 16px; display: inline-flex">
-            <div style="width: 36px; height: 36px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-              <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
-                <div style="width: 12px; height: 15px; left: 3px; top: 1.50px; position: absolute; outline: 1.70px #2E63E8 solid; outline-offset: -0.85px"></div>
-              </div>
-            </div>
-            <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 7px; display: inline-flex">
-              <div style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">screenshot_001.png 무결성 검증</div>
-              <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex">
-                <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">10/07 18:21</div>
-                <div style="padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; background: #EAF7F0; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: center; gap: 6px; display: flex">
-                  <div style="width: 14px; height: 14px; position: relative; overflow: hidden">
-                    <div style="width: 11.67px; height: 11.67px; left: 1.17px; top: 1.17px; position: absolute; outline: 1.70px #21815A solid; outline-offset: -0.85px"></div>
-                  </div>
-                  <div style="color: #21815A; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">정상</div>
-                </div>
-              </div>
-            </div>
-            <div style="color: #2454C6; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">상세보기 →</div>
-          </div>
-        </div>
-        <div style="flex: 1 1 0; background: white; box-shadow: 0px 6px 20px rgba(32, 60, 112, 0.04); overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-          <div style="align-self: stretch; padding: 28px; overflow: hidden; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-            <div style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">계정 설정</div>
-          </div>
-          <a href="profile_edit.html" style="align-self: stretch; padding-left: 28px; padding-right: 28px; padding-top: 23px; padding-bottom: 23px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex; color: inherit; text-decoration: none">
-            <div style="width: 20px; height: 20px; position: relative; overflow: hidden">
-              <div style="width: 13.33px; height: 15px; left: 3.33px; top: 2.50px; position: absolute; outline: 1.70px #647187 solid; outline-offset: -0.85px"></div>
-            </div>
-            <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
-              <div style="color: #18243A; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">프로필 정보</div>
-              <div style="align-self: stretch; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">이름을 수정합니다.</div>
-            </div>
-            <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
-              <div style="width: 4px; height: 8px; left: 6px; top: 4px; position: absolute; outline: 1.70px #8B96A8 solid; outline-offset: -0.85px"></div>
-            </div>
-          </a>
-          <a href="password_change.html" style="align-self: stretch; padding-left: 28px; padding-right: 28px; padding-top: 23px; padding-bottom: 23px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex; color: inherit; text-decoration: none">
-            <div style="width: 20px; height: 20px; position: relative; overflow: hidden">
-              <div style="width: 16.70px; height: 16.70px; left: 1.67px; top: 1.63px; position: absolute; outline: 1.70px #647187 solid; outline-offset: -0.85px"></div>
-            </div>
-            <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
-              <div style="color: #18243A; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">비밀번호 변경</div>
-              <div style="align-self: stretch; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">로그인 비밀번호를 변경합니다.</div>
-            </div>
-            <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
-              <div style="width: 4px; height: 8px; left: 6px; top: 4px; position: absolute; outline: 1.70px #8B96A8 solid; outline-offset: -0.85px"></div>
-            </div>
-          </a>
-          <div style="align-self: stretch; padding-left: 28px; padding-right: 28px; padding-top: 23px; padding-bottom: 23px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex">
-            <div style="width: 20px; height: 20px; position: relative; overflow: hidden">
-              <div style="width: 15px; height: 16.67px; left: 2.50px; top: 1.67px; position: absolute; outline: 1.70px #647187 solid; outline-offset: -0.85px"></div>
-            </div>
-            <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
-              <div style="color: #18243A; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">알림 설정</div>
-              <div style="align-self: stretch; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">서비스 알림 및 이메일 알림을 관리합니다.</div>
-            </div>
-            <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
-              <div style="width: 4px; height: 8px; left: 6px; top: 4px; position: absolute; outline: 1.70px #8B96A8 solid; outline-offset: -0.85px"></div>
-            </div>
-          </div>
-          <div style="align-self: stretch; padding-left: 28px; padding-right: 28px; padding-top: 23px; padding-bottom: 23px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex">
-            <div style="width: 20px; height: 20px; position: relative; overflow: hidden">
-              <div style="width: 13.33px; height: 16.67px; left: 3.33px; top: 1.67px; position: absolute; outline: 1.70px #647187 solid; outline-offset: -0.85px"></div>
-            </div>
-            <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
-              <div style="color: #18243A; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">보안 설정</div>
-              <div style="align-self: stretch; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">로그인 및 계정 보안 설정을 관리합니다.</div>
-            </div>
-            <div style="width: 16px; height: 16px; position: relative; overflow: hidden">
-              <div style="width: 4px; height: 8px; left: 6px; top: 4px; position: absolute; outline: 1.70px #8B96A8 solid; outline-offset: -0.85px"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style="align-self: stretch; padding: 28px; background: white; box-shadow: 0px 6px 20px rgba(32, 60, 112, 0.04); overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex">
-        <div style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">개인정보 및 보안</div>
-        <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 32px; display: inline-flex">
-          <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex">
-            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">이메일</div>
-            <div style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">soyeon@example.com</div>
-          </div>
-          <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex">
-            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">최근 로그인</div>
-            <div style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">2026/10/08 15:10</div>
-          </div>
-          <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex">
-            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">로그인 기기</div>
-            <div style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">Windows · Chrome</div>
-          </div>
-          <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex">
-            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">보안 상태</div>
-            <div style="padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; background: #EAF7F0; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: center; gap: 6px; display: inline-flex">
-              <div style="width: 14px; height: 14px; position: relative; overflow: hidden">
-                <div style="width: 11.67px; height: 11.67px; left: 1.17px; top: 1.17px; position: absolute; outline: 1.70px #21815A solid; outline-offset: -0.85px"></div>
-              </div>
-              <div style="color: #21815A; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">안전</div>
-            </div>
-          </div>
-        </div>
-        <div style="align-self: stretch; padding-top: 20px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-          <div style="height: 44px; padding-left: 20px; padding-right: 20px; background: white; overflow: hidden; border-radius: 8px; outline: 1px #E2E7EF solid; outline-offset: -1px; justify-content: center; align-items: center; gap: 8px; display: flex">
-            <div style="width: 17px; height: 17px; position: relative; overflow: hidden">
-              <div style="width: 12.75px; height: 12.75px; left: 2.13px; top: 2.13px; position: absolute; outline: 1.70px #647187 solid; outline-offset: -0.85px"></div>
-            </div>
-            <div style="color: #18243A; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">로그인 기록 확인</div>
-          </div>
-        </div>
-      </div>
-      <div style="align-self: stretch; overflow: hidden; justify-content: flex-end; align-items: flex-start; display: inline-flex">
-        <a href="logout_confirm.html" style="height: 44px; padding-left: 20px; padding-right: 20px; background: #F6F8FB; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; gap: 8px; display: flex; text-decoration: none">
-          <div style="width: 17px; height: 17px; position: relative; overflow: hidden">
-            <div style="width: 12.75px; height: 12.75px; left: 2.13px; top: 2.13px; position: absolute; outline: 1.70px #C44343 solid; outline-offset: -0.85px"></div>
-          </div>
-          <div style="color: #C44343; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">로그아웃</div>
-        </a>
-      </div>
-    </div>
-  </div>
-</div>
 </body>
 </html>

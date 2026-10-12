@@ -1,28 +1,56 @@
 (function () {
   "use strict";
 
+  const tokenKey = "evidence-auth-token";
   const profileNameKey = "evidence-profile-name";
-  const defaultProfileName = "소연";
-  const normalize = (value) => String(value || "").replace(/\s+/g, " ").trim();
+  const normalize = value => String(value || "").replace(/\s+/g, " ").trim();
+  let availability;
 
-  function getProfileName() {
-    try {
-      return normalize(localStorage.getItem(profileNameKey)) || defaultProfileName;
-    } catch (error) {
-      return defaultProfileName;
-    }
+  function enabled() {
+    if (!availability) availability = fetch("/api/health", { cache: "no-store" })
+      .then(response => response.ok && response.headers.get("content-type")?.includes("application/json"))
+      .catch(() => false);
+    return availability;
   }
 
-  function saveProfileName(name) {
-    try {
-      localStorage.setItem(profileNameKey, name);
-    } catch (error) {
-      // The current page still reflects the saved value if browser storage is unavailable.
+  async function request(path, options = {}) {
+    if (!await enabled()) throw new Error("계정 정보는 FastAPI 서버에서만 이용할 수 있습니다.");
+    const token = sessionStorage.getItem(tokenKey);
+    if (!token) {
+      location.href = `login.html?next=${encodeURIComponent(location.pathname.split("/").pop())}`;
+      throw new Error("로그인이 필요합니다.");
     }
-    document.querySelectorAll("[data-profile-name]").forEach(function (element) {
-      element.textContent = name;
+    const response = await fetch(path, {
+      ...options, cache: "no-store",
+      headers: { ...options.headers, Authorization: `Bearer ${token}` }
     });
+    if (response.status === 401) {
+      sessionStorage.removeItem(tokenKey);
+      location.href = `login.html?next=${encodeURIComponent(location.pathname.split("/").pop())}`;
+      throw new Error("로그인이 만료되었습니다.");
+    }
+    if (!response.ok) {
+      let detail = "요청을 처리하지 못했습니다.";
+      try { detail = (await response.json()).detail || detail; } catch (_) { /* Empty response. */ }
+      throw new Error(typeof detail === "string" ? detail : "입력 내용을 확인해 주세요.");
+    }
+    return response.json();
   }
+
+  const api = {
+    enabled,
+    me: () => request("/api/me"),
+    evidence: () => request("/api/evidence"),
+    audit: () => request("/api/audit"),
+    updateProfile: name => request("/api/me", {
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name })
+    }),
+    changePassword: (currentPassword, newPassword) => request("/api/auth/password", {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
+    })
+  };
+  window.AccountApi = api;
 
   function showStatus(message) {
     const status = document.querySelector("[data-account-status]");
@@ -31,23 +59,32 @@
     status.hidden = false;
   }
 
-  document.querySelectorAll("[data-profile-name]").forEach(function (element) {
-    element.textContent = getProfileName();
-  });
-
   const profileForm = document.getElementById("profile-edit-form");
   if (profileForm) {
     const nameInput = profileForm.elements.name;
-    nameInput.value = getProfileName();
-    profileForm.addEventListener("submit", function (event) {
+    const save = profileForm.querySelector('button[type="submit"]');
+    save.disabled = true;
+    api.me().then(user => {
+      nameInput.value = user.name;
+      profileForm.elements.email.value = user.email;
+      save.disabled = false;
+    }).catch(error => showStatus(error.message));
+    profileForm.addEventListener("submit", async event => {
       event.preventDefault();
       const name = normalize(nameInput.value);
       nameInput.value = name;
       nameInput.setCustomValidity(name ? "" : "이름을 입력해 주세요.");
       if (!profileForm.reportValidity()) return;
-      saveProfileName(name);
-      showStatus("이름을 저장했습니다. 마이페이지로 이동합니다.");
-      window.setTimeout(() => { window.location.href = "mypage.html"; }, 550);
+      save.disabled = true;
+      try {
+        const user = await api.updateProfile(name);
+        localStorage.setItem(profileNameKey, user.name);
+        showStatus("이름을 저장했습니다. 마이페이지로 이동합니다.");
+        window.setTimeout(() => { location.href = "mypage.html"; }, 500);
+      } catch (error) {
+        showStatus(error.message);
+        save.disabled = false;
+      }
     });
   }
 
@@ -63,48 +100,30 @@
     }
     next.addEventListener("input", validatePassword);
     confirm.addEventListener("input", validatePassword);
-    passwordForm.addEventListener("submit", async function (event) {
+    passwordForm.addEventListener("submit", async event => {
       event.preventDefault();
       validatePassword();
       if (!passwordForm.reportValidity()) return;
       try {
-        const token = sessionStorage.getItem("evidence-auth-token");
-        if (!token) throw new Error("로그인이 필요합니다.");
-        const response = await fetch("/api/auth/password", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ current_password: passwordForm.elements.current.value, new_password: next.value })
-        });
-        if (!response.ok) {
-          const result = await response.json();
-          throw new Error(result.detail || "비밀번호 변경에 실패했습니다.");
-        }
-      } catch (error) {
-        showStatus(error.message);
-        return;
-      }
-      passwordForm.reset();
-      showStatus("비밀번호 변경을 완료했습니다. 마이페이지로 이동합니다.");
-      window.setTimeout(() => { window.location.href = "mypage.html"; }, 550);
+        await api.changePassword(passwordForm.elements.current.value, next.value);
+        passwordForm.reset();
+        showStatus("비밀번호 변경을 완료했습니다. 마이페이지로 이동합니다.");
+        window.setTimeout(() => { location.href = "mypage.html"; }, 500);
+      } catch (error) { showStatus(error.message); }
     });
   }
 
   const logoutButton = document.getElementById("logout-confirm");
   if (logoutButton) {
-    logoutButton.addEventListener("click", async function () {
-      const token = sessionStorage.getItem("evidence-auth-token");
+    logoutButton.addEventListener("click", async () => {
+      const token = sessionStorage.getItem(tokenKey);
       if (token) {
-        try {
-          await fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-        } catch (error) { /* Local token is cleared even if the server is unavailable. */ }
+        try { await fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${token}` } }); }
+        catch (_) { /* Clear the browser token even when the server is unavailable. */ }
       }
-      try {
-        sessionStorage.clear();
-      } catch (error) {
-        // Continue to the public landing page when session storage is unavailable.
-      }
+      sessionStorage.removeItem(tokenKey);
       showStatus("로그아웃했습니다. 시작 화면으로 이동합니다.");
-      window.setTimeout(() => { window.location.href = "index.html"; }, 350);
+      window.setTimeout(() => { location.href = "index.html"; }, 350);
     });
   }
 })();

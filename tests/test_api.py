@@ -88,6 +88,29 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.post("/api/auth/logout", headers=headers)).status_code, 200)
         self.assertEqual((await self.client.get("/api/me", headers=headers)).status_code, 401)
 
+    async def test_profile_and_activity_are_scoped_to_current_user(self):
+        owner = await self.register("owner@example.com", "가입 이름")
+        other = await self.register("other@example.com", "다른 사용자")
+        headers = {"Authorization": f"Bearer {owner}"}
+        other_headers = {"Authorization": f"Bearer {other}"}
+        account = (await self.client.get("/api/me", headers=headers)).json()
+        self.assertEqual((account["name"], account["email"]), ("가입 이름", "owner@example.com"))
+        self.assertTrue(account["createdAt"])
+        self.assertEqual((await self.client.put("/api/me", headers=headers, json={"name": "  "})).status_code, 422)
+        updated = await self.client.put("/api/me", headers=headers, json={"name": "수정한 이름"})
+        self.assertEqual(updated.status_code, 200, updated.text)
+        self.assertEqual((await self.client.get("/api/me", headers=headers)).json()["name"], "수정한 이름")
+        self.assertEqual((await self.client.get("/api/me", headers=other_headers)).json()["name"], "다른 사용자")
+        uploaded = await self.client.post("/api/evidence", headers=headers,
+                                          files={"file": ("활동.txt", b"bytes", "text/plain")})
+        self.assertEqual(uploaded.status_code, 201, uploaded.text)
+        activities = (await self.client.get("/api/audit", headers=headers)).json()
+        self.assertTrue({"register", "login", "profile_update", "upload"}.issubset({item["action"] for item in activities}))
+        upload_activity = next(item for item in activities if item["action"] == "upload")
+        self.assertEqual(upload_activity["evidenceFilename"], "활동.txt")
+        self.assertEqual(upload_activity["evidenceId"], uploaded.json()["id"])
+        self.assertFalse(any(item["evidenceId"] == upload_activity["evidenceId"] for item in (await self.client.get("/api/audit", headers=other_headers)).json()))
+
 
 if __name__ == "__main__":
     unittest.main()
