@@ -8,16 +8,65 @@
   const GENERATION_KEY = 'evidence-report:generating:v1';
   const options = ['basic', 'preview', 'metadata', 'exif', 'hash', 'results', 'custody', 'url'];
   const optionNames = ['증거 기본 정보', '증거 미리보기', '메타데이터', 'EXIF 정보', 'SHA-256', '무결성 검증 결과', 'Chain of Custody', 'URL 수집 정보'];
-  const evidence = [
-    { name: 'evidence_001.html', id: 'EV-20261006-001', type: 'HTML', date: '2026/10/06 10:32', status: '정상' },
-    { name: 'screenshot_001.png', id: 'EV-20261006-002', type: '이미지', date: '2026/10/06 10:21', status: '정상' },
-    { name: 'evidence_video_001.mp4', id: 'EV-20261008-008', type: '영상', date: '2026/10/08 15:32', status: '정상' },
-    { name: 'report_001.pdf', id: 'EV-20261005-003', type: 'PDF', date: '2026/10/05 18:40', status: '검증 필요' }
-  ];
+  let evidence = [];
+  const statusNames = { NOT_VERIFIED: '미검증', MATCH: '일치', MISMATCH: '불일치', UNAVAILABLE: '검증 불가' };
   const select = (query) => document.querySelector(query);
   const all = (query) => Array.from(document.querySelectorAll(query));
   const date = (value) => new Date(value).toLocaleDateString('sv-SE').replace(/-/g, '/');
-  const defaults = () => ({ title: '디지털 증거 검증 보고서', author: '소연', project: '', description: '', selected: [0, 1], options: options.slice(), date: date(Date.now()) });
+  const defaults = () => ({ title: '디지털 증거 검증 보고서', author: '소연', project: '', description: '', selected: [], options: options.slice(), date: date(Date.now()) });
+
+  function formatDate(value) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? '기록 없음' : `${date(parsed)} ${parsed.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  }
+
+  function typeName(record) {
+    if (record.mime?.startsWith('image/')) return '이미지';
+    if (record.mime?.startsWith('video/')) return '영상';
+    const type = String(record.type || '').toUpperCase();
+    if (['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP', 'BMP', 'SVG'].includes(type)) return '이미지';
+    if (['MP4', 'MOV', 'WEBM', 'AVI'].includes(type)) return '영상';
+    return type || '기타';
+  }
+
+  function storedEvidence(record) {
+    const statusCode = statusNames[record.verificationStatus] ? record.verificationStatus : 'NOT_VERIFIED';
+    return {
+      id: record.id, name: record.name || record.filename || record.id, filename: record.filename || '',
+      type: typeName(record), date: formatDate(record.registeredAt), registeredAt: record.registeredAt, statusCode,
+      status: statusNames[statusCode], size: record.size, mime: record.mime || '',
+      sha256: record.sha256 || '', source: record.source || '',
+      lastVerification: record.lastVerification || null
+    };
+  }
+
+  async function loadStoredEvidence() {
+    if (window.EvidenceApi && await window.EvidenceApi.enabled()) {
+      return (await window.EvidenceApi.list()).map(storedEvidence).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt));
+    }
+    return new Promise((resolve, reject) => {
+      const opening = indexedDB.open('evidence-local-files', 1);
+      opening.onupgradeneeded = () => {
+        const db = opening.result;
+        if (!db.objectStoreNames.contains('records')) db.createObjectStore('records', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('files')) db.createObjectStore('files');
+      };
+      opening.onerror = () => reject(opening.error);
+      opening.onblocked = () => reject(new Error('브라우저 저장소를 열 수 없습니다.'));
+      opening.onsuccess = () => {
+        const db = opening.result;
+        db.onversionchange = () => db.close();
+        const transaction = db.transaction('records', 'readonly');
+        const request = transaction.objectStore('records').getAll();
+        transaction.oncomplete = () => { db.close(); resolve(request.result.map(storedEvidence).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))); };
+        transaction.onabort = () => { db.close(); reject(transaction.error || new Error('증거 목록을 읽을 수 없습니다.')); };
+      };
+    });
+  }
+
+  async function boot() {
+    try { evidence = await loadStoredEvidence(); }
+    catch (error) { message(`등록된 증거를 읽지 못했습니다: ${error.message}`); return; }
 
   function read(key) {
     try { return JSON.parse(sessionStorage.getItem(key)); } catch (_) { return null; }
@@ -51,11 +100,12 @@
       title: typeof value.title === 'string' ? value.title.slice(0, 150) : fallback.title,
       project: typeof value.project === 'string' ? value.project.slice(0, 200) : '',
       description: typeof value.description === 'string' ? value.description.slice(0, 4000) : '',
-      selected: Array.isArray(value.selected) ? [...new Set(value.selected.filter((i) => Number.isInteger(i) && evidence[i]))] : fallback.selected,
+      selected: Array.isArray(value.selected) ? [...new Set(value.selected.filter((id) => typeof id === 'string' && (evidence.some((item) => item.id === id) || value.evidenceSnapshot?.some((item) => item.id === id))))] : fallback.selected,
       options: Array.isArray(value.options) ? options.filter((key) => value.options.includes(key)) : fallback.options,
       date: typeof value.date === 'string' ? value.date : fallback.date,
       id: typeof value.id === 'string' ? value.id : '',
-      created: typeof value.created === 'string' ? value.created : ''
+      created: typeof value.created === 'string' ? value.created : '',
+      evidenceSnapshot: Array.isArray(value.evidenceSnapshot) ? value.evidenceSnapshot.filter((item) => item && typeof item.id === 'string') : []
     };
   }
 
@@ -63,8 +113,21 @@
   const result = read(RESULT_KEY);
   const isCurrent = page === 'complete' || new URLSearchParams(location.search).get('report') === 'current';
   if (isCurrent && (!result || !result.id)) { location.replace('report.html'); return; }
-  const sample = { ...defaults(), title: '디지털 증거 검증 보고서_001', id: 'RPT-20261008-001', date: '2026/10/08', created: '2026/10/08 16:02:31' };
+  const sampleEvidence = [
+    { id: 'EV-20261006-001', name: 'evidence_001.html', filename: 'evidence_001.html', type: 'HTML', date: '2026/10/06 10:32', statusCode: 'MATCH', status: '일치' },
+    { id: 'EV-20261006-002', name: 'screenshot_001.png', filename: 'screenshot_001.png', type: '이미지', date: '2026/10/06 10:21', statusCode: 'MATCH', status: '일치' }
+  ];
+  const sample = { ...defaults(), title: '디지털 증거 검증 보고서_001', id: 'RPT-20261008-001', date: '2026/10/08', created: '2026/10/08 16:02:31', selected: sampleEvidence.map((item) => item.id), evidenceSnapshot: sampleEvidence };
   const report = isCurrent ? clean(result) : (page === 'detail' || page === 'list' ? sample : draft);
+  if (isCurrent && page === 'detail') {
+    const heading = select('[role="heading"][aria-level="1"]');
+    if (heading) heading.textContent = '보고서 상세 보기';
+  }
+
+  function itemsFor(data) {
+    const source = data.evidenceSnapshot?.length ? data.evidenceSnapshot : evidence;
+    return data.selected.map((id) => source.find((item) => item.id === id)).filter(Boolean);
+  }
 
   function saveDraft() { return write(DRAFT_KEY, draft); }
   function valid() {
@@ -79,9 +142,8 @@
   }
 
   function summary(data) {
-    const normal = data.selected.filter((i) => evidence[i].status === '정상').length;
-    const pending = data.selected.length - normal;
-    return `정상 ${normal}건 · 검증 필요 ${pending}건`;
+    const counts = itemsFor(data).reduce((result, item) => { result[item.statusCode] = (result[item.statusCode] || 0) + 1; return result; }, {});
+    return `일치 ${counts.MATCH || 0}건 · 미검증 ${counts.NOT_VERIFIED || 0}건 · 불일치 ${counts.MISMATCH || 0}건 · 검증 불가 ${counts.UNAVAILABLE || 0}건`;
   }
 
   function renderValues(data) {
@@ -91,7 +153,7 @@
       id: data.id || '생성 시 발급', 'id-prefixed': `보고서 ID　${data.id || '생성 시 발급'}`,
       filename: `${data.title}.pdf`, created: data.created || '', count: `${count}건`,
       selection: `선택된 증거: ${count}건`, 'selected-count': `선택 증거 ${count}건`,
-      summary: summary(data), status: data.selected.some((i) => evidence[i].status !== '정상') ? '! 검증 필요 항목 포함' : '✓ 무결성 확인',
+      summary: summary(data), status: itemsFor(data).every((item) => item.statusCode === 'MATCH') && count ? '✓ 모두 일치' : '검증 상태 확인 필요',
       'preview-description': `선택한 ${count}건의 증거와 보고서에 포함되는 정보를 최종 확인하세요.`,
       'document-description': `등록된 디지털 증거 ${count}건의 수집 기록과 선택한 보고서 항목을 정리합니다.`,
       'complete-description': `선택한 증거 ${count}건으로 보고서를 생성했습니다.`,
@@ -104,28 +166,48 @@
   }
 
   function renderEvidence(data) {
-    all('[data-report-preview-evidence], [data-report-detail-evidence]').forEach((card) => {
-      const index = Number(card.dataset.reportPreviewEvidence ?? card.dataset.reportDetailEvidence);
-      card.hidden = !data.selected.includes(index);
-    });
-    all('[data-report-option-section]').forEach((section) => {
-      section.hidden = !data.options.includes(section.dataset.reportOptionSection);
-    });
     const container = select('[data-report-detail-evidence-list]') || select('[data-report-document]');
     if (!container) return;
-    data.selected.filter((i) => i > 1).forEach((i) => {
-      const item = evidence[i];
+    const preview = container.hasAttribute('data-report-document');
+    container.querySelectorAll('[data-report-preview-evidence], [data-report-detail-evidence]').forEach((card) => card.remove());
+    if (preview) {
+      Array.from(container.children).filter((child) => ['hash', 'custody'].includes(child.dataset.reportOptionSection)).forEach((child) => child.remove());
+    }
+    const items = itemsFor(data);
+    const resultSection = preview ? Array.from(container.children).find((child) => child.dataset.reportOptionSection === 'results') : null;
+    items.forEach((item, index) => {
       const card = document.createElement('section');
       card.className = 'report-extra-evidence';
-      const title = document.createElement('strong');
-      title.textContent = item.name;
-      card.append(title);
-      [item.id, `${item.type} · ${item.date}`, `검증 상태: ${item.status}`, '상세 메타데이터 및 전체 해시값은 증거 상세에서 확인하세요.'].forEach((text) => {
-        const line = document.createElement('p'); line.textContent = text; card.append(line);
-      });
-      const lastPreview = container.querySelector('[data-report-preview-evidence="1"]');
-      if (lastPreview) lastPreview.after(card);
+      card.dataset.status = item.statusCode;
+      card.dataset[preview ? 'reportPreviewEvidence' : 'reportDetailEvidence'] = String(index);
+      const heading = document.createElement('strong');
+      heading.textContent = item.name;
+      card.append(heading);
+      const addLine = (text, option) => {
+        const line = document.createElement('p');
+        line.textContent = text;
+        if (option) line.dataset.reportOptionSection = option;
+        card.append(line);
+      };
+      addLine(`증거 ID: ${item.id} · 원본 파일: ${item.filename || item.name}`, 'basic');
+      addLine(`${item.type} · ${formatSize(item.size)} · 수집 일시 ${item.date}`, 'basic');
+      addLine(`검증 상태: ${item.status}${item.lastVerification?.completedAt ? ` · 마지막 검증 ${formatDate(item.lastVerification.completedAt)}` : ''}`, 'results');
+      addLine(`수집 출처: ${item.source || '기록 없음'} · MIME: ${item.mime || '기록 없음'}`, 'metadata');
+      addLine(`등록 SHA-256: ${item.sha256 || '기록 없음'}`, 'hash');
+      addLine(`검증 SHA-256: ${item.lastVerification?.currentHash || '검증 기록 없음'}`, 'hash');
+      if (item.lastVerification?.reason) addLine(`검증 결과 설명: ${item.lastVerification.reason}`, 'results');
+      if (preview) container.insertBefore(card, resultSection);
       else container.append(card);
+    });
+    if (!items.length) {
+      const empty = document.createElement('p');
+      empty.className = 'report-empty';
+      empty.textContent = '선택한 증거가 없습니다.';
+      if (preview) container.insertBefore(empty, resultSection);
+      else container.append(empty);
+    }
+    all('[data-report-option-section]').forEach((section) => {
+      section.hidden = !data.options.includes(section.dataset.reportOptionSection);
     });
     if (data.project || data.description || data.options.length !== options.length) {
       const note = document.createElement('div');
@@ -134,6 +216,11 @@
       if (container.hasAttribute('data-report-detail-evidence-list')) container.before(note);
       else container.querySelector('[data-report-value="title"]').parentElement.append(note);
     }
+  }
+
+  function formatSize(bytes) {
+    if (!Number.isFinite(bytes)) return '크기 기록 없음';
+    return bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1048576).toFixed(1)} MB`;
   }
 
   renderValues(report);
@@ -235,6 +322,60 @@
 
   setupPreviewNavigation();
 
+  function renderSelectionRows() {
+    if (page !== 'select') return;
+    const marker = select('[data-report-evidence-placeholder]');
+    const parent = marker?.parentElement;
+    if (!parent) return;
+    const typeFilter = select('[data-report-filter="type"]');
+    const statusFilter = select('[data-report-filter="status"]');
+    typeFilter.replaceChildren(new Option('전체 유형', ''), ...[...new Set(evidence.map((item) => item.type))].sort().map((type) => new Option(type, type)));
+    statusFilter.replaceChildren(new Option('전체 상태', ''), ...Object.entries(statusNames).map(([code, label]) => new Option(label, code)));
+    evidence.forEach((item) => {
+      const row = document.createElement('div');
+      row.className = 'report-local-row';
+      row.dataset.reportEvidenceRow = item.id;
+      const selection = document.createElement('div');
+      selection.className = 'report-local-select';
+      const label = document.createElement('label');
+      label.className = 'report-checkbox';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.dataset.reportEvidence = item.id;
+      checkbox.setAttribute('aria-label', item.name);
+      checkbox.checked = draft.selected.includes(item.id);
+      const mark = document.createElement('span');
+      mark.className = 'report-checkbox-mark';
+      const image = document.createElement('img');
+      image.alt = '';
+      image.src = 'assets/report/b1e8d.svg';
+      mark.append(image); label.append(checkbox, mark); selection.append(label);
+      const name = document.createElement('div');
+      name.className = 'report-local-name';
+      const title = document.createElement('strong'); title.textContent = item.name;
+      name.append(title);
+      if (item.filename && item.filename !== item.name) { const filename = document.createElement('small'); filename.textContent = item.filename; name.append(filename); }
+      const addCell = (value, className) => { const cell = document.createElement('div'); cell.className = className; cell.textContent = value; row.append(cell); };
+      row.append(selection, name);
+      addCell(item.type, 'report-local-type');
+      addCell(item.date, 'report-local-date');
+      addCell(item.id, 'report-local-id');
+      const badge = document.createElement('span');
+      badge.className = 'report-local-badge';
+      badge.dataset.status = item.statusCode;
+      badge.textContent = item.status;
+      row.append(badge);
+      parent.insertBefore(row, marker);
+    });
+    if (!evidence.length) {
+      marker.textContent = '등록된 증거가 없습니다. 증거 관리에서 파일을 등록한 뒤 다시 확인해 주세요.';
+    } else {
+      marker.remove();
+    }
+  }
+
+  renderSelectionRows();
+
   all('[data-report-new]').forEach((link) => link.addEventListener('click', (event) => {
     draft = defaults();
     remove(GENERATION_KEY);
@@ -249,9 +390,9 @@
   });
 
   all('[data-report-evidence]').forEach((input) => {
-    input.checked = draft.selected.includes(Number(input.dataset.reportEvidence));
+    input.checked = draft.selected.includes(input.dataset.reportEvidence);
     input.addEventListener('change', () => {
-      draft.selected = all('[data-report-evidence]:checked').map((item) => Number(item.dataset.reportEvidence));
+      draft.selected = all('[data-report-evidence]:checked').map((item) => item.dataset.reportEvidence);
       saveDraft(); renderValues(draft);
     });
   });
@@ -272,8 +413,8 @@
     const type = select('[data-report-filter="type"]')?.value;
     const status = select('[data-report-filter="status"]')?.value;
     all('[data-report-evidence-row]').forEach((row) => {
-      const item = evidence[Number(row.dataset.reportEvidenceRow)];
-      row.hidden = !`${item.name} ${item.id}`.toLowerCase().includes(query) || !!(type && item.type !== type) || !!(status && item.status !== status);
+      const item = evidence.find((record) => record.id === row.dataset.reportEvidenceRow);
+      row.hidden = !`${item.name} ${item.filename} ${item.id}`.toLowerCase().includes(query) || !!(type && item.type !== type) || !!(status && item.statusCode !== status);
     });
   }
   all('[data-report-filter]').forEach((input) => input.addEventListener('change', filterRows));
@@ -297,7 +438,7 @@
       if (percent === 100) {
         clearInterval(timer);
         const now = new Date();
-        const completed = { ...draft, id: `RPT-${date(now).replace(/\//g, '')}-${now.getTime().toString().slice(-6)}`, created: `${date(now)} ${now.toLocaleTimeString('en-GB', { hour12: false })}` };
+        const completed = { ...draft, evidenceSnapshot: itemsFor(draft), id: `RPT-${date(now).replace(/\//g, '')}-${now.getTime().toString().slice(-6)}`, created: `${date(now)} ${now.toLocaleTimeString('en-GB', { hour12: false })}` };
         if (write(RESULT_KEY, completed)) {
           remove(GENERATION_KEY);
           location.replace('report_complete.html');
@@ -311,8 +452,8 @@
 
   function downloadPdf(data) {
     // This is the existing small demonstration PDF, not a server-generated evidence report.
-    const lines = ['EVIDENCE - DEMO REPORT', 'Digital Evidence Verification Report', `Report ID: ${data.id || 'preview'}`, `Included evidence: ${data.selected.length}`, ...data.selected.map((i) => evidence[i].id), `Verified samples: ${data.selected.filter((i) => evidence[i].status === '정상').length}`];
-    const escapePdf = (value) => value.replace(/([\\()])/g, '\\$1');
+    const lines = ['EVIDENCE - LOCAL REPORT', 'Digital Evidence Verification Report', `Report ID: ${data.id || 'preview'}`, `Included evidence: ${data.selected.length}`, ...itemsFor(data).flatMap((item) => [`Evidence: ${item.id}`, `File: ${item.filename || item.name}`, `SHA-256: ${item.sha256 || 'unavailable'}`, `Verification: ${item.statusCode}`])];
+    const escapePdf = (value) => value.replace(/[^\x20-\x7E]/g, '?').replace(/([\\()])/g, '\\$1');
     const stream = `BT /F1 12 Tf 72 760 Td ${lines.map((line, i) => `${i ? '0 -24 Td ' : ''}(${escapePdf(line)}) Tj`).join(' ')} ET`;
     const objects = [
       '<< /Type /Catalog /Pages 2 0 R >>',
@@ -342,7 +483,7 @@
     const row = select('[data-report-row]').cloneNode(true);
     const cells = Array.from(row.children);
     cells[0].lastElementChild.textContent = data.title;
-    cells[1].textContent = `${data.selected.length}건`;
+    cells[1].textContent = `${itemsFor(data).length}건`;
     cells[2].textContent = data.created;
     cells[3].textContent = summary(data);
     row.querySelector('a').href = 'report_detail.html?report=current';
@@ -355,4 +496,6 @@
       remove(RESULT_KEY); location.href = 'report.html';
     }
   }));
+  }
+  boot().catch((error) => message(`보고서를 표시할 수 없습니다: ${error.message}`));
 })();

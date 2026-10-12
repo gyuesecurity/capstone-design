@@ -5,9 +5,10 @@
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0">
   <title>캡디아메리카</title>
-  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="app.css?v=dashboard-local-1">
   <script src="navigation.js" defer></script>
   <script src="app.js" defer></script>
+  <script src="dashboard-local.js" defer></script>
 </head>
 <body>
 
@@ -50,7 +51,7 @@
           <div style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">디지털 증거의 상태와 최근 활동을 확인하세요.</div>
         </div>
         <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 16px; display: flex">
-          <div style="color: #647187; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">2026.10.06</div>
+          <div data-dashboard-date style="color: #647187; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">—</div>
           <div style="height: 44px; padding-left: 18px; padding-right: 18px; background: #2E63E8; overflow: hidden; border-radius: 8px; outline: 1px #2E63E8 solid; outline-offset: -1px; justify-content: flex-start; align-items: center; gap: 8px; display: flex">
             <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
               <div style="width: 10.50px; height: 10.50px; left: 3.75px; top: 3.75px; position: absolute; outline: 1.70px white solid; outline-offset: -0.85px"></div>
@@ -70,14 +71,14 @@
             </div>
           </div>
           <div style="overflow: hidden; justify-content: flex-start; align-items: baseline; gap: 6px; display: inline-flex">
-            <div style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">24</div>
+            <div data-dashboard-count="total" style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">—</div>
             <div style="color: #8B96A8; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">건</div>
           </div>
           <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">등록된 모든 증거</div>
         </div>
         <div style="flex: 1 1 0; height: 156px; padding: 24px; background: white; overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex">
           <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
-            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">검증 완료</div>
+            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">해시 일치</div>
             <div style="width: 34px; height: 34px; background: #ECF6F2; overflow: hidden; border-radius: 10px; justify-content: center; align-items: center; display: flex">
               <div style="width: 20px; height: 20px; position: relative; overflow: hidden">
                 <div style="width: 13.33px; height: 16.67px; left: 3.33px; top: 1.67px; position: absolute; outline: 1.70px #258169 solid; outline-offset: -0.85px"></div>
@@ -85,7 +86,7 @@
             </div>
           </div>
           <div style="overflow: hidden; justify-content: flex-start; align-items: baseline; gap: 6px; display: inline-flex">
-            <div style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">18</div>
+            <div data-dashboard-count="match" style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">—</div>
             <div style="color: #8B96A8; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">건</div>
           </div>
           <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">원본과 해시 일치</div>
@@ -100,10 +101,10 @@
             </div>
           </div>
           <div style="overflow: hidden; justify-content: flex-start; align-items: baseline; gap: 6px; display: inline-flex">
-            <div style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">4</div>
+            <div data-dashboard-count="pending" style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">—</div>
             <div style="color: #8B96A8; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">건</div>
           </div>
-          <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">무결성 검증 대기</div>
+          <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">미검증 또는 검증 불가</div>
         </div>
         <div style="flex: 1 1 0; height: 156px; padding: 24px; background: white; overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex">
           <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
@@ -115,7 +116,7 @@
             </div>
           </div>
           <div style="overflow: hidden; justify-content: flex-start; align-items: baseline; gap: 6px; display: inline-flex">
-            <div style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">2</div>
+            <div data-dashboard-count="mismatch" style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">—</div>
             <div style="color: #8B96A8; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">건</div>
           </div>
           <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">변경 여부 확인 필요</div>
@@ -126,40 +127,40 @@
       <div style="flex: 1 1 0; height: 296px; padding: 24px; background: white; overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: inline-flex">
         <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
           <div style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">무결성 검증 현황</div>
-          <div style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">전체 24건</div>
+          <div data-dashboard-chart-total style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">전체 —건</div>
         </div>
         <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 22px; display: flex">
           <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: flex">
             <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: inline-flex">
               <div style="width: 8px; height: 8px; background: #258169; border-radius: 9999px"></div>
-              <div style="flex: 1 1 0; color: #647187; font-size: 14px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">정상</div>
-              <div style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">18건</div>
-              <div style="width: 40px; text-align: right; color: #18243A; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">75%</div>
+              <div style="flex: 1 1 0; color: #647187; font-size: 14px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">일치</div>
+              <div data-dashboard-chart-count="match" style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">—건</div>
+              <div data-dashboard-chart-percent="match" style="width: 40px; text-align: right; color: #18243A; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">—%</div>
             </div>
             <div style="align-self: stretch; height: 8px; background: #F6F8FB; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-              <div style="width: 423px; height: 8px; background: #258169; border-radius: 100px"></div>
+              <div data-dashboard-chart-bar="match" style="width: 0%; height: 8px; background: #258169; border-radius: 100px"></div>
             </div>
           </div>
           <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: flex">
             <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: inline-flex">
               <div style="width: 8px; height: 8px; background: #AD7A24; border-radius: 9999px"></div>
               <div style="flex: 1 1 0; color: #647187; font-size: 14px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">검증 필요</div>
-              <div style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">4건</div>
-              <div style="width: 40px; text-align: right; color: #18243A; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">17%</div>
+              <div data-dashboard-chart-count="pending" style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">—건</div>
+              <div data-dashboard-chart-percent="pending" style="width: 40px; text-align: right; color: #18243A; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">—%</div>
             </div>
             <div style="align-self: stretch; height: 8px; background: #F6F8FB; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-              <div style="width: 96px; height: 8px; background: #AD7A24; border-radius: 100px"></div>
+              <div data-dashboard-chart-bar="pending" style="width: 0%; height: 8px; background: #AD7A24; border-radius: 100px"></div>
             </div>
           </div>
           <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: flex">
             <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: inline-flex">
               <div style="width: 8px; height: 8px; background: #C25C5C; border-radius: 9999px"></div>
               <div style="flex: 1 1 0; color: #647187; font-size: 14px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">위변조 의심</div>
-              <div style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">2건</div>
-              <div style="width: 40px; text-align: right; color: #18243A; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">8%</div>
+              <div data-dashboard-chart-count="mismatch" style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">—건</div>
+              <div data-dashboard-chart-percent="mismatch" style="width: 40px; text-align: right; color: #18243A; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">—%</div>
             </div>
             <div style="align-self: stretch; height: 8px; background: #F6F8FB; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-              <div style="width: 45px; height: 8px; background: #C25C5C; border-radius: 100px"></div>
+              <div data-dashboard-chart-bar="mismatch" style="width: 0%; height: 8px; background: #C25C5C; border-radius: 100px"></div>
             </div>
           </div>
         </div>
@@ -167,9 +168,9 @@
       <div style="flex: 1 1 0; height: 296px; padding: 24px; background: white; overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: inline-flex">
         <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
           <div style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">최근 활동</div>
-          <div style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">오늘</div>
+          <div style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">최근 기록</div>
         </div>
-        <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+        <div data-dashboard-activities style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
           <div style="align-self: stretch; height: 65px; overflow: hidden; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex">
             <div style="width: 38px; height: 38px; background: #EDF3FF; overflow: hidden; border-radius: 10px; justify-content: center; align-items: center; display: flex">
               <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
@@ -213,7 +214,7 @@
       <div style="align-self: stretch; height: 70px; padding-left: 24px; padding-right: 24px; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
         <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
           <div style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">최근 등록된 증거</div>
-          <div style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">3건</div>
+          <div data-dashboard-recent-count style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">—건</div>
         </div>
         <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 6px; display: flex">
           <div style="color: #2454C6; font-size: 13px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">전체 보기</div>
@@ -222,7 +223,7 @@
           </div>
         </div>
       </div>
-      <div style="align-self: stretch; height: 44px; padding-left: 24px; padding-right: 24px; background: #F6F8FB; overflow: hidden; justify-content: flex-start; align-items: center; display: inline-flex">
+      <div data-dashboard-recent-header style="align-self: stretch; height: 44px; padding-left: 24px; padding-right: 24px; background: #F6F8FB; overflow: hidden; justify-content: flex-start; align-items: center; display: inline-flex">
         <div style="flex: 1 1 0; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">파일명</div>
         <div style="width: 176px; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">유형</div>
         <div style="width: 256px; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">수집 시간</div>

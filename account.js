@@ -63,14 +63,25 @@
     }
     next.addEventListener("input", validatePassword);
     confirm.addEventListener("input", validatePassword);
-    passwordForm.addEventListener("submit", function (event) {
+    passwordForm.addEventListener("submit", async function (event) {
       event.preventDefault();
       validatePassword();
       if (!passwordForm.reportValidity()) return;
       try {
-        sessionStorage.setItem("evidence-password-change", "completed");
+        const token = sessionStorage.getItem("evidence-auth-token");
+        if (!token) throw new Error("로그인이 필요합니다.");
+        const response = await fetch("/api/auth/password", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ current_password: passwordForm.elements.current.value, new_password: next.value })
+        });
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.detail || "비밀번호 변경에 실패했습니다.");
+        }
       } catch (error) {
-        // No password is written to browser storage.
+        showStatus(error.message);
+        return;
       }
       passwordForm.reset();
       showStatus("비밀번호 변경을 완료했습니다. 마이페이지로 이동합니다.");
@@ -80,7 +91,13 @@
 
   const logoutButton = document.getElementById("logout-confirm");
   if (logoutButton) {
-    logoutButton.addEventListener("click", function () {
+    logoutButton.addEventListener("click", async function () {
+      const token = sessionStorage.getItem("evidence-auth-token");
+      if (token) {
+        try {
+          await fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        } catch (error) { /* Local token is cleared even if the server is unavailable. */ }
+      }
       try {
         sessionStorage.clear();
       } catch (error) {
