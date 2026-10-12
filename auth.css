@@ -20,6 +20,19 @@
 .auth-button--primary { border-color: var(--evidence-blue); background: var(--evidence-blue); color: #fff; }
 .auth-button--primary:hover { background: #2454c6; }
 .auth-button--full { width: 100%; }
+.auth-input-row { display: flex; align-items: stretch; gap: 8px; }
+.auth-input-row .auth-input { flex: 1; min-width: 0; }
+.auth-button--verification { min-width: 112px; flex: 0 0 112px; padding: 0 10px; border-color: var(--evidence-blue); color: var(--evidence-blue); }
+.auth-button--verification:hover:not(:disabled) { background: #eef4ff; }
+.auth-button:disabled { cursor: not-allowed; border-color: #e5ebf3; background: #f5f7fa; color: #7a8799; }
+.auth-input input:disabled { background: #f5f7fa; }
+.auth-input input[readonly] { background: #f0f8f4; }
+.auth-field-note, .auth-field-status { margin: 8px 0 0; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.auth-field-note { color: var(--evidence-muted); }
+.auth-field-status:empty { display: none; }
+.auth-field-status[data-state="error"] { color: #b53d3d; }
+.auth-field-status[data-state="success"] { color: #247548; }
+@media (max-width: 380px) { .auth-input-row { flex-wrap: wrap; } .auth-input-row .auth-input, .auth-button--verification { flex-basis: 100%; } }
 .auth-actions { display: flex; justify-content: flex-end; gap: 14px; margin-top: 12px; }
 .auth-agreement { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 14px; line-height: 24px; letter-spacing: -.8px; }
 .auth-agreement input, .auth-term input { appearance: none; flex: 0 0 20px; width: 20px; height: 20px; margin: 0; border: 1px solid #e5ebf3; border-radius: 4px; cursor: pointer; }

@@ -5,9 +5,9 @@
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0">
   <title>캡디아메리카</title>
-  <link rel="stylesheet" href="app.css?v=1905180-filterfix">
+  <link rel="stylesheet" href="app.css?v=evidence-pagination-1">
   <script src="navigation.js" defer></script>
-  <script src="app.js?v=17248cb" defer></script>
+  <script src="app.js?v=evidence-pagination-1" defer></script>
 </head>
 <body>
 
@@ -97,7 +97,7 @@
       <div style="align-self: stretch; height: 70px; padding-left: 24px; padding-right: 24px; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
         <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
           <div style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">증거 목록</div>
-          <div style="color: #647187; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">24개</div>
+          <div data-evidence-count="visible" style="color: #647187; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">불러오는 중</div>
         </div>
         <div style="height: 34px; padding-left: 12px; padding-right: 12px; overflow: hidden; border-radius: 8px; outline: 1px #E2E7EF solid; outline-offset: -1px; justify-content: flex-start; align-items: center; gap: 7px; display: flex">
           <div style="width: 15px; height: 15px; position: relative; overflow: hidden">
@@ -112,7 +112,7 @@
         </div>
         <div style="flex: 1 1 0; color: #647187; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">증거명</div>
         <div style="width: 80px; color: #647187; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">유형</div>
-        <div style="width: 194px; color: #647187; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">수집 일시</div>
+        <div style="width: 194px; color: #647187; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">등록 일시</div>
         <div style="width: 204px; color: #647187; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">증거 ID</div>
         <div style="width: 160px; color: #647187; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">무결성 상태</div>
         <div style="width: 110px; color: #647187; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">관리</div>
@@ -243,27 +243,12 @@
         <div style="width: 110px; color: #2454C6; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">상세보기 →</div>
       </div>
       <div style="align-self: stretch; height: 76px; padding-left: 24px; padding-right: 24px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex">
-        <div><span style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">전체 증거 </span><span style="color: #18243A; font-size: 12px; font-family: Noto Sans KR; font-weight: 700; line-height: 18px; word-wrap: break-word">24개</span></div>
-        <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 8px; display: flex">
-          <div style="height: 34px; padding-left: 10px; padding-right: 10px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
-            <div style="color: #8B96A8; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">‹ 이전</div>
-          </div>
-          <div style="width: 34px; height: 34px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-            <div style="color: #2454C6; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">1</div>
-          </div>
-          <div style="width: 34px; height: 34px; background: white; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-            <div style="color: #647187; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">2</div>
-          </div>
-          <div style="width: 34px; height: 34px; background: white; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-            <div style="color: #647187; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">3</div>
-          </div>
-          <div style="width: 34px; height: 34px; background: white; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
-            <div style="color: #647187; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">4</div>
-          </div>
-          <div style="height: 34px; padding-left: 10px; padding-right: 10px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
-            <div style="color: #18243A; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">다음 ›</div>
-          </div>
-        </div>
+        <div><span style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">전체 증거 </span><span data-evidence-count="total" style="color: #18243A; font-size: 12px; font-family: Noto Sans KR; font-weight: 700; line-height: 18px; word-wrap: break-word">불러오는 중</span></div>
+        <nav class="evidence-pagination" aria-label="증거 목록 페이지">
+          <button type="button" data-evidence-page="previous" aria-label="이전 페이지">‹ 이전</button>
+          <span data-evidence-pages aria-live="polite">1 / 1</span>
+          <button type="button" data-evidence-page="next" aria-label="다음 페이지">다음 ›</button>
+        </nav>
       </div>
     </div>
   </div>
