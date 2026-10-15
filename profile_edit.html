@@ -21,9 +21,11 @@
       <nav class="account-breadcrumb" aria-label="경로"><a href="mypage.html">My page</a><span>/</span><strong>프로필 정보 수정</strong></nav>
       <section class="account-card" aria-labelledby="profile-title">
         <div class="account-card__title"><span class="account-icon" aria-hidden="true">♙</span><h1 id="profile-title">프로필 정보 수정</h1></div>
-        <p class="account-card__description">마이페이지와 대시보드에 표시되는 이름을 수정합니다.</p>
+        <p class="account-card__description">가입할 때 입력한 계정 정보를 확인하고 이름을 수정합니다.</p>
         <form id="profile-edit-form" class="account-form">
-          <label class="account-field">이름<input name="name" type="text" required maxlength="30" autocomplete="name"></label>
+          <label class="account-field">이름<input name="name" type="text" required maxlength="100" autocomplete="name"></label>
+          <label class="account-field">이메일<input name="email" type="email" autocomplete="email" readonly></label>
+          <p class="account-help">이메일 변경은 현재 지원하지 않습니다.</p>
           <div class="account-actions"><a class="account-button" href="mypage.html">취소</a><button class="account-button account-button--primary" type="submit">저장</button></div>
         </form>
         <p class="account-status" data-account-status role="status" hidden></p>

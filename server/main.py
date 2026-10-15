@@ -67,6 +67,10 @@ class PasswordChange(BaseModel):
     new_password: str
 
 
+class ProfileUpdate(BaseModel):
+    name: str
+
+
 def create_app(data_dir: str | Path | None = None) -> FastAPI:
     storage = Path(data_dir or os.environ.get("EVIDENCE_DATA_DIR", ROOT / "data")).resolve()
     files_dir = storage / "files"
@@ -179,6 +183,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
                 raise HTTPException(409, "이미 등록된 이메일입니다.") from None
             token = issue_session(connection, user_id)
             connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)", (user_id, "register", utc_now()))
+            connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)", (user_id, "login", utc_now()))
         return {"token": token, "user": {"id": user_id, "email": email, "name": name}}
 
     @app.post("/api/auth/login")
@@ -202,7 +207,18 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
 
     @app.get("/api/me")
     def me(user: sqlite3.Row = Depends(current_user)):
-        return {"id": user["id"], "email": user["email"], "name": user["name"]}
+        return {"id": user["id"], "email": user["email"], "name": user["name"], "createdAt": user["created_at"]}
+
+    @app.put("/api/me")
+    def update_profile(payload: ProfileUpdate, user: sqlite3.Row = Depends(current_user)):
+        name = payload.name.strip()
+        if not name or len(name) > 100:
+            raise HTTPException(422, "이름은 1~100자로 입력해 주세요.")
+        with closing(connect()) as connection, connection:
+            connection.execute("UPDATE users SET name = ? WHERE id = ?", (name, user["id"]))
+            connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)",
+                               (user["id"], "profile_update", utc_now()))
+        return {"id": user["id"], "email": user["email"], "name": name, "createdAt": user["created_at"]}
 
     @app.put("/api/auth/password")
     def change_password(payload: PasswordChange, user: sqlite3.Row = Depends(current_user)):
@@ -324,8 +340,13 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
     @app.get("/api/audit")
     def audit_log(user: sqlite3.Row = Depends(current_user)):
         with closing(connect()) as connection, connection:
-            rows = connection.execute("SELECT action, evidence_id, created_at FROM audit WHERE user_id = ? ORDER BY id DESC LIMIT 100", (user["id"],)).fetchall()
-            return [{"action": row["action"], "evidenceId": row["evidence_id"], "createdAt": row["created_at"]} for row in rows]
+            rows = connection.execute("""SELECT audit.action, audit.evidence_id, audit.created_at,
+                evidence.name AS evidence_name, evidence.filename AS evidence_filename
+                FROM audit LEFT JOIN evidence ON evidence.id = audit.evidence_id AND evidence.owner_id = audit.user_id
+                WHERE audit.user_id = ? ORDER BY audit.id DESC LIMIT 100""", (user["id"],)).fetchall()
+            return [{"action": row["action"], "evidenceId": row["evidence_id"],
+                     "evidenceName": row["evidence_name"], "evidenceFilename": row["evidence_filename"],
+                     "createdAt": row["created_at"]} for row in rows]
 
     @app.get("/")
     def home():

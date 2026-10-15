@@ -146,6 +146,15 @@
     return `일치 ${counts.MATCH || 0}건 · 미검증 ${counts.NOT_VERIFIED || 0}건 · 불일치 ${counts.MISMATCH || 0}건 · 검증 불가 ${counts.UNAVAILABLE || 0}건`;
   }
 
+  function listStatus(data) {
+    const counts = itemsFor(data).reduce((result, item) => { result[item.statusCode] = (result[item.statusCode] || 0) + 1; return result; }, {});
+    if (counts.MISMATCH) return { code: 'MISMATCH', label: `불일치 ${counts.MISMATCH}건` };
+    if (counts.UNAVAILABLE) return { code: 'UNAVAILABLE', label: `검증 불가 ${counts.UNAVAILABLE}건` };
+    if (counts.NOT_VERIFIED) return { code: 'NOT_VERIFIED', label: `미검증 ${counts.NOT_VERIFIED}건` };
+    if (counts.MATCH) return { code: 'MATCH', label: '✓ 모두 일치' };
+    return { code: 'NOT_VERIFIED', label: '미검증' };
+  }
+
   function renderValues(data) {
     const count = data.selected.length;
     const values = {
@@ -482,10 +491,16 @@
     const data = clean(result);
     const row = select('[data-report-row]').cloneNode(true);
     const cells = Array.from(row.children);
+    const status = listStatus(data);
     cells[0].lastElementChild.textContent = data.title;
     cells[1].textContent = `${itemsFor(data).length}건`;
     cells[2].textContent = data.created;
-    cells[3].textContent = summary(data);
+    const badge = cells[3].firstElementChild;
+    badge.classList.add('report-status-badge');
+    badge.dataset.status = status.code;
+    badge.title = summary(data);
+    badge.setAttribute('aria-label', `${status.label}. ${summary(data)}`);
+    badge.firstElementChild.textContent = status.label;
     row.querySelector('a').href = 'report_detail.html?report=current';
     row.querySelector('[data-report-download]').addEventListener('click', () => downloadPdf(data));
     select('[data-report-row]').before(row);

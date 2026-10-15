@@ -90,6 +90,11 @@ textarea.report-field { resize: vertical; min-height: 56px; }
 .report-local-badge { width: 132px; flex: none; color: #986b12; }
 .report-local-badge[data-status="MATCH"] { color: #21815a; }
 .report-local-badge[data-status="MISMATCH"], .report-local-badge[data-status="UNAVAILABLE"] { color: #c44343; }
+.report-status-badge { flex: none; white-space: nowrap; }
+.report-status-badge[data-status="NOT_VERIFIED"], .report-status-badge[data-status="UNAVAILABLE"] { background: #fff5df !important; }
+.report-status-badge[data-status="NOT_VERIFIED"] > div, .report-status-badge[data-status="UNAVAILABLE"] > div { color: #986b12 !important; }
+.report-status-badge[data-status="MISMATCH"] { background: #fff0ef !important; }
+.report-status-badge[data-status="MISMATCH"] > div { color: #bf3f3f !important; }
 .report-local-empty { padding: 28px; color: #647187; font-size: 14px; border-top: 1px solid #e2e7ef; }
 .report-empty { color: #647187; font-size: 13px; }
 .report-extra-evidence[data-status="MISMATCH"], .report-extra-evidence[data-status="UNAVAILABLE"] { border-color: #efb6b6; }
