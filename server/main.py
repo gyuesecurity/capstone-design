@@ -12,10 +12,14 @@ import uuid
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import quote
 
+from cryptography.exceptions import InvalidTag
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel
+
+from .crypto import ALGORITHM, CryptoConfigurationError, EncryptionMetadata, EvidenceCrypto
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -76,6 +80,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
     files_dir = storage / "files"
     files_dir.mkdir(parents=True, exist_ok=True)
     db_path = storage / "evidence.sqlite3"
+    evidence_crypto = EvidenceCrypto.from_storage(storage)
 
     def connect() -> sqlite3.Connection:
         connection = sqlite3.connect(db_path, timeout=15)
@@ -97,13 +102,16 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
               filename TEXT NOT NULL, stored_name TEXT UNIQUE NOT NULL, type TEXT NOT NULL,
               mime TEXT NOT NULL, size INTEGER NOT NULL, kind TEXT NOT NULL, source TEXT NOT NULL,
               description TEXT NOT NULL, memo TEXT NOT NULL, registered_at TEXT NOT NULL,
-              sha256 TEXT NOT NULL, verification_status TEXT NOT NULL DEFAULT 'NOT_VERIFIED'
+              sha256 TEXT NOT NULL, verification_status TEXT NOT NULL DEFAULT 'NOT_VERIFIED',
+              encryption_algorithm TEXT NOT NULL DEFAULT 'LEGACY', encryption_key_version TEXT,
+              encryption_salt TEXT, encryption_nonce TEXT, encryption_tag TEXT
             );
             CREATE INDEX IF NOT EXISTS evidence_owner_date ON evidence(owner_id, registered_at DESC);
             CREATE TABLE IF NOT EXISTS verifications (
               id TEXT PRIMARY KEY, evidence_id TEXT NOT NULL REFERENCES evidence(id), user_id TEXT NOT NULL REFERENCES users(id),
               started_at TEXT NOT NULL, completed_at TEXT NOT NULL, expected_hash TEXT NOT NULL,
-              current_hash TEXT, status TEXT NOT NULL, reason TEXT NOT NULL
+              current_hash TEXT, status TEXT NOT NULL, reason TEXT NOT NULL,
+              failure_code TEXT NOT NULL DEFAULT ''
             );
             CREATE INDEX IF NOT EXISTS verification_evidence_date ON verifications(evidence_id, completed_at DESC);
             CREATE TABLE IF NOT EXISTS audit (
@@ -112,6 +120,19 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             );
             CREATE INDEX IF NOT EXISTS audit_user_date ON audit(user_id, created_at DESC);
         """)
+        evidence_columns = {row[1] for row in connection.execute("PRAGMA table_info(evidence)")}
+        for name, definition in {
+            "encryption_algorithm": "TEXT NOT NULL DEFAULT 'LEGACY'",
+            "encryption_key_version": "TEXT",
+            "encryption_salt": "TEXT",
+            "encryption_nonce": "TEXT",
+            "encryption_tag": "TEXT",
+        }.items():
+            if name not in evidence_columns:
+                connection.execute(f"ALTER TABLE evidence ADD COLUMN {name} {definition}")
+        verification_columns = {row[1] for row in connection.execute("PRAGMA table_info(verifications)")}
+        if "failure_code" not in verification_columns:
+            connection.execute("ALTER TABLE verifications ADD COLUMN failure_code TEXT NOT NULL DEFAULT ''")
 
     app = FastAPI(title="EVIDENCE API", version="0.1.0")
 
@@ -147,8 +168,26 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             "id": row["id"], "evidenceId": row["evidence_id"], "startedAt": row["started_at"],
             "completedAt": row["completed_at"], "expectedHash": row["expected_hash"],
             "currentHash": row["current_hash"], "status": row["status"], "reason": row["reason"],
+            "failureCode": row["failure_code"],
             "filename": filename,
         }
+
+    def encryption_metadata(row: sqlite3.Row) -> EncryptionMetadata | None:
+        if row["encryption_algorithm"] == "LEGACY":
+            return None
+        values = (row["encryption_key_version"], row["encryption_salt"], row["encryption_nonce"], row["encryption_tag"])
+        if not all(values):
+            raise CryptoConfigurationError("증거의 암호화 메타데이터가 누락되었습니다.")
+        return EncryptionMetadata(row["encryption_algorithm"], *values)
+
+    def decrypted_chunks(target: Path, row: sqlite3.Row):
+        metadata = encryption_metadata(row)
+        with target.open("rb") as source:
+            if metadata is None:
+                while chunk := source.read(CHUNK_SIZE):
+                    yield chunk
+            else:
+                yield from evidence_crypto.iter_decrypted(source, metadata, CHUNK_SIZE)
 
     def evidence_dict(connection: sqlite3.Connection, row: sqlite3.Row) -> dict:
         history = [verification_dict(item, row["filename"]) for item in connection.execute(
@@ -162,11 +201,20 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             "date": row["registered_at"][:10], "sha256": row["sha256"],
             "verificationStatus": row["verification_status"], "status": STATUS_LABELS[row["verification_status"]],
             "lastVerification": history[0] if history else None, "verifications": history, "storage": "server",
+            "encryption": {
+                "algorithm": row["encryption_algorithm"],
+                "keyVersion": row["encryption_key_version"],
+                "keyDerivation": "HKDF-SHA256" if row["encryption_algorithm"] != "LEGACY" else None,
+                "salt": row["encryption_salt"],
+                "nonce": row["encryption_nonce"],
+                "authenticationTag": row["encryption_tag"],
+            },
         }
 
     @app.get("/api/health")
     def health():
-        return {"backend": True, "maxFileSize": MAX_FILE_SIZE, "extensions": sorted(ALLOWED_EXTENSIONS)}
+        return {"backend": True, "maxFileSize": MAX_FILE_SIZE, "extensions": sorted(ALLOWED_EXTENSIONS),
+                "evidenceEncryption": ALGORITHM, "keyVersion": evidence_crypto.key_version}
 
     @app.post("/api/auth/register", status_code=201)
     def register(payload: Registration):
@@ -253,6 +301,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
         size = 0
         digest = hashlib.sha256()
+        encryptor, salt, nonce = evidence_crypto.new_encryptor()
         try:
             descriptor = os.open(target, flags, 0o600)
             with os.fdopen(descriptor, "wb") as output:
@@ -261,16 +310,30 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
                     if size > MAX_FILE_SIZE:
                         raise HTTPException(413, "파일은 50 MB 이하만 등록할 수 있습니다.")
                     digest.update(chunk)
-                    output.write(chunk)
+                    encrypted = encryptor.update(chunk)
+                    if encrypted:
+                        output.write(encrypted)
+                if size == 0:
+                    raise HTTPException(422, "빈 파일은 등록할 수 없습니다.")
+                final = encryptor.finalize()
+                if final:
+                    output.write(final)
                 output.flush()
                 os.fsync(output.fileno())
             target.chmod(0o400)
             now = utc_now()
+            encryption = evidence_crypto.metadata(salt, nonce, encryptor.tag)
             with closing(connect()) as connection, connection:
-                connection.execute("""INSERT INTO evidence VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                connection.execute("""INSERT INTO evidence (
+                    id, owner_id, name, filename, stored_name, type, mime, size, kind, source,
+                    description, memo, registered_at, sha256, verification_status,
+                    encryption_algorithm, encryption_key_version, encryption_salt, encryption_nonce, encryption_tag
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                                    (evidence_id, user["id"], name.strip() or filename, filename, stored_name,
                                     extension[1:].upper(), file.content_type or "application/octet-stream", size,
-                                    kind, source, description, memo, now, digest.hexdigest(), "NOT_VERIFIED"))
+                                    kind, source, description, memo, now, digest.hexdigest(), "NOT_VERIFIED",
+                                    encryption.algorithm, encryption.key_version, encryption.salt,
+                                    encryption.nonce, encryption.tag))
                 connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
                                    (user["id"], "upload", evidence_id, now))
                 row = owned_evidence(connection, user["id"], evidence_id)
@@ -303,9 +366,22 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             target = files_dir / row["stored_name"]
             if not target.is_file():
                 raise HTTPException(404, "원본 파일을 찾을 수 없습니다.")
+            try:
+                for _ in decrypted_chunks(target, row):
+                    pass
+            except InvalidTag:
+                raise HTTPException(409, "암호화 파일의 인증 정보가 일치하지 않아 다운로드할 수 없습니다.") from None
+            except CryptoConfigurationError as error:
+                raise HTTPException(500, str(error)) from error
             connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
                                (user["id"], "download", evidence_id, utc_now()))
-            return FileResponse(target, media_type="application/octet-stream", filename=row["filename"])
+            encoded_name = quote(row["filename"], safe="")
+            headers = {
+                "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_name}",
+                "Content-Length": str(row["size"]),
+                "X-Content-Type-Options": "nosniff",
+            }
+            return StreamingResponse(decrypted_chunks(target, row), media_type="application/octet-stream", headers=headers)
 
     @app.post("/api/evidence/{evidence_id}/verify")
     def verify_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user)):
@@ -318,20 +394,32 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             current_hash = None
             status = "UNAVAILABLE"
             reason = "저장된 파일을 읽을 수 없어 검증하지 못했습니다."
+            failure_code = "FILE_UNAVAILABLE"
             try:
                 digest = hashlib.sha256()
-                with target.open("rb") as source:
-                    while chunk := source.read(CHUNK_SIZE):
-                        digest.update(chunk)
+                for chunk in decrypted_chunks(target, row):
+                    digest.update(chunk)
                 current_hash = digest.hexdigest()
                 status = "MATCH" if hmac.compare_digest(current_hash, row["sha256"]) else "MISMATCH"
                 reason = "등록 당시 SHA-256과 일치합니다." if status == "MATCH" else "등록 당시 SHA-256과 일치하지 않습니다."
+                failure_code = "" if status == "MATCH" else "HASH_MISMATCH"
+            except InvalidTag:
+                status = "MISMATCH"
+                reason = "암호화 파일 또는 인증 태그가 변경되어 AES-GCM 인증에 실패했습니다."
+                failure_code = "AUTHENTICATION_FAILED"
+            except CryptoConfigurationError:
+                reason = "암호화 메타데이터가 올바르지 않아 검증하지 못했습니다."
+                failure_code = "ENCRYPTION_METADATA_INVALID"
             except OSError:
                 pass
             completed = utc_now()
             result_id = f"VERIFY-{uuid.uuid4().hex}"
-            connection.execute("""INSERT INTO verifications VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                               (result_id, evidence_id, user["id"], started, completed, row["sha256"], current_hash, status, reason))
+            connection.execute("""INSERT INTO verifications (
+                id, evidence_id, user_id, started_at, completed_at, expected_hash,
+                current_hash, status, reason, failure_code
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                               (result_id, evidence_id, user["id"], started, completed, row["sha256"],
+                                current_hash, status, reason, failure_code))
             connection.execute("UPDATE evidence SET verification_status = ? WHERE id = ?", (status, evidence_id))
             connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
                                (user["id"], "verify:" + status, evidence_id, completed))

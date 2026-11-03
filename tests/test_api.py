@@ -39,6 +39,10 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(record["size"], 14)
         self.assertEqual(record["verificationStatus"], "NOT_VERIFIED")
         self.assertEqual(len(record["sha256"]), 64)
+        self.assertEqual(record["encryption"]["algorithm"], "AES-256-GCM")
+        self.assertEqual(record["encryption"]["keyVersion"], "v1")
+        self.assertEqual(record["encryption"]["keyDerivation"], "HKDF-SHA256")
+        self.assertTrue(record["encryption"]["salt"])
         evidence_id = record["id"]
         self.assertEqual(len((await self.client.get("/api/evidence", headers=headers)).json()), 1)
         self.assertEqual((await self.client.get(f"/api/evidence/{evidence_id}/download", headers=headers)).content, b"original bytes")
@@ -49,13 +53,24 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(matched.status_code, 200, matched.text)
         self.assertEqual(matched.json()["result"]["status"], "MATCH")
         with closing(sqlite3.connect(self.root / "evidence.sqlite3")) as connection:
-            stored_name = connection.execute("SELECT stored_name FROM evidence WHERE id = ?", (evidence_id,)).fetchone()[0]
+            stored_name, algorithm, nonce, tag = connection.execute(
+                "SELECT stored_name, encryption_algorithm, encryption_nonce, encryption_tag FROM evidence WHERE id = ?",
+                (evidence_id,),
+            ).fetchone()
+        self.assertEqual(algorithm, "AES-256-GCM")
+        self.assertTrue(nonce)
+        self.assertTrue(tag)
         file_path = self.root / "files" / stored_name
+        self.assertNotEqual(file_path.read_bytes(), b"original bytes")
+        self.assertNotIn(b"original bytes", file_path.read_bytes())
         self.assertFalse(bool(file_path.stat().st_mode & 0o222))
         file_path.chmod(0o600)
         file_path.write_bytes(b"changed bytes")
         mismatched = await self.client.post(f"/api/evidence/{evidence_id}/verify", headers=headers)
         self.assertEqual(mismatched.json()["result"]["status"], "MISMATCH")
+        self.assertEqual(mismatched.json()["result"]["failureCode"], "AUTHENTICATION_FAILED")
+        self.assertIsNone(mismatched.json()["result"]["currentHash"])
+        self.assertEqual((await self.client.get(f"/api/evidence/{evidence_id}/download", headers=headers)).status_code, 409)
         details = (await self.client.get(f"/api/evidence/{evidence_id}", headers=headers)).json()
         self.assertEqual(details["verificationStatus"], "MISMATCH")
         self.assertEqual(len(details["verifications"]), 2)
@@ -68,6 +83,7 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.post("/api/auth/register", json={"email": "owner@example.com", "name": "Tester", "password": "Strong!123"})).status_code, 409)
         self.assertEqual((await self.client.post("/api/auth/login", json={"email": "owner@example.com", "password": "wrong"})).status_code, 401)
         self.assertEqual((await self.client.post("/api/evidence", headers=headers, files={"file": ("bad.exe", b"x", "application/octet-stream")})).status_code, 415)
+        self.assertEqual((await self.client.post("/api/evidence", headers=headers, files={"file": ("empty.txt", b"", "text/plain")})).status_code, 422)
         self.assertEqual((await self.client.post("/api/evidence", headers=headers, files={"file": ("empty.txt", b"data", "text/plain")}, data={"name": "x" * 201})).status_code, 422)
         old_limit = main.MAX_FILE_SIZE
         main.MAX_FILE_SIZE = 3
@@ -87,6 +103,30 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.post("/api/auth/login", json={"email": "owner@example.com", "password": "NewStrong!123"})).status_code, 200)
         self.assertEqual((await self.client.post("/api/auth/logout", headers=headers)).status_code, 200)
         self.assertEqual((await self.client.get("/api/me", headers=headers)).status_code, 401)
+
+    async def test_encrypted_evidence_survives_app_restart(self):
+        token = await self.register("restart@example.com")
+        headers = {"Authorization": f"Bearer {token}"}
+        uploaded = await self.client.post(
+            "/api/evidence", headers=headers, files={"file": ("restart.txt", b"persistent secret", "text/plain")}
+        )
+        self.assertEqual(uploaded.status_code, 201, uploaded.text)
+        evidence_id = uploaded.json()["id"]
+        self.assertEqual((self.root / "keys" / "master-v1.key").stat().st_size, 32)
+
+        await self.client.aclose()
+        self.client = httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=main.create_app(self.root)), base_url="http://test"
+        )
+        login = await self.client.post(
+            "/api/auth/login", json={"email": "restart@example.com", "password": "Strong!123"}
+        )
+        restarted_headers = {"Authorization": f"Bearer {login.json()['token']}"}
+        download = await self.client.get(f"/api/evidence/{evidence_id}/download", headers=restarted_headers)
+        self.assertEqual(download.status_code, 200, download.text)
+        self.assertEqual(download.content, b"persistent secret")
+        verified = await self.client.post(f"/api/evidence/{evidence_id}/verify", headers=restarted_headers)
+        self.assertEqual(verified.json()["result"]["status"], "MATCH")
 
     async def test_profile_and_activity_are_scoped_to_current_user(self):
         owner = await self.register("owner@example.com", "가입 이름")
