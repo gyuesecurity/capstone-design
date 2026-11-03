@@ -18,6 +18,7 @@ jobs:
       - run: ruff check server tests
       - run: pip-audit -r requirements.txt
       - run: python -m unittest discover -s tests -v
+      - run: docker build --tag evidence:test .
       - uses: actions/setup-node@v7
         with:
           node-version: "22"
