@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from contextlib import closing
 from pathlib import Path
+from unittest import mock
 
 import httpx
 
@@ -31,7 +32,8 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         headers = {"Authorization": f"Bearer {owner}"}
         self.assertEqual((await self.client.get("/api/evidence")).status_code, 401)
         upload = await self.client.post("/api/evidence", headers=headers,
-                                        data={"name": "제출 자료", "source": "직접 수집"},
+                                        data={"name": "제출 자료", "source": "직접 수집",
+                                              "client_selected_at": "2026-11-03T10:20:30+09:00"},
                                         files={"file": ("증거.txt", b"original bytes", "text/plain")})
         self.assertEqual(upload.status_code, 201, upload.text)
         record = upload.json()
@@ -42,7 +44,10 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(record["encryption"]["algorithm"], "AES-256-GCM")
         self.assertEqual(record["encryption"]["keyVersion"], "v1")
         self.assertEqual(record["encryption"]["keyDerivation"], "HKDF-SHA256")
+        self.assertEqual(record["encryption"]["aadVersion"], "v1")
         self.assertTrue(record["encryption"]["salt"])
+        self.assertEqual(record["selectedAt"], "2026-11-03T01:20:30.000+00:00")
+        self.assertNotEqual(record["selectedAt"], record["registeredAt"])
         evidence_id = record["id"]
         self.assertEqual(len((await self.client.get("/api/evidence", headers=headers)).json()), 1)
         self.assertEqual((await self.client.get(f"/api/evidence/{evidence_id}/download", headers=headers)).content, b"original bytes")
@@ -76,13 +81,23 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(details["verifications"]), 2)
         audit = (await self.client.get("/api/audit", headers=headers)).json()
         self.assertTrue({"upload", "download", "verify:MATCH", "verify:MISMATCH"}.issubset({item["action"] for item in audit}))
+        self.assertEqual({item["chainStatus"] for item in audit}, {"VALID"})
 
     async def test_auth_validation_and_upload_limits(self):
         owner = await self.register("owner@example.com")
         headers = {"Authorization": f"Bearer {owner}"}
         self.assertEqual((await self.client.post("/api/auth/register", json={"email": "owner@example.com", "name": "Tester", "password": "Strong!123"})).status_code, 409)
         self.assertEqual((await self.client.post("/api/auth/login", json={"email": "owner@example.com", "password": "wrong"})).status_code, 401)
+        for _ in range(4):
+            await self.client.post("/api/auth/login", json={"email": "blocked@example.com", "password": "wrong"})
+        fifth = await self.client.post("/api/auth/login", json={"email": "blocked@example.com", "password": "wrong"})
+        self.assertEqual(fifth.status_code, 401)
+        self.assertEqual(
+            (await self.client.post("/api/auth/login", json={"email": "blocked@example.com", "password": "wrong"})).status_code,
+            429,
+        )
         self.assertEqual((await self.client.post("/api/evidence", headers=headers, files={"file": ("bad.exe", b"x", "application/octet-stream")})).status_code, 415)
+        self.assertEqual((await self.client.post("/api/evidence", headers=headers, files={"file": ("fake.png", b"not a png", "image/png")})).status_code, 415)
         self.assertEqual((await self.client.post("/api/evidence", headers=headers, files={"file": ("empty.txt", b"", "text/plain")})).status_code, 422)
         self.assertEqual((await self.client.post("/api/evidence", headers=headers, files={"file": ("empty.txt", b"data", "text/plain")}, data={"name": "x" * 201})).status_code, 422)
         old_limit = main.MAX_FILE_SIZE
@@ -97,8 +112,13 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
             password = connection.execute("SELECT password_hash FROM users WHERE email = ?", ("owner@example.com",)).fetchone()[0]
         self.assertTrue(password.startswith("scrypt$"))
         self.assertNotIn("Strong!123", password)
+        secondary = await self.client.post(
+            "/api/auth/login", json={"email": "owner@example.com", "password": "Strong!123"}
+        )
+        secondary_headers = {"Authorization": f"Bearer {secondary.json()['token']}"}
         self.assertEqual((await self.client.put("/api/auth/password", headers=headers, json={"current_password": "wrong", "new_password": "NewStrong!123"})).status_code, 403)
         self.assertEqual((await self.client.put("/api/auth/password", headers=headers, json={"current_password": "Strong!123", "new_password": "NewStrong!123"})).status_code, 200)
+        self.assertEqual((await self.client.get("/api/me", headers=secondary_headers)).status_code, 401)
         self.assertEqual((await self.client.post("/api/auth/login", json={"email": "owner@example.com", "password": "Strong!123"})).status_code, 401)
         self.assertEqual((await self.client.post("/api/auth/login", json={"email": "owner@example.com", "password": "NewStrong!123"})).status_code, 200)
         self.assertEqual((await self.client.post("/api/auth/logout", headers=headers)).status_code, 200)
@@ -127,6 +147,62 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(download.content, b"persistent secret")
         verified = await self.client.post(f"/api/evidence/{evidence_id}/verify", headers=restarted_headers)
         self.assertEqual(verified.json()["result"]["status"], "MATCH")
+
+    async def test_key_rotation_keeps_old_evidence_readable(self):
+        token = await self.register("rotation@example.com")
+        headers = {"Authorization": f"Bearer {token}"}
+        first = await self.client.post(
+            "/api/evidence", headers=headers, files={"file": ("v1.txt", b"version one", "text/plain")}
+        )
+        self.assertEqual(first.status_code, 201, first.text)
+        first_id = first.json()["id"]
+        await self.client.aclose()
+
+        with mock.patch.dict("os.environ", {"EVIDENCE_KEY_VERSION": "v2"}):
+            self.client = httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=main.create_app(self.root)), base_url="http://test"
+            )
+        login = await self.client.post(
+            "/api/auth/login", json={"email": "rotation@example.com", "password": "Strong!123"}
+        )
+        rotated_headers = {"Authorization": f"Bearer {login.json()['token']}"}
+        old_download = await self.client.get(f"/api/evidence/{first_id}/download", headers=rotated_headers)
+        self.assertEqual(old_download.content, b"version one")
+        second = await self.client.post(
+            "/api/evidence", headers=rotated_headers, files={"file": ("v2.txt", b"version two", "text/plain")}
+        )
+        self.assertEqual(second.status_code, 201, second.text)
+        self.assertEqual(second.json()["encryption"]["keyVersion"], "v2")
+        with closing(sqlite3.connect(self.root / "evidence.sqlite3")) as connection:
+            versions = {row[0] for row in connection.execute("SELECT encryption_key_version FROM evidence")}
+        self.assertEqual(versions, {"v1", "v2"})
+        self.assertEqual(
+            (await self.client.post(f"/api/evidence/{first_id}/verify", headers=rotated_headers)).json()["result"]["status"],
+            "MATCH",
+        )
+
+    async def test_aad_and_audit_chain_detect_metadata_tampering(self):
+        token = await self.register("tamper@example.com")
+        headers = {"Authorization": f"Bearer {token}"}
+        upload = await self.client.post(
+            "/api/evidence", headers=headers, data={"name": "원본 이름"},
+            files={"file": ("bound.txt", b"bound content", "text/plain")},
+        )
+        self.assertEqual(upload.status_code, 201, upload.text)
+        evidence_id = upload.json()["id"]
+        with closing(sqlite3.connect(self.root / "evidence.sqlite3")) as connection, connection:
+            connection.execute("UPDATE evidence SET name = '변조된 이름' WHERE id = ?", (evidence_id,))
+        verified = await self.client.post(f"/api/evidence/{evidence_id}/verify", headers=headers)
+        self.assertEqual(verified.json()["result"]["failureCode"], "AUTHENTICATION_FAILED")
+        with closing(sqlite3.connect(self.root / "evidence.sqlite3")) as connection, connection:
+            connection.execute("UPDATE evidence SET name = '원본 이름' WHERE id = ?", (evidence_id,))
+            first_audit_id = connection.execute(
+                "SELECT id FROM audit WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id LIMIT 1",
+                ("tamper@example.com",),
+            ).fetchone()[0]
+            connection.execute("UPDATE audit SET action = 'tampered' WHERE id = ?", (first_audit_id,))
+        audit = (await self.client.get("/api/audit", headers=headers)).json()
+        self.assertIn("INVALID", {item["chainStatus"] for item in audit})
 
     async def test_profile_and_activity_are_scoped_to_current_user(self):
         owner = await self.register("owner@example.com", "가입 이름")

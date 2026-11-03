@@ -1,0 +1,10 @@
+.git
+.github
+.venv
+.test-data
+data
+__pycache__
+*.pyc
+*.sqlite3
+node_modules
+npm-debug.log

@@ -4,4 +4,8 @@ data/
 .venv/
 .deps/
 .test-data/
+node_modules/
+.env
+.env.*
+!.env.example
 *.pyc
