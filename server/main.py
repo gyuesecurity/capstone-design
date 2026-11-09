@@ -348,25 +348,6 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
                      "evidenceName": row["evidence_name"], "evidenceFilename": row["evidence_filename"],
                      "createdAt": row["created_at"]} for row in rows]
 
-    @app.get("/")
-    def home():
-        return RedirectResponse("/index.html")
-
-    @app.get("/{file_path:path}", include_in_schema=False)
-    def static_file(file_path: str):
-        requested = Path(file_path)
-        if requested.is_absolute() or ".." in requested.parts:
-            raise HTTPException(404)
-        if len(requested.parts) == 1 and requested.suffix.lower() in {".html", ".css", ".js"}:
-            target = ROOT / requested.name
-        elif len(requested.parts) == 3 and requested.parts[0] == "assets" and requested.suffix.lower() in {".svg", ".ttf", ".txt"}:
-            target = ROOT.joinpath(*requested.parts)
-        else:
-            raise HTTPException(404)
-        if not target.is_file():
-            raise HTTPException(404)
-        return FileResponse(target)
-
     return app
 
 
