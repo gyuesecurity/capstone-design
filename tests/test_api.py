@@ -6,7 +6,7 @@ from pathlib import Path
 
 import httpx
 
-from server import main
+from server import config, main
 
 
 class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
@@ -69,14 +69,14 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.post("/api/auth/login", json={"email": "owner@example.com", "password": "wrong"})).status_code, 401)
         self.assertEqual((await self.client.post("/api/evidence", headers=headers, files={"file": ("bad.exe", b"x", "application/octet-stream")})).status_code, 415)
         self.assertEqual((await self.client.post("/api/evidence", headers=headers, files={"file": ("empty.txt", b"data", "text/plain")}, data={"name": "x" * 201})).status_code, 422)
-        old_limit = main.MAX_FILE_SIZE
-        main.MAX_FILE_SIZE = 3
+        old_limit = config.MAX_FILE_SIZE
+        config.MAX_FILE_SIZE = 3
         try:
             response = await self.client.post("/api/evidence", headers=headers, files={"file": ("large.txt", b"1234", "text/plain")})
             self.assertEqual(response.status_code, 413, response.text)
             self.assertEqual(list((self.root / "files").iterdir()), [])
         finally:
-            main.MAX_FILE_SIZE = old_limit
+            config.MAX_FILE_SIZE = old_limit
         with closing(sqlite3.connect(self.root / "evidence.sqlite3")) as connection:
             password = connection.execute("SELECT password_hash FROM users WHERE email = ?", ("owner@example.com",)).fetchone()[0]
         self.assertTrue(password.startswith("scrypt$"))
