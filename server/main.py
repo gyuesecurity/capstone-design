@@ -1,4 +1,4 @@
-"""Same-origin API and static app for the EVIDENCE capstone prototype."""
+"""API server for the EVIDENCE capstone prototype (serves /api only; no frontend files)."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 
