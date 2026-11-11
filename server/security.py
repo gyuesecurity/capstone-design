@@ -43,7 +43,10 @@ def password_matches(password: str, stored: str) -> bool:
 
 
 def issue_session(connection: sqlite3.Connection, user_id: str) -> str:
-    """로그인 토큰을 새로 만들고, DB에는 토큰의 SHA-256만 저장합니다. (유효 기간 8시간)"""
+    """로그인 토큰을 새로 만들고, DB에는 토큰의 SHA-256만 저장합니다. (유효 기간 8시간)
+
+    부르는 쪽의 write_transaction 안에서 실행됩니다.
+    """
     token = secrets.token_urlsafe(32)
     expires = (datetime.now(timezone.utc) + timedelta(hours=8)).isoformat(timespec="milliseconds")
     connection.execute("INSERT INTO sessions VALUES (?, ?, ?)", (hashlib.sha256(token.encode()).hexdigest(), user_id, expires))
@@ -60,7 +63,8 @@ def current_user(
     token = authorization[7:].strip()
     if not token:
         raise HTTPException(401, "로그인이 필요합니다.")
-    with closing(storage.connect()) as connection, connection:
+    # 읽기만 하므로 쓰기 트랜잭션 없이 조회합니다.
+    with closing(storage.connect()) as connection:
         user = connection.execute("""
             SELECT users.* FROM sessions JOIN users ON users.id = sessions.user_id
             WHERE sessions.token_hash = ? AND sessions.expires_at > ?

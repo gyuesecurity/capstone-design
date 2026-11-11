@@ -1,7 +1,7 @@
 """DB 행(row)을 API 응답(JSON)으로 바꾸는 함수.
 
-기존 create_app() 안에 있던 verification_dict, evidence_dict를 그대로 옮겨 왔습니다.
-응답 필드 이름과 값은 바꾸지 않습니다. (프론트 A가 이 이름에 맞춰 화면을 그립니다)
+기존 응답 필드 이름과 값은 바꾸지 않습니다. (프론트 A가 이 이름에 맞춰 화면을 그립니다)
+3단계에서 A API 명세에 정한 필드 2개(registeredBy, performedBy)만 추가했습니다.
 """
 
 from __future__ import annotations
@@ -18,6 +18,8 @@ def verification_dict(row: sqlite3.Row, filename: str = "") -> dict:
         "completedAt": row["completed_at"], "expectedHash": row["expected_hash"],
         "currentHash": row["current_hash"], "status": row["status"], "reason": row["reason"],
         "filename": filename,
+        # 검증 당시 검증자 이름 (3단계 추가). 3단계 이전 기록은 null → 화면에서 "미기록"
+        "performedBy": row["performed_by_name"],
     }
 
 
@@ -32,6 +34,8 @@ def evidence_dict(connection: sqlite3.Connection, row: sqlite3.Row) -> dict:
         "kind": row["kind"], "source": row["source"], "description": row["description"], "memo": row["memo"],
         # selectedAt은 호환용 필드입니다. 실제 파일 선택 시각이 아니라 서버 등록 시각(registeredAt)과 같은 값입니다. (11/9 결정)
         "selectedAt": row["registered_at"], "registeredAt": row["registered_at"],
+        # 등록 당시 등록자 이름 (3단계 추가). 3단계 이전 기록은 null → 화면에서 "미기록"
+        "registeredBy": row["registered_by_name"],
         "date": row["registered_at"][:10], "sha256": row["sha256"],
         "verificationStatus": row["verification_status"], "status": STATUS_LABELS[row["verification_status"]],
         "lastVerification": history[0] if history else None, "verifications": history, "storage": "server",

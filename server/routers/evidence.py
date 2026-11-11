@@ -1,6 +1,11 @@
 """증거 API: 등록, 목록, 상세, 원본 다운로드, 무결성 검증
 
-기존 create_app() 안의 owned_evidence와 증거 API 5개를 그대로 옮겨 왔습니다.
+3단계에서 바뀐 점
+- 쓰기는 write_transaction(BEGIN IMMEDIATE)으로 감쌉니다.
+- 새 증거에는 등록자 이름(registered_by_name), 새 검증 결과에는 검증자 이름(performed_by_name)을 저장합니다.
+  이름은 프론트가 보낸 값이 아니라, 로그인한 사용자의 지금 이름을 서버가 넣습니다.
+- INSERT는 컬럼 위치가 아니라 컬럼 이름을 적어서 넣습니다. (컬럼이 추가돼도 깨지지 않게)
+- 검증할 때 파일 해시 계산은 쓰기 잠금 밖에서 하고, 잠금 안에서는 다시 확인한 뒤 기록만 합니다.
 """
 
 from __future__ import annotations
@@ -19,7 +24,7 @@ from fastapi.responses import FileResponse
 
 from .. import config
 from ..config import ALLOWED_EXTENSIONS, CHUNK_SIZE
-from ..db import Storage, get_storage
+from ..db import Storage, get_storage, write_transaction
 from ..security import current_user, utc_now
 from ..serializers import evidence_dict, verification_dict
 
@@ -34,8 +39,15 @@ def owned_evidence(connection: sqlite3.Connection, user_id: str, evidence_id: st
     return row
 
 
+def stored_file(storage: Storage, row: sqlite3.Row) -> Path:
+    """저장 파일 경로. 저장 이름이 32자리 16진수인지 확인해서, 저장 폴더 밖 경로를 열지 않게 합니다."""
+    if not re.fullmatch(r"[0-9a-f]{32}", row["stored_name"]):
+        raise HTTPException(500, "저장 파일 경로가 유효하지 않습니다.")
+    return storage.files_dir / row["stored_name"]
+
+
 # 증거 등록: 파일을 1 MiB씩 받으면서 SHA-256(기준 해시)을 계산하고, 임의 이름으로 저장합니다.
-# 실패하면 저장하던 파일을 지웁니다.
+# 파일을 다 쓴 뒤에 DB에 기록하고, 실패하면 저장하던 파일을 지웁니다.
 @router.post("/api/evidence", status_code=201)
 async def upload_evidence(
     file: UploadFile = File(...), name: str = Form(""), kind: str = Form("파일"),
@@ -62,7 +74,7 @@ async def upload_evidence(
         with os.fdopen(descriptor, "wb") as output:
             while chunk := await file.read(CHUNK_SIZE):
                 size += len(chunk)
-                # 최대 크기는 요청마다 config에서 읽습니다. (기존 코드도 실행 중에 값을 읽었고, 테스트가 이 값을 바꿔서 413을 확인합니다)
+                # 최대 크기는 요청마다 config에서 읽습니다. (테스트가 이 값을 바꿔서 413을 확인합니다)
                 if size > config.MAX_FILE_SIZE:
                     raise HTTPException(413, "파일은 50 MB 이하만 등록할 수 있습니다.")
                 digest.update(chunk)
@@ -71,11 +83,15 @@ async def upload_evidence(
             os.fsync(output.fileno())
         target.chmod(0o400)
         now = utc_now()
-        with closing(storage.connect()) as connection, connection:
-            connection.execute("""INSERT INTO evidence VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        with closing(storage.connect()) as connection, write_transaction(connection):
+            connection.execute("""INSERT INTO evidence (
+                    id, owner_id, name, filename, stored_name, type, mime, size, kind, source,
+                    description, memo, registered_at, sha256, verification_status, registered_by_name
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                                (evidence_id, user["id"], name.strip() or filename, filename, stored_name,
                                 extension[1:].upper(), file.content_type or "application/octet-stream", size,
-                                kind, source, description, memo, now, digest.hexdigest(), "NOT_VERIFIED"))
+                                kind, source, description, memo, now, digest.hexdigest(), "NOT_VERIFIED",
+                                user["name"]))
             connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
                                (user["id"], "upload", evidence_id, now))
             row = owned_evidence(connection, user["id"], evidence_id)
@@ -89,63 +105,71 @@ async def upload_evidence(
         await file.close()
 
 
-# 내 증거 목록 (최신 등록순)
+# 내 증거 목록 (최신 등록순, 읽기만 함)
 @router.get("/api/evidence")
 def list_evidence(user: sqlite3.Row = Depends(current_user), storage: Storage = Depends(get_storage)):
-    with closing(storage.connect()) as connection, connection:
+    with closing(storage.connect()) as connection:
         rows = connection.execute("SELECT * FROM evidence WHERE owner_id = ? ORDER BY registered_at DESC", (user["id"],)).fetchall()
         return [evidence_dict(connection, row) for row in rows]
 
 
-# 증거 상세
+# 증거 상세 (읽기만 함)
 @router.get("/api/evidence/{evidence_id}")
 def get_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user), storage: Storage = Depends(get_storage)):
-    with closing(storage.connect()) as connection, connection:
+    with closing(storage.connect()) as connection:
         return evidence_dict(connection, owned_evidence(connection, user["id"], evidence_id))
 
 
-# 원본 다운로드: 저장 이름이 32자리 16진수인지 확인해서, 저장 폴더 밖 경로를 열지 않게 합니다.
+# 원본 다운로드: 파일이 있는지 확인하고 활동 기록(download)을 남긴 뒤 파일을 보냅니다.
 @router.get("/api/evidence/{evidence_id}/download")
 def download_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user), storage: Storage = Depends(get_storage)):
-    with closing(storage.connect()) as connection, connection:
+    with closing(storage.connect()) as connection:
         row = owned_evidence(connection, user["id"], evidence_id)
-        if not re.fullmatch(r"[0-9a-f]{32}", row["stored_name"]):
-            raise HTTPException(500, "저장 파일 경로가 유효하지 않습니다.")
-        target = storage.files_dir / row["stored_name"]
+        target = stored_file(storage, row)
         if not target.is_file():
             raise HTTPException(404, "원본 파일을 찾을 수 없습니다.")
-        connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
-                           (user["id"], "download", evidence_id, utc_now()))
+        with write_transaction(connection):
+            connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
+                               (user["id"], "download", evidence_id, utc_now()))
         return FileResponse(target, media_type="application/octet-stream", filename=row["filename"])
 
 
 # 무결성 검증: 저장된 파일의 SHA-256을 다시 계산해 기준 해시와 비교합니다.
-# 파일을 읽을 수 없으면 UNAVAILABLE. 결과는 검증 기록 1행으로 남깁니다.
+# 파일을 읽을 수 없으면 UNAVAILABLE. 결과는 검증 기록 1행으로 남깁니다. (검증 기록은 수정·삭제 금지)
 @router.post("/api/evidence/{evidence_id}/verify")
 def verify_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user), storage: Storage = Depends(get_storage)):
     started = utc_now()
-    with closing(storage.connect()) as connection, connection:
+    # 1) 대상 확인 (읽기만)
+    with closing(storage.connect()) as connection:
         row = owned_evidence(connection, user["id"], evidence_id)
-        if not re.fullmatch(r"[0-9a-f]{32}", row["stored_name"]):
-            raise HTTPException(500, "저장 파일 경로가 유효하지 않습니다.")
-        target = storage.files_dir / row["stored_name"]
-        current_hash = None
-        status = "UNAVAILABLE"
-        reason = "저장된 파일을 읽을 수 없어 검증하지 못했습니다."
-        try:
-            digest = hashlib.sha256()
-            with target.open("rb") as source:
-                while chunk := source.read(CHUNK_SIZE):
-                    digest.update(chunk)
-            current_hash = digest.hexdigest()
-            status = "MATCH" if hmac.compare_digest(current_hash, row["sha256"]) else "MISMATCH"
-            reason = "등록 당시 SHA-256과 일치합니다." if status == "MATCH" else "등록 당시 SHA-256과 일치하지 않습니다."
-        except OSError:
-            pass
-        completed = utc_now()
-        result_id = f"VERIFY-{uuid.uuid4().hex}"
-        connection.execute("""INSERT INTO verifications VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                           (result_id, evidence_id, user["id"], started, completed, row["sha256"], current_hash, status, reason))
+    target = stored_file(storage, row)
+
+    # 2) 해시 계산은 쓰기 잠금 밖에서 합니다. 큰 파일을 읽는 동안 다른 요청이 멈추지 않게 하기 위해서입니다.
+    current_hash = None
+    status = "UNAVAILABLE"
+    reason = "저장된 파일을 읽을 수 없어 검증하지 못했습니다."
+    try:
+        digest = hashlib.sha256()
+        with target.open("rb") as source:
+            while chunk := source.read(CHUNK_SIZE):
+                digest.update(chunk)
+        current_hash = digest.hexdigest()
+        status = "MATCH" if hmac.compare_digest(current_hash, row["sha256"]) else "MISMATCH"
+        reason = "등록 당시 SHA-256과 일치합니다." if status == "MATCH" else "등록 당시 SHA-256과 일치하지 않습니다."
+    except OSError:
+        pass
+    completed = utc_now()
+    result_id = f"VERIFY-{uuid.uuid4().hex}"
+
+    # 3) 쓰기 잠금 안에서는 대상을 다시 확인한 뒤 기록만 합니다.
+    with closing(storage.connect()) as connection, write_transaction(connection):
+        row = owned_evidence(connection, user["id"], evidence_id)
+        connection.execute("""INSERT INTO verifications (
+                id, evidence_id, user_id, started_at, completed_at, expected_hash,
+                current_hash, status, reason, performed_by_name
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                           (result_id, evidence_id, user["id"], started, completed, row["sha256"],
+                            current_hash, status, reason, user["name"]))
         connection.execute("UPDATE evidence SET verification_status = ? WHERE id = ?", (status, evidence_id))
         connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
                            (user["id"], "verify:" + status, evidence_id, completed))
