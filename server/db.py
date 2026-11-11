@@ -6,6 +6,9 @@
   서버가 시작할 때(요청을 받기 전) 한 트랜잭션으로 실행하고, 끝나면 PRAGMA user_version을 올립니다.
   기존 데이터가 있으면 먼저 DB 파일을 backups/ 폴더에 백업합니다. 실패하면 서버가 시작하지 않습니다.
 - 증거·검증 결과·활동 기록의 수정·삭제를 막는 트리거와, 작업 당시 이름 컬럼을 추가합니다. (마이그레이션 2)
+
+4단계(feature/chain-of-custody)에서 바뀐 점
+- Chain of Custody 표(chain_of_custody)와 추가만 허용하는 트리거를 만듭니다. (마이그레이션 3)
 """
 
 from __future__ import annotations
@@ -177,10 +180,98 @@ def _migration_2_immutable_records(connection: sqlite3.Connection) -> None:
         connection.execute(statement)
 
 
+# Chain of Custody 이벤트 허용 목록 (통합 설계 문서 4장).
+# EVIDENCE_REENCRYPTED는 [결정 필요]라서 아직 넣지 않습니다. 정해지면 새 마이그레이션에서 트리거를 다시 만듭니다.
+# server/custody.py의 EVENT_TYPES와 같은 목록이어야 합니다. (테스트가 둘이 같은지 확인)
+CUSTODY_EVENT_TYPES = (
+    "EVIDENCE_REGISTERED", "EVIDENCE_DOWNLOADED", "INTEGRITY_VERIFIED",
+    "PERMISSION_GRANTED", "PERMISSION_REVOKED", "ACCESS_DENIED",
+    "REPORT_INCLUDED", "PACKAGE_EXPORTED", "PACKAGE_DOWNLOADED", "LEGACY_IMPORTED",
+)
+
+
+def _migration_3_chain_of_custody(connection: sqlite3.Connection) -> None:
+    """마이그레이션 3: Chain of Custody 표 + 추가만 허용하는 트리거 + 사슬 연결 검사 트리거
+
+    - 증거마다 sequence_no 1, 2, 3 ... 순서로 이벤트가 쌓입니다. 각 이벤트는 바로 앞 이벤트의 해시를 품습니다.
+    - 수정·삭제는 트리거가 막습니다. (IMMUTABLE)
+    - 새 이벤트는 "마지막 번호 + 1"이고 "마지막 이벤트 해시"를 이어받아야 들어갑니다. (INVALID)
+      → 코드에 실수가 있어도 DB가 끊긴 사슬을 받아들이지 않습니다.
+    - event_hash 값이 정말 SHA-256 계산 결과인지는 SQLite가 계산할 수 없어서, C2 검사(custody.verify_chain)가 확인합니다.
+    - 이 마이그레이션 이전에 등록된 증거에는 이벤트를 거슬러 만들지 않습니다. (C2에서 CHAIN_EMPTY. 11/12 결정)
+    """
+    connection.execute("""CREATE TABLE IF NOT EXISTS chain_of_custody (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          evidence_id TEXT NOT NULL REFERENCES evidence(id),
+          sequence_no INTEGER NOT NULL,
+          event_type TEXT NOT NULL,
+          actor_user_id TEXT NOT NULL REFERENCES users(id),
+          event_time TEXT NOT NULL,
+          result TEXT NOT NULL,
+          details TEXT NOT NULL,
+          previous_event_hash TEXT NOT NULL,
+          event_hash TEXT NOT NULL UNIQUE,
+          UNIQUE (evidence_id, sequence_no)
+        )""")
+
+    event_types = ", ".join(f"'{name}'" for name in CUSTODY_EVENT_TYPES)  # 코드에 적힌 고정 값만 사용
+    zero_hash = "0" * 64
+    triggers = {
+        # 추가만 허용: 수정·삭제 금지
+        "custody_block_update": """
+            CREATE TRIGGER custody_block_update BEFORE UPDATE ON chain_of_custody
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: Chain of Custody 이벤트는 수정할 수 없습니다'); END""",
+        "custody_block_delete": """
+            CREATE TRIGGER custody_block_delete BEFORE DELETE ON chain_of_custody
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: Chain of Custody 이벤트는 삭제할 수 없습니다'); END""",
+        # 값 목록 검사 (늘어날 수 있으므로 CHECK 대신 트리거)
+        "custody_check_event_type": f"""
+            CREATE TRIGGER custody_check_event_type BEFORE INSERT ON chain_of_custody
+            WHEN NEW.event_type NOT IN ({event_types})
+            BEGIN SELECT RAISE(ABORT, 'INVALID: chain_of_custody.event_type 값이 허용 목록에 없습니다'); END""",
+        "custody_check_result": """
+            CREATE TRIGGER custody_check_result BEFORE INSERT ON chain_of_custody
+            WHEN NEW.result NOT IN ('SUCCESS', 'FAILURE')
+            BEGIN SELECT RAISE(ABORT, 'INVALID: chain_of_custody.result 값이 허용 목록에 없습니다'); END""",
+        # details는 JSON 객체이고, actorName(작업 당시 이름)은 빈 값이 아닌 문자열이어야 함
+        "custody_require_actor_name": """
+            CREATE TRIGGER custody_require_actor_name BEFORE INSERT ON chain_of_custody
+            WHEN CASE WHEN json_valid(NEW.details) THEN (
+                     json_type(NEW.details) IS NOT 'object'
+                     OR json_type(NEW.details, '$.actorName') IS NOT 'text'
+                     OR trim(json_extract(NEW.details, '$.actorName')) = '')
+                 ELSE 1 END  -- JSON이 아니면 json_type을 부르지 않고 바로 거부 (CASE는 필요한 쪽만 계산)
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 새 이벤트의 details에는 actorName이 필요합니다'); END""",
+        # 해시 2개는 소문자 16진수 64자리
+        "custody_check_hash_format": """
+            CREATE TRIGGER custody_check_hash_format BEFORE INSERT ON chain_of_custody
+            WHEN length(NEW.event_hash) != 64 OR NEW.event_hash GLOB '*[^0-9a-f]*'
+              OR length(NEW.previous_event_hash) != 64 OR NEW.previous_event_hash GLOB '*[^0-9a-f]*'
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 해시는 소문자 16진수 64자리여야 합니다'); END""",
+        # 번호는 그 증거의 마지막 번호 + 1 (첫 이벤트는 1)
+        "custody_check_sequence": """
+            CREATE TRIGGER custody_check_sequence BEFORE INSERT ON chain_of_custody
+            WHEN NEW.sequence_no IS NOT (
+                SELECT COALESCE(MAX(sequence_no), 0) + 1 FROM chain_of_custody WHERE evidence_id = NEW.evidence_id)
+            BEGIN SELECT RAISE(ABORT, 'INVALID: sequence_no는 마지막 번호 + 1이어야 합니다'); END""",
+        # 앞 이벤트 해시는 그 증거의 마지막 이벤트 해시 (첫 이벤트는 0 64개)
+        "custody_check_link": f"""
+            CREATE TRIGGER custody_check_link BEFORE INSERT ON chain_of_custody
+            WHEN NEW.previous_event_hash IS NOT COALESCE((
+                SELECT event_hash FROM chain_of_custody WHERE evidence_id = NEW.evidence_id
+                ORDER BY sequence_no DESC LIMIT 1), '{zero_hash}')
+            BEGIN SELECT RAISE(ABORT, 'INVALID: previous_event_hash가 마지막 이벤트 해시와 다릅니다'); END""",
+    }
+    for name, statement in triggers.items():
+        connection.execute(f"DROP TRIGGER IF EXISTS {name}")
+        connection.execute(statement)
+
+
 # (버전 번호, 마이그레이션 함수). 번호는 1부터 빈칸 없이 올라갑니다.
 MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [
     (1, _migration_1_base_schema),
     (2, _migration_2_immutable_records),
+    (3, _migration_3_chain_of_custody),
 ]
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 

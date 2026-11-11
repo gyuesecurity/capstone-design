@@ -6,6 +6,10 @@
   이름은 프론트가 보낸 값이 아니라, 로그인한 사용자의 지금 이름을 서버가 넣습니다.
 - INSERT는 컬럼 위치가 아니라 컬럼 이름을 적어서 넣습니다. (컬럼이 추가돼도 깨지지 않게)
 - 검증할 때 파일 해시 계산은 쓰기 잠금 밖에서 하고, 잠금 안에서는 다시 확인한 뒤 기록만 합니다.
+
+4단계에서 바뀐 점 (응답 모양은 그대로)
+- 등록·다운로드·검증 때 Chain of Custody 이벤트를 같은 트랜잭션 안에서 함께 기록합니다.
+  EVIDENCE_REGISTERED / EVIDENCE_DOWNLOADED / INTEGRITY_VERIFIED
 """
 
 from __future__ import annotations
@@ -24,6 +28,7 @@ from fastapi.responses import FileResponse
 
 from .. import config
 from ..config import ALLOWED_EXTENSIONS, CHUNK_SIZE
+from ..custody import append_event
 from ..db import Storage, get_storage, write_transaction
 from ..security import current_user, utc_now
 from ..serializers import evidence_dict, verification_dict
@@ -94,6 +99,9 @@ async def upload_evidence(
                                 user["name"]))
             connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
                                (user["id"], "upload", evidence_id, now))
+            # Chain of Custody 1번 이벤트. 등록 당시 기준 해시와 파일 정보를 함께 남깁니다.
+            append_event(connection, evidence_id, "EVIDENCE_REGISTERED", user, "SUCCESS",
+                         {"sha256": digest.hexdigest(), "filename": filename, "size": size})
             row = owned_evidence(connection, user["id"], evidence_id)
             return evidence_dict(connection, row)
     except Exception:
@@ -131,6 +139,8 @@ def download_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user
         with write_transaction(connection):
             connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
                                (user["id"], "download", evidence_id, utc_now()))
+            # 파일을 보내기 시작하는 시점의 이벤트 (활동 기록과 같은 트랜잭션)
+            append_event(connection, evidence_id, "EVIDENCE_DOWNLOADED", user, "SUCCESS")
         return FileResponse(target, media_type="application/octet-stream", filename=row["filename"])
 
 
@@ -173,4 +183,8 @@ def verify_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user),
         connection.execute("UPDATE evidence SET verification_status = ? WHERE id = ?", (status, evidence_id))
         connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
                            (user["id"], "verify:" + status, evidence_id, completed))
+        # MATCH·MISMATCH는 검증 작업 자체는 끝났으므로 SUCCESS, 파일을 못 읽은 UNAVAILABLE만 FAILURE
+        append_event(connection, evidence_id, "INTEGRITY_VERIFIED", user,
+                     "FAILURE" if status == "UNAVAILABLE" else "SUCCESS",
+                     {"status": status, "verificationId": result_id})
         return {"result": verification_dict(connection.execute("SELECT * FROM verifications WHERE id = ?", (result_id,)).fetchone(), row["filename"]), "saved": True}
