@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Malgun Gothic', 'NanumGothic', sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+        .evidence-item { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        .hash-box { background: #f4f4f4; padding: 10px; font-family: monospace; word-break: break-all; }
+        /* 텍스트 추출을 위한 ASCII 문자열 영역 */
+        .report-id { font-weight: bold; color: #d9534f; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ report.title }}</h1>
+        <p>{{ report.description }}</p>
+    </div>
+
+    <!-- 필수: 첫 페이지 본문 보고서 ID 표시 -->
+    <p class="report-id">보고서 ID: {{ reportId }}</p>
+    
+    <p><strong>작성자:</strong> {{ report.author }}</p>
+    <p><strong>생성 일시:</strong> {{ created }}</p>
+    <p><strong>작업 ID:</strong> {{ jobId }}</p>
+
+    <h2>수집된 증거 목록</h2>
+    {% for item in evidence %}
+    <div class="evidence-item">
+        <h3>증거 파일: {{ item.filename }} (ID: {{ item.evidenceId }})</h3>
+        <p><strong>파일 크기:</strong> {{ item.size }} Bytes</p>
+        <p><strong>Custody 기준점:</strong> {{ item.custodySnapshot }}</p>
+        
+        <h4>무결성 해시 (SHA-256)</h4>
+        <div class="hash-box">{{ item.sha256 }}</div>
+    </div>
+    {% endfor %}
+</body>
+</html>

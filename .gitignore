@@ -9,3 +9,13 @@ node_modules/
 .env.*
 !.env.example
 *.pyc
+
+# local tooling (not part of the team project)
+venv/
+.claude/
+graphify-out/
+
+# D: generated PDF/ZIP report artifacts
+*.pdf
+*.zip
+output/

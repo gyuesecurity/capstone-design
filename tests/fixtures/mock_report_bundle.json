@@ -1,0 +1,28 @@
+{
+  "bundleVersion": "v1.0",
+  "jobId": "JOB-98765",
+  "kind": "REPORT",
+  "reportId": "RPT-1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+  "created": "2026/11/07 17:00:00",
+  "report": {
+    "title": "사이버폭력 디지털 증거 수집 보고서",
+    "description": "카카오톡 협박 메시지 및 웹페이지 캡처 증거물 통합본",
+    "author": "홍길동",
+    "options": {
+      "showVerifications": true,
+      "showCustody": true
+    }
+  },
+  "evidence": [
+    {
+      "evidenceId": "EVI-001",
+      "filename": "chat_capture_01.png",
+      "sha256": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "size": 102400,
+      "custodySnapshot": "SNAP-1122",
+      "metadata": {
+        "source_url": "N/A"
+      }
+    }
+  ]
+}
