@@ -77,6 +77,13 @@ class PdfRendererTests(unittest.TestCase):
         with self.assertRaises(FatalURLFetchingError):
             html.write_pdf(self.tmp / 'blocked.pdf')
 
+    def test_font_dir_escape_blocked(self):
+        # 허용 폴더(fonts/)를 ../로 벗어나는 경로는 차단되어야 함
+        escape = (Path('d_package/fonts').resolve() / '..' / 'pdf_renderer.py').as_uri()
+        html = HTML(string=f'<img src="{escape}">', url_fetcher=_DenyExternalFetcher())
+        with self.assertRaises(FatalURLFetchingError):
+            html.write_pdf(self.tmp / 'escape.pdf')
+
     def test_invalid_report_id_rejected(self):
         self.bundle['reportId'] = 'RPT-x"; } body { display: none'
         with self.assertRaises(ValueError):

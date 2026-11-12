@@ -14,9 +14,13 @@ WeasyPrint는 pip 패키지 외에 Pango 라이브러리가 필요합니다.
 
 **Debian/Docker (`python:*-slim`)**
 ```
-apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-nanum
+apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0
 ```
-한글 폰트(`fonts-nanum`)가 없으면 글자가 네모로 출력됩니다.
+
+## 폰트
+
+한글 폰트는 `fonts/`에 번들되어 있어 시스템 폰트 설치가 필요 없습니다.
+NanumGothic (SIL Open Font License 1.1, `fonts/OFL.txt`), 출처: google/fonts `ofl/nanumgothic`.
 
 ## 실행
 ```

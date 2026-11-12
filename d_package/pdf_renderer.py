@@ -1,18 +1,31 @@
 import json
 import os
 import re
+from pathlib import Path
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
 from weasyprint.urls import FatalURLFetchingError, URLFetcher
 
 REPORT_ID_PATTERN = re.compile(r'RPT-[0-9a-f]{32}')
+FONT_DIR = (Path(__file__).parent / 'fonts').resolve()
+
+
+def _is_bundled_font(url):
+    parsed = urlparse(url)
+    if parsed.scheme != 'file':
+        return False
+    # resolve()로 ../ 및 심볼릭 링크를 풀어 실제 위치가 fonts/ 바로 아래인지 확인
+    path = Path(url2pathname(parsed.path)).resolve()
+    return path.parent == FONT_DIR and path.suffix == '.ttf'
 
 
 class _DenyExternalFetcher(URLFetcher):
-    # 템플릿은 외부 리소스를 쓰지 않음: file://, http(s) 등 data: 외 전부 차단해 로컬 파일 유출/SSRF 방지
+    # data:와 번들 폰트(d_package/fonts/*.ttf) 외 전부 차단해 로컬 파일 유출/SSRF 방지
     def fetch(self, url, headers=None):
-        if url.startswith('data:'):
+        if url.startswith('data:') or _is_bundled_font(url):
             return super().fetch(url, headers)
         raise FatalURLFetchingError('external resource blocked')
 
@@ -40,7 +53,12 @@ def generate_pdf_report(json_bundle_path, template_path, output_pdf_path):
     )
 
     try:
-        HTML(string=html_content, url_fetcher=_DenyExternalFetcher()).write_pdf(output_pdf_path)
+        # base_url: 템플릿 기준 상대 경로(../fonts/)로 번들 폰트를 찾기 위함
+        HTML(
+            string=html_content,
+            base_url=str(Path(template_path).resolve()),
+            url_fetcher=_DenyExternalFetcher(),
+        ).write_pdf(output_pdf_path)
         # 전체 경로 노출 금지: 파일명만 출력, cp949 콘솔 호환 위해 ASCII 표기
         print(f"[OK] PDF 보고서 생성 완료: {os.path.basename(output_pdf_path)}")
 

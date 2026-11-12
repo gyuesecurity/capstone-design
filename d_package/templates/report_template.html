@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <style>
+        /* 번들 폰트(OFL 1.1): 환경과 무관하게 동일한 한글 출력 */
+        @font-face { font-family: 'NanumGothic'; src: url('../fonts/NanumGothic-Regular.ttf'); font-weight: normal; }
+        @font-face { font-family: 'NanumGothic'; src: url('../fonts/NanumGothic-Bold.ttf'); font-weight: bold; }
         /* 필수: 모든 페이지 바닥글 보고서 ID (reportId는 렌더러에서 RPT-<32hex> 형식 검증됨) */
         @page {
             size: A4;
             margin: 20mm;
-            @bottom-center { content: "EVIDENCE {{ reportId }}"; font-size: 10pt; }
+            @bottom-center { content: "EVIDENCE {{ reportId }}"; font-family: 'NanumGothic'; font-size: 10pt; }
         }
         body {
-            font-family: 'Malgun Gothic', 'NanumGothic', sans-serif;
+            font-family: 'NanumGothic';
             color: #333;
             line-height: 1.6;
         }
