@@ -7,11 +7,12 @@
 - 프런트엔드: HTML, CSS, JavaScript
 - 서버: Python 3.11+, FastAPI, SQLite
 - 암호화 파일 저장: `data/files/`, 메타데이터와 이력: `data/evidence.sqlite3`
-- 개발용 버전별 마스터 키: `data/keys/master-v1.key` (운영에서는 `EVIDENCE_MASTER_KEYS` 키링 사용)
+- 암호화 키: Docker secret 또는 저장소 밖의 키링 파일로 주입 (명시적 로컬 개발 모드에서만 `data/keys/` 사용)
 
 ```powershell
 cd D:\CDamerica\capstone-design
 python -m pip install -r requirements.txt
+$env:EVIDENCE_ALLOW_DEV_KEY_GENERATION = "true" # 로컬 개발에서만 사용
 python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
 ```
 
@@ -24,7 +25,7 @@ python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
 3. 증거 관리에서 이름·유형·상태·기간으로 찾고 상세 정보와 원본을 확인합니다. 목록은 10건씩 이동할 수 있고 여러 건을 선택해 검증 화면으로 보낼 수 있습니다.
 4. 검증 시 서버가 암호문과 AAD를 인증·복호화하고 SHA-256을 다시 계산합니다. `일치`, `불일치`, `검증 불가` 상태와 실패 코드가 저장됩니다. 암호문·인증 태그·결속 메타데이터가 변경된 경우에도 별도의 실패 사유가 기록됩니다.
 5. 다운로드는 전체 AES-GCM 인증이 성공한 평문만 임시 스풀을 통해 전송하므로 인증 전 바이트가 사용자에게 노출되지 않습니다.
-6. 등록·로그인·업로드·다운로드·검증·비밀번호 변경·로그아웃은 버전별 HMAC 해시 체인 감사 기록에 남습니다. `/api/audit`의 `chainStatus`에서 변조 여부를 확인할 수 있습니다.
+6. 등록·로그인·업로드·다운로드·검증·비밀번호 변경·로그아웃은 버전별 HMAC 해시 체인 애플리케이션 감사 기록에 남습니다. `/api/audit`의 `chainStatus`에서 변조 여부를 확인할 수 있습니다. 이 기록은 증거별 공식 Chain of Custody와 역할을 구분합니다.
 
 `mypage.html`은 `/api/me`, `/api/evidence`, `/api/audit`를 읽어 가입 시 입력한 이름·이메일·가입일, 증거·검증 건수, 최근 이용 내역을 표시합니다. `profile_edit.html`에서 이름을 바꾸면 서버 계정에도 저장되고 다음 로그인에도 유지됩니다. 최근 활동에는 현재 사용자의 서버 작업만 표시됩니다. 보고서 생성은 아직 브라우저 시연 기능이므로 마이페이지의 서버 활동 건수에 포함되지 않습니다.
 
@@ -32,18 +33,42 @@ python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
 
 ### 암호화 키 설정
 
-로컬 개발에서는 키 버전을 처음 사용할 때 `data/keys/master-{version}.key`가 권한 `0600`으로 생성됩니다. 기존 버전 파일도 함께 읽으므로 `v2`로 전환한 뒤에도 `v1` 증거를 복호화할 수 있습니다. 이 파일을 잃으면 해당 버전의 증거를 복호화할 수 없으므로 DB·암호문과 분리해 백업해야 합니다.
+서버는 기본적으로 암호화 키가 없으면 시작하지 않습니다. DB·암호문과 키가 같은 폴더나 볼륨에 복사되는 것을 막기 위해 운영·시연 키는 Docker secret 또는 저장소 밖의 파일로 주입합니다.
 
-운영 환경에서는 `EVIDENCE_MASTER_KEYS`에 버전별 32바이트 키를 JSON 객체로 전달하고 `EVIDENCE_KEY_VERSION`으로 신규 암호화에 사용할 버전을 지정합니다.
+시연 PC에서는 실제 키를 출력하지 않는 생성 도구로 키링을 한 번 만듭니다. 기존 파일을 덮어쓰지 않으며 기본 출력은 Git에서 제외됩니다.
 
 ```powershell
-$env:EVIDENCE_MASTER_KEYS = '{"v1":"v1 키","v2":"v2 키"}'
-$env:EVIDENCE_KEY_VERSION = "v2"
+python scripts/generate_demo_key.py
+docker compose up --build
 ```
 
-키 교체 시 구버전 키를 제거하지 않고 키링에 유지한 채 활성 버전만 변경합니다. 현재는 구버전 증거의 일괄 재암호화 기능이 없으므로 해당 증거가 존재하는 동안 구버전 키가 필요합니다. 단일 `EVIDENCE_MASTER_KEY`도 개발 호환용으로 지원하지만 키 교체가 필요한 운영 환경에서는 키링을 사용합니다.
+Compose는 `secrets/evidence-master-keys.json`을 컨테이너의 `/run/secrets/evidence_master_keys`에 읽기 전용으로 제공하고, `evidence-data` 볼륨에는 DB와 암호문만 저장합니다. 키링 파일은 프로젝트·데이터 볼륨과 별도로 백업해야 합니다.
+
+컨테이너 없이 실행할 때는 저장소 밖의 키링 파일을 지정할 수 있습니다.
+
+```powershell
+$env:EVIDENCE_MASTER_KEYS_FILE = "C:\capstone-secrets\evidence-master-keys.json"
+$env:EVIDENCE_KEY_VERSION = "v1"
+python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
+```
+
+로컬 개발에서만 자동 키 생성을 명시적으로 허용할 수 있습니다. 이 모드에서만 `data/keys/master-{version}.key`가 생성됩니다.
+
+```powershell
+$env:EVIDENCE_ALLOW_DEV_KEY_GENERATION = "true"
+```
+
+MVP에서는 키링에 `v1` 하나만 넣어 사용합니다. 키 교체 시에는 구버전 키를 제거하지 않고 키링에 유지한 채 `EVIDENCE_KEY_VERSION`만 변경합니다. 현재는 구버전 증거의 일괄 재암호화 기능이 없으므로 해당 증거가 존재하는 동안 구버전 키가 필요합니다. 단일 `EVIDENCE_MASTER_KEY`도 개발 호환용으로 지원하지만 키 교체가 필요한 환경에서는 키링을 사용합니다.
 
 마스터 키는 소스코드, SQLite DB, Git 저장소에 넣지 않습니다. DB에는 파일별 HKDF salt, AES-GCM nonce, 인증 태그, AAD 버전만 저장됩니다.
+
+### AAD와 감사·Custody 경계
+
+AAD v1은 `schema: "v1"`, 증거 ID, 소유자 ID, 증거 이름, 파일명, 종류, 출처, 등록 시각, 키 버전으로 동결합니다. 등록자 표시 이름처럼 변경 가능한 값은 추가하지 않습니다. 필드를 바꿔야 할 때는 기존 v1을 수정하지 않고 v2 생성·복원 함수를 추가합니다.
+
+현재 `audit` HMAC 체인은 로그인·프로필·다운로드 등을 포함하는 애플리케이션 활동 기록입니다. 증거별 Chain of Custody는 증거의 공식 관리 이력으로 별도 유지하며, 두 기록을 같은 법적 의미로 취급하지 않습니다. Custody 체인에 HMAC을 적용할 때는 `custody-log`처럼 별도 키 파생 목적을 사용합니다.
+
+백엔드와 암호화 모듈 사이의 확정된 함수, 메타데이터, 실패 코드와 테스트 벡터는 [`docs/crypto-interface-v1.md`](docs/crypto-interface-v1.md)를 따릅니다. 해시 비교와 상태 기록은 백엔드가 담당하고, 암호화 모듈은 인증이 끝난 평문만 반환합니다.
 
 ### Docker 실행
 
@@ -51,7 +76,7 @@ $env:EVIDENCE_KEY_VERSION = "v2"
 docker compose up --build
 ```
 
-`evidence-data` 볼륨에 DB·암호문·개발 키가 보존됩니다. 운영 배포에서는 `.env.example`을 참고하되 실제 키를 `.env`나 저장소에 커밋하지 말고 배포 서비스의 Secret 기능으로 주입해야 합니다. HTTPS 종료, 볼륨 백업과 키 별도 백업도 함께 구성합니다.
+`evidence-data` 볼륨에는 DB와 암호문만 보존됩니다. 키는 별도의 Compose secret으로 마운트됩니다. 실제 키를 `.env`, 이미지 또는 저장소에 커밋하지 말고, HTTPS 종료와 데이터·키 분리 백업을 함께 구성해야 합니다.
 
 ## API와 데이터 구조
 
@@ -91,7 +116,7 @@ erDiagram
 
 ```powershell
 python -m pip install -r requirements-dev.txt
-ruff check server tests
+ruff check server tests scripts
 pip-audit -r requirements.txt
 python -m unittest discover -s tests -v
 npm ci

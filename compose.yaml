@@ -6,9 +6,16 @@ services:
     environment:
       EVIDENCE_DATA_DIR: /app/data
       EVIDENCE_KEY_VERSION: v1
+      EVIDENCE_MASTER_KEYS_FILE: /run/secrets/evidence_master_keys
+    secrets:
+      - evidence_master_keys
     volumes:
       - evidence-data:/app/data
     restart: unless-stopped
+
+secrets:
+  evidence_master_keys:
+    file: ./secrets/evidence-master-keys.json
 
 volumes:
   evidence-data:

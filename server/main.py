@@ -17,7 +17,6 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
-from cryptography.exceptions import InvalidTag
 from fastapi import (
     Depends,
     FastAPI,
@@ -34,9 +33,15 @@ from starlette.background import BackgroundTask
 
 from .crypto import (
     ALGORITHM,
-    CryptoConfigurationError,
+    AuthenticationFailedError,
+    CryptoInternalError,
     EncryptionMetadata,
     EvidenceCrypto,
+    InvalidCryptoInputError,
+    InvalidEncryptionMetadataError,
+    KeyUnavailableError,
+    Sha256Hasher,
+    sha256_chunks,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -75,8 +80,22 @@ def normalized_client_time(value: str) -> str | None:
     return parsed.astimezone(UTC).isoformat(timespec="milliseconds")
 
 
-def evidence_aad(fields: dict[str, str]) -> bytes:
-    return json.dumps(fields, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+def evidence_aad_v1(
+    *, evidence_id: str, owner_id: str, name: str, filename: str,
+    kind: str, source: str, registered_at: str, key_version: str,
+) -> bytes:
+    """Return the immutable canonical AAD v1 shape; add future fields in a new version."""
+    return json.dumps({
+        "schema": "v1",
+        "evidenceId": evidence_id,
+        "ownerId": owner_id,
+        "name": name,
+        "filename": filename,
+        "kind": kind,
+        "source": source,
+        "registeredAt": registered_at,
+        "keyVersion": key_version,
+    }, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
 def file_signature_matches(extension: str, header: bytes, file_object) -> bool:
@@ -193,7 +212,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             CREATE TABLE IF NOT EXISTS evidence (
               id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id), name TEXT NOT NULL,
               filename TEXT NOT NULL, stored_name TEXT UNIQUE NOT NULL, type TEXT NOT NULL,
-              mime TEXT NOT NULL, size INTEGER NOT NULL, kind TEXT NOT NULL, source TEXT NOT NULL,
+              mime TEXT NOT NULL, size INTEGER NOT NULL, stored_size INTEGER, kind TEXT NOT NULL, source TEXT NOT NULL,
               description TEXT NOT NULL, memo TEXT NOT NULL, client_selected_at TEXT, registered_at TEXT NOT NULL,
               sha256 TEXT NOT NULL, verification_status TEXT NOT NULL DEFAULT 'NOT_VERIFIED',
               encryption_algorithm TEXT NOT NULL DEFAULT 'LEGACY', encryption_key_version TEXT,
@@ -218,6 +237,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
         evidence_columns = {row[1] for row in connection.execute("PRAGMA table_info(evidence)")}
         for name, definition in {
             "client_selected_at": "TEXT",
+            "stored_size": "INTEGER",
             "encryption_algorithm": "TEXT NOT NULL DEFAULT 'LEGACY'",
             "encryption_key_version": "TEXT",
             "encryption_salt": "TEXT",
@@ -227,6 +247,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
         }.items():
             if name not in evidence_columns:
                 connection.execute(f"ALTER TABLE evidence ADD COLUMN {name} {definition}")
+        connection.execute("UPDATE evidence SET stored_size = size WHERE stored_size IS NULL")
         verification_columns = {row[1] for row in connection.execute("PRAGMA table_info(verifications)")}
         if "failure_code" not in verification_columns:
             connection.execute("ALTER TABLE verifications ADD COLUMN failure_code TEXT NOT NULL DEFAULT ''")
@@ -300,7 +321,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
                     row["key_version"],
                     row["entry_hash"],
                 )
-            except CryptoConfigurationError:
+            except KeyUnavailableError:
                 statuses[row["id"]] = "KEY_UNAVAILABLE"
             else:
                 statuses[row["id"]] = "VALID" if valid else "INVALID"
@@ -376,7 +397,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             return None
         values = (row["encryption_key_version"], row["encryption_salt"], row["encryption_nonce"], row["encryption_tag"])
         if not all(values):
-            raise CryptoConfigurationError("증거의 암호화 메타데이터가 누락되었습니다.")
+            raise InvalidEncryptionMetadataError("증거의 암호화 메타데이터가 누락되었습니다.")
         return EncryptionMetadata(row["encryption_algorithm"], *values, row["encryption_aad_version"])
 
     def aad_for_row(row: sqlite3.Row) -> bytes:
@@ -384,27 +405,31 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
         if not version:
             return b""
         if version != AAD_VERSION:
-            raise CryptoConfigurationError(f"지원하지 않는 AAD 버전입니다: {version}")
-        return evidence_aad({
-            "schema": version,
-            "evidenceId": row["id"],
-            "ownerId": row["owner_id"],
-            "name": row["name"],
-            "filename": row["filename"],
-            "kind": row["kind"],
-            "source": row["source"],
-            "registeredAt": row["registered_at"],
-            "keyVersion": row["encryption_key_version"],
-        })
+            raise InvalidEncryptionMetadataError(f"지원하지 않는 AAD 버전입니다: {version}")
+        return evidence_aad_v1(
+            evidence_id=row["id"], owner_id=row["owner_id"], name=row["name"],
+            filename=row["filename"], kind=row["kind"], source=row["source"],
+            registered_at=row["registered_at"], key_version=row["encryption_key_version"],
+        )
 
-    def decrypted_chunks(target: Path, row: sqlite3.Row):
-        metadata = encryption_metadata(row)
+    def encrypted_chunks(target: Path):
         with target.open("rb") as source:
-            if metadata is None:
-                while chunk := source.read(CHUNK_SIZE):
-                    yield chunk
-            else:
-                yield from evidence_crypto.iter_decrypted(source, metadata, CHUNK_SIZE, aad_for_row(row))
+            while chunk := source.read(CHUNK_SIZE):
+                yield chunk
+
+    def verified_plaintext(target: Path, row: sqlite3.Row):
+        metadata = encryption_metadata(row)
+        if metadata is not None:
+            return evidence_crypto.decrypt_verified(encrypted_chunks(target), metadata, aad_for_row(row))
+        plain = tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b")
+        try:
+            for chunk in encrypted_chunks(target):
+                plain.write(chunk)
+            plain.seek(0)
+            return plain
+        except Exception:
+            plain.close()
+            raise
 
     def evidence_dict(connection: sqlite3.Connection, row: sqlite3.Row) -> dict:
         history = [verification_dict(item, row["filename"]) for item in connection.execute(
@@ -413,6 +438,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
         return {
             "id": row["id"], "name": row["name"], "filename": row["filename"],
             "type": row["type"], "mime": row["mime"], "size": row["size"],
+            "storedSize": row["stored_size"],
             "kind": row["kind"], "source": row["source"], "description": row["description"], "memo": row["memo"],
             "selectedAt": row["client_selected_at"], "registeredAt": row["registered_at"],
             "date": row["registered_at"][:10], "sha256": row["sha256"],
@@ -540,24 +566,18 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
         target = files_dir / stored_name
         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
         size = 0
-        digest = hashlib.sha256()
+        digest = Sha256Hasher()
         display_name = name.strip() or filename
         evidence_kind = kind.strip() or "파일"
         evidence_source = source.strip() or "직접 수집"
         registered_at = utc_now()
         selected_at = normalized_client_time(client_selected_at)
-        aad = evidence_aad({
-            "schema": AAD_VERSION,
-            "evidenceId": evidence_id,
-            "ownerId": user["id"],
-            "name": display_name,
-            "filename": filename,
-            "kind": evidence_kind,
-            "source": evidence_source,
-            "registeredAt": registered_at,
-            "keyVersion": evidence_crypto.key_version,
-        })
-        encryptor, salt, nonce = evidence_crypto.new_encryptor(aad)
+        aad = evidence_aad_v1(
+            evidence_id=evidence_id, owner_id=user["id"], name=display_name,
+            filename=filename, kind=evidence_kind, source=evidence_source,
+            registered_at=registered_at, key_version=evidence_crypto.key_version,
+        )
+        encryption_session = evidence_crypto.start_encryption(aad)
         try:
             descriptor = os.open(target, flags, 0o600)
             with os.fdopen(descriptor, "wb") as output:
@@ -566,27 +586,28 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
                     if size > MAX_FILE_SIZE:
                         raise HTTPException(413, "파일은 50 MB 이하만 등록할 수 있습니다.")
                     digest.update(chunk)
-                    encrypted = encryptor.update(chunk)
+                    encrypted = encryption_session.update(chunk)
                     if encrypted:
                         output.write(encrypted)
                 if size == 0:
                     raise HTTPException(422, "빈 파일은 등록할 수 없습니다.")
-                final = encryptor.finalize()
+                final, encryption_result = encryption_session.finalize(AAD_VERSION)
                 if final:
                     output.write(final)
                 output.flush()
                 os.fsync(output.fileno())
             target.chmod(0o400)
-            encryption = evidence_crypto.metadata(salt, nonce, encryptor.tag, AAD_VERSION)
+            encryption = encryption_result.metadata
             with closing(connect()) as connection, connection:
                 connection.execute("""INSERT INTO evidence (
-                    id, owner_id, name, filename, stored_name, type, mime, size, kind, source,
+                    id, owner_id, name, filename, stored_name, type, mime, size, stored_size, kind, source,
                     description, memo, client_selected_at, registered_at, sha256, verification_status,
                     encryption_algorithm, encryption_key_version, encryption_salt, encryption_nonce, encryption_tag,
                     encryption_aad_version
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                                    (evidence_id, user["id"], display_name, filename, stored_name,
                                     extension[1:].upper(), file.content_type or "application/octet-stream", size,
+                                    encryption_result.stored_size,
                                     evidence_kind, evidence_source, description, memo, selected_at, registered_at,
                                     digest.hexdigest(), "NOT_VERIFIED",
                                     encryption.algorithm, encryption.key_version, encryption.salt,
@@ -622,19 +643,19 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             target = files_dir / row["stored_name"]
             if not target.is_file():
                 raise HTTPException(404, "원본 파일을 찾을 수 없습니다.")
-            plain = tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b")
             try:
-                for chunk in decrypted_chunks(target, row):
-                    plain.write(chunk)
-                plain.seek(0)
-            except InvalidTag:
-                plain.close()
+                plain = verified_plaintext(target, row)
+            except AuthenticationFailedError:
                 raise HTTPException(409, "암호화 파일의 인증 정보가 일치하지 않아 다운로드할 수 없습니다.") from None
-            except CryptoConfigurationError as error:
-                plain.close()
-                raise HTTPException(500, str(error)) from error
+            except KeyUnavailableError as error:
+                raise HTTPException(500, "암호화 키를 사용할 수 없어 다운로드할 수 없습니다.") from error
+            except InvalidEncryptionMetadataError as error:
+                raise HTTPException(500, "암호화 메타데이터가 올바르지 않아 다운로드할 수 없습니다.") from error
+            except InvalidCryptoInputError as error:
+                raise HTTPException(500, "암호화 모듈 입력 오류로 다운로드할 수 없습니다.") from error
+            except CryptoInternalError as error:
+                raise HTTPException(500, "저장된 파일을 안전하게 복호화하지 못했습니다.") from error
             except OSError as error:
-                plain.close()
                 raise HTTPException(500, "저장된 파일을 안전하게 복호화하지 못했습니다.") from error
             append_audit(connection, user["id"], "download", evidence_id)
             encoded_name = quote(row["filename"], safe="")
@@ -668,20 +689,26 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             reason = "저장된 파일을 읽을 수 없어 검증하지 못했습니다."
             failure_code = "FILE_UNAVAILABLE"
             try:
-                digest = hashlib.sha256()
-                for chunk in decrypted_chunks(target, row):
-                    digest.update(chunk)
-                current_hash = digest.hexdigest()
+                plain = verified_plaintext(target, row)
+                try:
+                    current_hash = sha256_chunks(iter(lambda: plain.read(CHUNK_SIZE), b""))
+                finally:
+                    plain.close()
                 status = "MATCH" if hmac.compare_digest(current_hash, row["sha256"]) else "MISMATCH"
                 reason = "등록 당시 SHA-256과 일치합니다." if status == "MATCH" else "등록 당시 SHA-256과 일치하지 않습니다."
                 failure_code = "" if status == "MATCH" else "HASH_MISMATCH"
-            except InvalidTag:
+            except AuthenticationFailedError:
                 status = "MISMATCH"
                 reason = "암호화 파일 또는 인증 태그가 변경되어 AES-GCM 인증에 실패했습니다."
                 failure_code = "AUTHENTICATION_FAILED"
-            except CryptoConfigurationError:
-                reason = "암호화 메타데이터가 올바르지 않아 검증하지 못했습니다."
-                failure_code = "ENCRYPTION_METADATA_INVALID"
+            except KeyUnavailableError as error:
+                raise HTTPException(500, "암호화 키를 사용할 수 없어 무결성을 검증하지 못했습니다.") from error
+            except InvalidEncryptionMetadataError as error:
+                raise HTTPException(500, "암호화 메타데이터가 올바르지 않아 무결성을 검증하지 못했습니다.") from error
+            except InvalidCryptoInputError as error:
+                raise HTTPException(500, "암호화 모듈 입력 오류로 무결성을 검증하지 못했습니다.") from error
+            except CryptoInternalError as error:
+                raise HTTPException(500, "암호화 모듈 내부 오류로 무결성을 검증하지 못했습니다.") from error
             except OSError:
                 pass
             completed = utc_now()

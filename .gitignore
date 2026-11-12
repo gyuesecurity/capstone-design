@@ -8,4 +8,6 @@ node_modules/
 .env
 .env.*
 !.env.example
+secrets/*
+!secrets/*.example.json
 *.pyc

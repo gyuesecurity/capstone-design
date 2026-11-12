@@ -1,3 +1,6 @@
+import base64
+import json
+import os
 import sqlite3
 import tempfile
 import unittest
@@ -6,6 +9,12 @@ from pathlib import Path
 from unittest import mock
 
 import httpx
+
+os.environ.setdefault("EVIDENCE_MASTER_KEYS", json.dumps({
+    "v1": base64.urlsafe_b64encode(b"K" * 32).decode("ascii"),
+    "v2": base64.urlsafe_b64encode(b"L" * 32).decode("ascii"),
+}))
+os.environ.setdefault("EVIDENCE_KEY_VERSION", "v1")
 
 from server import main
 
@@ -26,6 +35,22 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code, 201, response.text)
         return response.json()["token"]
 
+    async def test_aad_v1_schema_is_canonical_and_does_not_include_display_user_name(self):
+        aad = main.evidence_aad_v1(
+            evidence_id="EV-1", owner_id="USER-1", name="증거", filename="a.txt",
+            kind="파일", source="직접 수집", registered_at="2026-11-12T00:00:00.000+00:00",
+            key_version="v1",
+        )
+        self.assertEqual(
+            aad,
+            (
+                '{"evidenceId":"EV-1","filename":"a.txt","keyVersion":"v1","kind":"파일",'
+                '"name":"증거","ownerId":"USER-1",'
+                '"registeredAt":"2026-11-12T00:00:00.000+00:00","schema":"v1",'
+                '"source":"직접 수집"}'
+            ).encode(),
+        )
+
     async def test_upload_verify_access_and_audit(self):
         owner = await self.register("owner@example.com")
         other = await self.register("other@example.com")
@@ -39,6 +64,7 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         record = upload.json()
         self.assertEqual(record["filename"], "증거.txt")
         self.assertEqual(record["size"], 14)
+        self.assertEqual(record["storedSize"], 14)
         self.assertEqual(record["verificationStatus"], "NOT_VERIFIED")
         self.assertEqual(len(record["sha256"]), 64)
         self.assertEqual(record["encryption"]["algorithm"], "AES-256-GCM")
@@ -132,7 +158,7 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(uploaded.status_code, 201, uploaded.text)
         evidence_id = uploaded.json()["id"]
-        self.assertEqual((self.root / "keys" / "master-v1.key").stat().st_size, 32)
+        self.assertFalse((self.root / "keys").exists())
 
         await self.client.aclose()
         self.client = httpx.AsyncClient(
@@ -180,6 +206,59 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
             (await self.client.post(f"/api/evidence/{first_id}/verify", headers=rotated_headers)).json()["result"]["status"],
             "MATCH",
         )
+
+    async def test_missing_key_is_not_recorded_as_evidence_tampering(self):
+        token = await self.register("missing-key@example.com")
+        headers = {"Authorization": f"Bearer {token}"}
+        uploaded = await self.client.post(
+            "/api/evidence", headers=headers, files={"file": ("key.txt", b"key protected", "text/plain")}
+        )
+        self.assertEqual(uploaded.status_code, 201, uploaded.text)
+        evidence_id = uploaded.json()["id"]
+        with closing(sqlite3.connect(self.root / "evidence.sqlite3")) as connection, connection:
+            connection.execute(
+                "UPDATE evidence SET encryption_key_version = 'missing' WHERE id = ?", (evidence_id,)
+            )
+
+        verified = await self.client.post(f"/api/evidence/{evidence_id}/verify", headers=headers)
+        self.assertEqual(verified.status_code, 500, verified.text)
+        self.assertIn("암호화 키", verified.json()["detail"])
+        downloaded = await self.client.get(f"/api/evidence/{evidence_id}/download", headers=headers)
+        self.assertEqual(downloaded.status_code, 500, downloaded.text)
+        with closing(sqlite3.connect(self.root / "evidence.sqlite3")) as connection:
+            count = connection.execute(
+                "SELECT COUNT(*) FROM verifications WHERE evidence_id = ?", (evidence_id,)
+            ).fetchone()[0]
+            status = connection.execute(
+                "SELECT verification_status FROM evidence WHERE id = ?", (evidence_id,)
+            ).fetchone()[0]
+        self.assertEqual(count, 0)
+        self.assertEqual(status, "NOT_VERIFIED")
+
+    async def test_invalid_encryption_metadata_is_not_saved_as_a_verification_result(self):
+        token = await self.register("invalid-metadata@example.com")
+        headers = {"Authorization": f"Bearer {token}"}
+        uploaded = await self.client.post(
+            "/api/evidence", headers=headers, files={"file": ("metadata.txt", b"metadata", "text/plain")}
+        )
+        evidence_id = uploaded.json()["id"]
+        with closing(sqlite3.connect(self.root / "evidence.sqlite3")) as connection, connection:
+            connection.execute(
+                "UPDATE evidence SET encryption_nonce = 'invalid!' WHERE id = ?", (evidence_id,)
+            )
+
+        verified = await self.client.post(f"/api/evidence/{evidence_id}/verify", headers=headers)
+        self.assertEqual(verified.status_code, 500, verified.text)
+        self.assertIn("메타데이터", verified.json()["detail"])
+        with closing(sqlite3.connect(self.root / "evidence.sqlite3")) as connection:
+            count = connection.execute(
+                "SELECT COUNT(*) FROM verifications WHERE evidence_id = ?", (evidence_id,)
+            ).fetchone()[0]
+            status = connection.execute(
+                "SELECT verification_status FROM evidence WHERE id = ?", (evidence_id,)
+            ).fetchone()[0]
+        self.assertEqual(count, 0)
+        self.assertEqual(status, "NOT_VERIFIED")
 
     async def test_aad_and_audit_chain_detect_metadata_tampering(self):
         token = await self.register("tamper@example.com")
