@@ -49,9 +49,8 @@ class PdfRendererTests(unittest.TestCase):
     def test_report_id_in_page1_body(self):
         _, out = self.render()
         first_page = self.page_texts(out)[0]
-        # 바닥글과 별개로 본문에도 있어야 하므로 바닥글 문자열을 제외하고 검사
-        body = first_page.replace(f'EVIDENCE {self.report_id}', '')
-        self.assertIn(self.report_id, body)
+        # 본문 1회 + 바닥글 1회: 'EVIDENCE RPT-...' 전체 문자열이 두 곳 모두에 있어야 함
+        self.assertGreaterEqual(first_page.count(f'EVIDENCE {self.report_id}'), 2)
 
     def test_footer_on_every_page(self):
         self.bundle['evidence'] = self.bundle['evidence'] * 15
