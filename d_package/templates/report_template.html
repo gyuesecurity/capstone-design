@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <style>
+        /* 필수: 모든 페이지 바닥글 보고서 ID (reportId는 렌더러에서 RPT-<32hex> 형식 검증됨) */
+        @page {
+            size: A4;
+            margin: 20mm;
+            @bottom-center { content: "EVIDENCE {{ reportId }}"; font-size: 10pt; }
+        }
         body {
             font-family: 'Malgun Gothic', 'NanumGothic', sans-serif;
             color: #333;
