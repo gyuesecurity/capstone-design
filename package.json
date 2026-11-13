@@ -1,0 +1,12 @@
+{
+  "name": "evidence-capstone",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "check:js": "node --check app.js && node --check auth.js && node --check account.js && node --check dashboard-local.js && node --check mypage.js && node --check navigation.js && node --check report.js && node --check verification-local.js",
+    "test:browser": "node tests/browser_smoke.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
+}
