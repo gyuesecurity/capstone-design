@@ -1,0 +1,368 @@
+/* Loaded after page styles. These hooks override fixed Figma export dimensions. */
+.layout-page,
+.layout-page * {
+  box-sizing: border-box;
+}
+
+.layout-page :where(div, main, section, form, label) {
+  min-width: 0;
+}
+
+.layout-page .layout-shell,
+.layout-page > .layout-section {
+  display: flex !important;
+  width: 100% !important;
+  max-width: 1440px;
+  margin-inline: auto;
+}
+
+.layout-page .layout-shell {
+  flex-direction: column;
+}
+
+.layout-page .layout-section {
+  width: 100%;
+  padding-inline: clamp(16px, 6.667vw, 96px) !important;
+}
+
+.layout-page img:not([style*="position: absolute"]) {
+  max-width: 100%;
+  height: auto;
+}
+
+.layout-page .layout-fluid {
+  width: 100% !important;
+  max-width: 100%;
+}
+
+.layout-page .layout-panel {
+  height: auto !important;
+}
+
+.layout-page .layout-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch !important;
+  width: 100%;
+  overflow: visible !important;
+}
+
+.layout-page .layout-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.layout-page .layout-grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.layout-page .layout-grid > * {
+  width: auto !important;
+  min-width: 0;
+}
+
+.layout-page .layout-wrap {
+  flex-wrap: wrap;
+  gap: 12px;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.layout-page .layout-header {
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.layout-page .layout-brand {
+  flex-wrap: nowrap;
+}
+
+.layout-page .account-header {
+  width: 100%;
+}
+
+.layout-page .layout-wrap[style*="height: 44px"],
+.layout-page .layout-wrap[style*="height: 46px"],
+.layout-page .layout-wrap[style*="height: 48px"],
+.layout-page .layout-wrap[style*="height: 52px"] {
+  min-height: 44px;
+}
+
+.layout-page .layout-wrap[style*="height: 56px"],
+.layout-page .layout-wrap[style*="height: 64px"] {
+  min-height: 56px;
+  padding-block: 12px;
+}
+
+.layout-page .evidence-editable-field:has(select) {
+  min-height: 44px;
+}
+
+.layout-page .layout-brand,
+.layout-page .layout-nav {
+  flex-shrink: 0;
+}
+
+.layout-page .layout-nav > * {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.layout-page .layout-media-preview {
+  aspect-ratio: 616 / 346;
+  height: auto !important;
+}
+
+.layout-page .layout-media-preview > img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
+
+.layout-page .layout-media-preview > [style*="width: 616px"] {
+  height: 100% !important;
+}
+
+.layout-page .layout-media-preview > [style*="top: 296px"] {
+  top: auto !important;
+  bottom: 12px;
+  width: calc(100% - 36px) !important;
+}
+
+.layout-page .layout-media-preview > div[style*="width: 64px"] {
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%);
+}
+
+.layout-page .layout-filters > * {
+  flex: 1 1 140px !important;
+}
+
+.layout-page .layout-filters > :first-child {
+  flex-basis: 240px !important;
+}
+
+.layout-page .layout-filters :is(input, select),
+.layout-page :is(.evidence-inline-input, .evidence-inline-select, .evidence-inline-textarea) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Scroll only the data panel. Fixed column widths remain aligned with live rows. */
+.layout-page .layout-table {
+  --table-width: 1120px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain;
+}
+
+.layout-page .layout-table--dashboard { --table-width: 900px; }
+.layout-page .layout-table--reports { --table-width: 960px; }
+.layout-page .layout-table--selection { --table-width: 1040px; }
+
+.layout-page .layout-table > :is(.layout-table-row, .evidence-local-row, .dashboard-recent-row, .report-local-row, [data-report-row]) {
+  width: 100%;
+  min-width: var(--table-width);
+  flex-shrink: 0;
+}
+
+.layout-page .layout-table-row > [style*="width:"] {
+  flex-shrink: 0;
+}
+
+.layout-page .report-main {
+  overflow-x: visible;
+}
+
+.layout-page [data-report-screen]:not(.report-progress-screen) {
+  min-width: 0;
+  width: 100%;
+}
+
+.layout-page [data-report-document],
+.layout-page [data-report-document] * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.layout-page .report-preview-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.layout-page .dashboard-activity-description strong {
+  overflow-wrap: anywhere;
+}
+
+.layout-page :is(.report-field, .evidence-inline-input, .evidence-inline-textarea, .evidence-inline-select) {
+  box-sizing: border-box;
+}
+
+.layout-page :is(.evidence-toast, .evidence-dialog__item, .report-detail-card, .completion-card) {
+  overflow-wrap: anywhere;
+}
+
+.layout-page .evidence-toast {
+  max-width: calc(100vw - 48px);
+}
+
+/* Short windows must scroll the form instead of centering its top off screen. */
+.layout-page.auth-page {
+  min-height: 100svh;
+  align-items: safe center;
+}
+
+@media (max-width: 1100px) {
+  .layout-page .layout-header,
+  .layout-page .account-header,
+  .layout-page .completion-header {
+    height: auto !important;
+    min-height: 88px;
+    flex-wrap: wrap;
+    padding: 16px clamp(16px, 4vw, 32px) 0 !important;
+    overflow: visible !important;
+  }
+
+  .layout-page .layout-header > .layout-nav,
+  .layout-page .account-nav,
+  .layout-page .completion-nav {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 8px 24px !important;
+    overflow: visible !important;
+  }
+
+  .layout-page .layout-nav > div,
+  .layout-page .account-nav a,
+  .layout-page .completion-nav > span {
+    height: auto !important;
+    min-height: 44px;
+  }
+
+  .layout-page .layout-nav > div > [style*="top: 85px"] {
+    top: auto !important;
+    bottom: 0;
+  }
+
+  .layout-page .layout-grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .layout-page .layout-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .layout-page .layout-hero > * {
+    width: 100% !important;
+  }
+
+  .layout-page .layout-product-preview {
+    max-width: 720px;
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .layout-page .layout-section {
+    padding-inline: 16px !important;
+  }
+
+  .layout-page .layout-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px !important;
+  }
+
+  .layout-page .layout-grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .layout-page .layout-section[style*="padding-top: 72px"],
+  .layout-page .layout-section[style*="padding-top: 80px"],
+  .layout-page .layout-section[style*="padding-top: 88px"] {
+    padding-top: 40px !important;
+    padding-bottom: 40px !important;
+  }
+
+  .layout-page .layout-hero [style*="font-size: 50px"] {
+    font-size: clamp(28px, 6.5vw, 44px) !important;
+    line-height: 1.4 !important;
+  }
+
+  .layout-page .layout-product-details {
+    flex-direction: column;
+  }
+
+  .layout-page .layout-product-art,
+  .layout-page .layout-product-metadata {
+    width: 100% !important;
+    flex: auto !important;
+  }
+
+  .layout-page .layout-product-metadata > .layout-wrap > :last-child {
+    flex: 1 1 130px !important;
+  }
+
+  .layout-page .layout-wrap {
+    row-gap: 12px;
+  }
+
+  .layout-page .layout-filters > :first-child {
+    flex-basis: 100% !important;
+  }
+
+  .layout-page :is(.verification-heading, .verification-card-heading, .verification-panel-footer) {
+    flex-wrap: wrap;
+  }
+
+  .layout-page .report-detail-toolbar,
+  .layout-page .report-detail-toolbar > div,
+  .layout-page .report-detail-legend {
+    flex-wrap: wrap;
+    max-width: 100%;
+    gap: 12px;
+  }
+
+  .layout-page .report-detail-meta,
+  .layout-page [data-report-detail-evidence-list] {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .layout-page .layout-brand > :last-child:not(:nth-child(2)),
+  .layout-page .account-brand__detail,
+  .layout-page .completion-brand__description {
+    display: none;
+  }
+
+  .layout-page .layout-header > .layout-nav,
+  .layout-page .account-nav,
+  .layout-page .completion-nav {
+    gap: 8px 16px !important;
+  }
+
+  .layout-page .layout-grid--4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .layout-page .layout-panel {
+    padding: 20px !important;
+  }
+
+  .layout-page [data-report-screen][style*="padding: 28px"],
+  .layout-page .report-detail-card {
+    padding: 20px !important;
+  }
+
+  .layout-page .layout-product-preview {
+    padding: 0 !important;
+  }
+
+  .layout-page .auth-links {
+    flex-wrap: wrap;
+  }
+}

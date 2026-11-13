@@ -8,14 +8,15 @@
 <link href="app.css" rel="stylesheet"/>
 <script defer="" src="navigation.js"></script>
 <script defer="" src="app.js"></script>
-<link href="report.css" rel="stylesheet"/><script defer="" src="report.js"></script></head>
-<body data-report-page="detail"><div class="report-shell" style="width: 100%; min-height: 100vh; background: #F6F8FB; display: flex; flex-direction: column"><div class="report-nav" style="align-self: stretch; height: 88px; padding-left: 96px; padding-right: 96px; background: white; overflow: hidden; border-bottom: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex">
-<div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex">
+<link href="report.css" rel="stylesheet"/><script defer="" src="report.js"></script><link rel="stylesheet" href="responsive.css">
+</head>
+<body data-report-page="detail" class="layout-page"><div class="report-shell layout-shell" style="width: 100%; min-height: 100vh; background: #F6F8FB; display: flex; flex-direction: column"><div class="report-nav layout-header layout-section" style="align-self: stretch; height: 88px; padding-left: 96px; padding-right: 96px; background: white; overflow: hidden; border-bottom: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex">
+<div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex" class="layout-brand layout-wrap">
 <div style="width: 32px; height: 36px; overflow: hidden; justify-content: center; align-items: center; display: flex"><img alt="" src="assets/report/1befa.svg"/></div>
 <div style="color: #18243A; font-size: 23px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">EVIDENCE</div>
 <div style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">디지털 증거 플랫폼</div>
 </div>
-<div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 32px; display: flex">
+<div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 32px; display: flex" class="layout-nav layout-wrap">
 <div style="height: 88px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
 <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">대시보드</div>
 </div>
@@ -33,9 +34,9 @@
 <div style="color: #2454C6; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">My page</div>
 </div>
 </div>
-</div><main class="report-main"><div data-report-screen="detail" style="align-self: stretch; padding-top: 28px; border-top: 1px #E2E7EF solid; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 20px; display: flex">
+</div><main class="report-main layout-section"><div data-report-screen="detail" style="align-self: stretch; padding-top: 28px; border-top: 1px #E2E7EF solid; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 20px; display: flex">
 <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: flex">
-<div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
+<div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
 <div aria-level="1" role="heading" style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">보고서 상세 보기 예시</div>
 <div style="padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; background: #EDF3FF; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: flex">
 <div style="color: #2454C6; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">생성 후 상세 상태</div>
@@ -44,12 +45,12 @@
 <div style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.84px; word-wrap: break-word">생성된 보고서의 정보와 포함 증거를 확인하고 PDF를 다운로드합니다.</div>
 </div>
 <div style="align-self: stretch; padding: 28px; background: white; box-shadow: 0px 6px 20px rgba(32, 60, 112, 0.04); overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex">
-<div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
+<div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
 <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
 <div data-report-value="title" style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">디지털 증거 검증 보고서_001</div>
 <div data-report-value="id" style="color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">RPT-20261008-001</div>
 </div>
-<div style="overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 12px; display: flex">
+<div style="overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 12px; display: flex" class="layout-wrap">
 <button class="report-action" data-report-download="" style="height: 48px; padding-left: 22px; padding-right: 22px; background: #2E63E8; overflow: hidden; border-radius: 8px; outline: 1px #2E63E8 solid; outline-offset: -1px; justify-content: center; align-items: center; display: flex" type="button">
 <div style="color: white; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">PDF 다운로드</div>
 </button>
@@ -58,7 +59,7 @@
 </button>
 </div>
 </div>
-<div style="align-self: stretch; padding: 20px; background: #F6F8FB; overflow: hidden; border-radius: 12px; justify-content: flex-start; align-items: flex-start; gap: 24px; display: inline-flex">
+<div style="align-self: stretch; padding: 20px; background: #F6F8FB; overflow: hidden; border-radius: 12px; justify-content: flex-start; align-items: flex-start; gap: 24px; display: inline-flex" class="layout-grid layout-grid--4">
 <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
 <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">작성자</div>
 <div data-report-value="author" style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">소연</div>
@@ -76,13 +77,13 @@
 <div data-report-value="status" style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">✓ 전체 정상</div>
 </div>
 </div>
-<div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex">
+<div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
 <div style="color: #18243A; font-size: 16px; font-family: DM Sans; font-weight: 500; line-height: 20.80px; word-wrap: break-word">포함 증거</div>
 <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">등록·검증 해시와 상태를 확인하세요.</div>
 </div>
-<div data-report-detail-evidence-list="" style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 20px; display: inline-flex">
+<div data-report-detail-evidence-list="" style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 20px; display: inline-flex" class="layout-grid layout-grid--2">
 <div data-report-detail-evidence="0" style="flex: 1 1 0; padding: 24px; background: white; overflow: hidden; border-radius: 12px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 20px; display: inline-flex">
-<div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex">
+<div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex" class="layout-wrap">
 <div style="width: 40px; height: 44px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
 <div style="width: 22px; height: 22px; position: relative; overflow: hidden"><img alt="" src="assets/report/ae305.svg"/></div>
 </div>
@@ -122,7 +123,7 @@
 <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">현재 해시</div>
 <div style="color: #18243A; font-size: 17px; font-family: DM Sans; font-weight: 500; word-wrap: break-word">a8f5f1679c21…9d72</div>
 </div>
-<div style="align-self: stretch; padding-top: 12px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex">
+<div style="align-self: stretch; padding-top: 12px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
 <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">비교 결과: 일치</div>
 <div style="padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; background: #EAF7F0; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: flex">
 <div style="color: #21815A; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">✓ 무결성 확인</div>
@@ -131,7 +132,7 @@
 </div>
 </div>
 <div data-report-detail-evidence="1" style="flex: 1 1 0; padding: 24px; background: white; overflow: hidden; border-radius: 12px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 20px; display: inline-flex">
-<div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex">
+<div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex" class="layout-wrap">
 <div style="width: 40px; height: 44px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
 <div style="width: 22px; height: 22px; position: relative; overflow: hidden"><img alt="" src="assets/report/936d8.svg"/></div>
 </div>
@@ -171,7 +172,7 @@
 <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">현재 해시</div>
 <div style="color: #18243A; font-size: 17px; font-family: DM Sans; font-weight: 500; word-wrap: break-word">b72e4c891a45…31af</div>
 </div>
-<div style="align-self: stretch; padding-top: 12px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex">
+<div style="align-self: stretch; padding-top: 12px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
 <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">비교 결과: 일치</div>
 <div style="padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; background: #EAF7F0; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: flex">
 <div style="color: #21815A; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">✓ 무결성 확인</div>
@@ -181,11 +182,11 @@
 </div>
 </div>
 <div data-report-option-section="custody" style="align-self: stretch; padding-top: 20px; overflow: hidden; border-top: 1px #E2E7EF solid; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 18px; display: flex">
-<div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: flex-start; display: inline-flex">
+<div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: flex-start; display: inline-flex" class="layout-wrap">
 <div style="color: #18243A; font-size: 16px; font-family: DM Sans; font-weight: 500; line-height: 20.80px; word-wrap: break-word">Chain of Custody</div>
 <div data-report-value="custody-description" style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">증거 2건의 수집 및 처리 이력을 보고서와 함께 보존합니다.</div>
 </div>
-<div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex">
+<div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex" class="layout-grid layout-grid--5">
 <div style="flex: 1 1 0; padding: 16px; background: #F6F8FB; overflow: hidden; border-radius: 8px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: inline-flex">
 <div style="color: #2454C6; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">증거 등록 ↓</div>
 <div style="align-self: stretch; color: #18243A; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">2026/10/06</div>
@@ -213,7 +214,7 @@
 </div>
 </div>
 </div>
-<div style="align-self: stretch; padding-top: 4px; overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex">
+<div style="align-self: stretch; padding-top: 4px; overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex" class="layout-wrap">
 <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">검증 상태 표기</div>
 <div style="padding-left: 10px; padding-right: 10px; padding-top: 6px; padding-bottom: 6px; background: #EAF7F0; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: flex">
 <div style="color: #21815A; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">✓ 무결성 확인</div>
