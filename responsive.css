@@ -125,6 +125,28 @@
   white-space: nowrap;
 }
 
+.layout-page .home-nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  font: 500 14px/1.5 "Noto Sans KR", sans-serif;
+}
+
+.home-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--evidence-ink);
+  text-decoration: none;
+}
+
+.home-nav .home-nav-account {
+  padding-inline: 16px;
+  border-radius: 8px;
+  color: #2454c6;
+  background: var(--evidence-blue-soft);
+}
+
 .layout-page .layout-media-preview {
   aspect-ratio: 616 / 346;
   height: auto !important;

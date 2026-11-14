@@ -8,13 +8,12 @@
   <link rel="stylesheet" href="app.css">
   <script src="navigation.js" defer></script>
   <script src="app.js" defer></script>
-<link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="responsive.css">
 </head>
 <body class="layout-page">
 
-  <!-- 여기에 피그마에서 복사한 HTML 코드 넣기 -->
-<div style="width: 1440px; background: white; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex" class="layout-fluid layout-shell">
-  <div style="align-self: stretch; height: 88px; padding-left: 96px; padding-right: 96px; overflow: hidden; border-bottom: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex" class="layout-header layout-section">
+<div class="layout-shell" style="background: white">
+  <header style="height: 88px; border-bottom: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: flex" class="layout-header layout-section">
     <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex" class="layout-brand layout-wrap">
       <div style="width: 32px; height: 36px; overflow: hidden; justify-content: center; align-items: center; display: flex">
         <div style="width: 30px; height: 30px; position: relative; overflow: hidden">
@@ -24,31 +23,15 @@
       <div style="color: #18243A; font-size: 23px; font-family: Inter; font-weight: 400; word-wrap: break-word">EVIDENCE</div>
       <div style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">디지털 증거 플랫폼</div>
     </div>
-    <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 32px; display: flex" class="layout-nav layout-wrap">
-      
-      <a href="Dashboard.html" style="color: #18243A; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; text-decoration: none; display: block;">
-    대시보드
-</a>
-
-<a href="evidence.html" style="color: #18243A; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; text-decoration: none; display: block;">
-    증거 관리
-</a>
-
-<a href="verification.html" style="color: #18243A; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; text-decoration: none; display: block;">
-    검증
-</a>
-
-<a href="report.html" style="color: #18243A; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; text-decoration: none; display: block;">
-    보고서
-</a>
-      
-        <div style="height: 40px; padding-left: 16px; padding-right: 16px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: flex-start; align-items: center; display: flex">
-          <div style="color: #2454C6; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">My page</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div style="align-self: stretch; padding-top: 72px; padding-bottom: 96px; padding-left: 96px; padding-right: 96px; background: #F6F8FB; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 40px; display: flex" class="layout-section">
+    <nav aria-label="주 메뉴" class="layout-nav layout-wrap home-nav">
+      <a href="Dashboard.html">대시보드</a>
+      <a href="evidence.html">증거 관리</a>
+      <a href="verification.html">검증</a>
+      <a href="report.html">보고서</a>
+      <a href="mypage.html" class="home-nav-account">My page</a>
+    </nav>
+  </header>
+  <main style="padding-top: 72px; padding-bottom: 96px; background: #F6F8FB; flex-direction: column; align-items: flex-start; gap: 40px; display: flex" class="layout-section">
     <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
       <div style="color: #2E63E8; font-size: 13px; font-family: Noto Sans KR; font-weight: 700; word-wrap: break-word">서비스 홈</div>
       <div style="align-self: stretch; color: #18243A; font-size: 36px; font-family: Noto Sans KR; font-weight: 700; line-height: 48.60px; word-wrap: break-word">디지털 증거 관리</div>
@@ -140,8 +123,8 @@
         </div>
       </div>
     </div>
-  </div>
-  <div style="align-self: stretch; padding-top: 48px; padding-bottom: 32px; padding-left: 96px; padding-right: 96px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 32px; display: flex" class="layout-section">
+  </main>
+  <footer style="padding-top: 48px; padding-bottom: 32px; flex-direction: column; gap: 32px; display: flex" class="layout-section">
     <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: flex-start; display: inline-flex" class="layout-wrap">
       <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: inline-flex">
         <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex" class="layout-wrap">
@@ -165,7 +148,7 @@
       <div style="color: #8B96A8; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">© 2026 EVIDENCE. 모든 권리 보유.</div>
       <div style="color: #8B96A8; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">디지털 증거 수집 · 위변조 검증 플랫폼</div>
     </div>
-  </div>
+  </footer>
 </div>
 </body>
 </html>

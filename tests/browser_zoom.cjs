@@ -9,7 +9,7 @@ catch (_) {
 }
 
 const base = process.env.EVIDENCE_TEST_URL || 'http://127.0.0.1:8177/';
-const files = ['index.html', 'Dashboard.html', 'signup.html', 'evidence_file.html', 'evidence_video.html', 'evidence_url.html', 'evidence.html', 'verification.html', 'report_select.html', 'report_preview.html'];
+const files = ['index.html', 'index_home.html?demo=1', 'Dashboard.html', 'signup.html', 'evidence_file.html', 'evidence_video.html', 'evidence_url.html', 'evidence.html', 'verification.html', 'report_select.html', 'report_preview.html'];
 const zoomLevels = [0.5, 0.75, 1.25, 2, 3, 4, 5, 1];
 
 function inspectLayout() {
@@ -92,6 +92,18 @@ function textFits(element) {
         assert.equal(actual.outer, baseline.outer, label + ' changed the physical window');
         assert.ok(Math.abs(actual.inner * zoom - baseline.inner) <= 5, label + ' did not change the layout viewport');
         const issues = await page.evaluate(inspectLayout);
+        if (file === 'index_home.html?demo=1') {
+          const shell = page.locator('.layout-shell');
+          const header = await shell.locator(':scope > header').boundingBox();
+          const main = await shell.locator(':scope > main').boundingBox();
+          assert.ok(header && main, label + ' header and cards must share the page container');
+          assert.ok(Math.abs(header.x - main.x) < 2 && Math.abs(header.width - main.width) < 2, label + ' header and body edges differ');
+          if (actual.inner > 1100) {
+            const account = await shell.getByRole('link', { name: 'My page' }).boundingBox();
+            const cards = await shell.locator('main .layout-grid--4').boundingBox();
+            assert.ok(Math.abs(account.x + account.width - cards.x - cards.width) < 2, label + ' menu must align with the rightmost card');
+          }
+        }
         if (file === 'index.html') {
           const filename = page.getByText('거래 내역_2026.pdf', { exact: true }).first();
           if (!await filename.evaluate(textFits)) issues.push('sample filename is clipped');
