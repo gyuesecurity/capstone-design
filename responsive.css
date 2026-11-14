@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+/* Page zoom can leave less than 320 CSS pixels inside a desktop window. */
+.layout-page {
+  min-width: 0;
+}
+
 .layout-page :where(div, main, section, form, label) {
   min-width: 0;
 }
@@ -12,7 +17,7 @@
 .layout-page > .layout-section {
   display: flex !important;
   width: 100% !important;
-  max-width: 1440px;
+  max-width: none;
   margin-inline: auto;
 }
 
@@ -60,6 +65,15 @@
   min-width: 0;
 }
 
+.layout-file-summary > * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.layout-product-art .layout-panel > * {
+  max-width: 100%;
+}
+
 .layout-page .layout-wrap {
   flex-wrap: wrap;
   gap: 12px;
@@ -78,6 +92,10 @@
 
 .layout-page .account-header {
   width: 100%;
+}
+
+.layout-page :is(.account-actions, .completion-actions, .report-pdf-toolbar) {
+  flex-wrap: wrap;
 }
 
 .layout-page .layout-wrap[style*="height: 44px"],

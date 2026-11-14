@@ -168,7 +168,7 @@
       'complete-description': `선택한 증거 ${count}건으로 보고서를 생성했습니다.`,
       'progress-description': `선택한 ${count}건의 증거와 무결성 검증 정보를 문서에 포함하고 있습니다.`,
       'custody-description': `증거 ${count}건의 수집 및 처리 이력을 보고서와 함께 보존합니다.`,
-      'author-date': `작성자　${data.author}　　　　　　　 작성일　${data.date}`,
+      'author-date': `작성자 ${data.author} · 작성일 ${data.date}`,
       footer: `EVIDENCE · ${data.id || '미리보기'}`
     };
     all('[data-report-value]').forEach((element) => { element.textContent = values[element.dataset.reportValue] ?? ''; });
