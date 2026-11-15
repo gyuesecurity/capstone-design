@@ -1,0 +1,54 @@
+{
+  "bundleVersion": "report-v1",
+  "reportId": "RPT-9f8e7d6c5b4a39281706f5e4d3c2b1a0",
+  "created": "2026/11/12 10:05:30",
+  "timeZone": "KST",
+  "report": {
+    "title": "미기록 필드 표시 확인용 보고서",
+    "project": null,
+    "description": null,
+    "author": null,
+    "options": ["basic", "metadata", "hash", "results", "custody"]
+  },
+  "evidence": [
+    {
+      "id": "EV-1111aaaa2222bbbb3333cccc4444dddd",
+      "name": "검증 전 증거",
+      "filename": "sample_unverified.txt",
+      "size": 2048,
+      "registeredAt": "2026/11/12 09:00:00",
+      "registeredBy": null,
+      "source": null,
+      "mime": null,
+      "sha256": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+      "status": "미검증",
+      "verification": null,
+      "custodySnapshot": {
+        "sequenceNo": 1,
+        "eventHash": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+      }
+    },
+    {
+      "id": "EV-5555eeee6666ffff7777aaaa8888bbbb",
+      "name": "검증 불가 증거",
+      "filename": "sample_unreadable.bin",
+      "size": 512,
+      "registeredAt": "2026/11/12 09:30:00",
+      "registeredBy": "홍길동",
+      "source": "직접 수집",
+      "mime": "application/octet-stream",
+      "sha256": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9",
+      "status": "검증 불가",
+      "verification": {
+        "completedAt": "2026/11/12 09:45:00",
+        "performedBy": null,
+        "currentHash": null,
+        "reason": null
+      },
+      "custodySnapshot": {
+        "sequenceNo": 2,
+        "eventHash": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9"
+      }
+    }
+  ]
+}
