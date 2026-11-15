@@ -4,4 +4,10 @@ data/
 .venv/
 .deps/
 .test-data/
+node_modules/
+.env
+.env.*
+!.env.example
+secrets/*
+!secrets/*.example.json
 *.pyc
