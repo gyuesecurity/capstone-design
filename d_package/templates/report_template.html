@@ -3,50 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        /* 번들 폰트(OFL 1.1): 환경과 무관하게 동일한 한글 출력 */
-        @font-face { font-family: 'NanumGothic'; src: url('../fonts/NanumGothic-Regular.ttf'); font-weight: normal; }
-        @font-face { font-family: 'NanumGothic'; src: url('../fonts/NanumGothic-Bold.ttf'); font-weight: bold; }
-        /* 필수: 모든 페이지 바닥글 보고서 ID (reportId는 렌더러에서 RPT-<32hex> 형식 검증됨) */
+        /* 번들 폰트(OFL 1.1)만 사용: 환경과 무관하게 동일한 한글 출력 */
+        @font-face { font-family: 'NanumGothic'; src: url('fonts/NanumGothic-Regular.ttf'); font-weight: normal; }
+        @font-face { font-family: 'NanumGothic'; src: url('fonts/NanumGothic-Bold.ttf'); font-weight: bold; }
+        /* 필수: 모든 페이지 바닥글 보고서 ID (reportId는 RPT-<32hex> 형식 검증됨) */
         @page {
             size: A4;
             margin: 20mm;
             @bottom-center { content: "EVIDENCE {{ reportId }}"; font-family: 'NanumGothic'; font-size: 10pt; }
         }
-        body {
-            font-family: 'NanumGothic';
-            color: #333;
-            line-height: 1.6;
-        }
+        body { font-family: 'NanumGothic'; font-size: 10.5pt; color: #333; line-height: 1.6; }
+        h1, td { overflow-wrap: anywhere; }
         .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-        .evidence-item { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-        .hash-box { background: #f4f4f4; padding: 10px; font-family: monospace; word-break: break-all; }
-        /* 텍스트 추출을 위한 ASCII 문자열 영역 */
         .report-id { font-weight: bold; color: #d9534f; }
+        .nowrap { white-space: nowrap; }
+        table { width: 100%; border-collapse: collapse; }
+        th { width: 28%; text-align: left; vertical-align: top; font-weight: bold; }
+        .description { white-space: pre-wrap; }
+        .evidence-item { border: 1px solid #ccc; padding: 12px; margin-bottom: 16px; border-radius: 5px; }
+        .label { margin: 8px 0 0; font-weight: bold; }
+        /* 64자 해시는 줄바꿈·생략 없이 한 줄 (9pt 기준 약 110mm, 본문 폭 안) */
+        .hash { margin: 0; white-space: nowrap; font-size: 9pt; background: #f4f4f4; padding: 4px 6px; }
     </style>
 </head>
 <body>
+{%- macro v(value) -%}{% if value is none %}미기록{% else %}{{ value }}{% endif %}{%- endmacro -%}
+{%- set opts = report.options -%}
     <div class="header">
         <h1>{{ report.title }}</h1>
-        <p>{{ report.description }}</p>
     </div>
 
     <!-- 필수: 첫 페이지 본문 보고서 ID 표시 -->
-    <p class="report-id">보고서 ID: <span style="white-space: nowrap">EVIDENCE {{ reportId }}</span></p>
-    
-    <p><strong>작성자:</strong> {{ report.author }}</p>
-    <p><strong>생성 일시:</strong> {{ created }}</p>
-    <p><strong>작업 ID:</strong> {{ jobId }}</p>
+    <p class="report-id">보고서 ID: <span class="nowrap">EVIDENCE {{ reportId }}</span></p>
+
+    <table>
+        <tr><th>사건·프로젝트</th><td>{{ v(report.project) }}</td></tr>
+        <tr><th>작성자</th><td>{{ v(report.author) }}</td></tr>
+        <tr><th>생성 일시</th><td>{{ created }} ({{ timeZone }})</td></tr>
+        <tr><th>설명</th><td class="description">{{ v(report.description) }}</td></tr>
+    </table>
 
     <h2>수집된 증거 목록</h2>
     {% for item in evidence %}
     <div class="evidence-item">
-        <h3>증거 파일: {{ item.filename }} (ID: {{ item.evidenceId }})</h3>
-        <p><strong>파일 크기:</strong> {{ item.size }} Bytes</p>
-        <p><strong>Custody 기준점:</strong> {{ item.custodySnapshot }}</p>
-        
-        <h4>무결성 해시 (SHA-256)</h4>
-        <div class="hash-box">{{ item.sha256 }}</div>
+        <h3>증거 {{ loop.index }}</h3>
+        <table>
+            <tr><th>증거 ID</th><td>{{ item.id }}</td></tr>
+            <tr><th>원본 파일명</th><td>{{ item.filename }}</td></tr>
+            {% if 'basic' in opts %}
+            <tr><th>증거 이름</th><td>{{ item.name }}</td></tr>
+            <tr><th>파일 크기</th><td>{{ item.size }} bytes</td></tr>
+            {% endif %}
+            {% if 'basic' in opts or 'custody' in opts %}
+            <tr><th>등록 일시</th><td>{{ item.registeredAt }} ({{ timeZone }})</td></tr>
+            <tr><th>등록자</th><td>{{ v(item.registeredBy) }}</td></tr>
+            {% endif %}
+            {% if 'metadata' in opts %}
+            <tr><th>수집 출처</th><td>{{ v(item.source) }}</td></tr>
+            <tr><th>파일 형식</th><td>{{ v(item.mime) }}</td></tr>
+            {% endif %}
+            {% if 'results' in opts %}
+            <tr><th>검증 상태</th><td>{{ item.status }}</td></tr>
+            {% endif %}
+        </table>
+
+        {% if 'hash' in opts %}
+        <p class="label">기준 SHA-256</p>
+        <p class="hash">{{ item.sha256 }}</p>
+        {% endif %}
+
+        {% if 'results' in opts or 'custody' in opts %}
+        {% if item.verification is none %}
+        <p class="label">검증 기록: 미기록</p>
+        {% else %}
+        <p class="label">검증 기록</p>
+        <table>
+            <tr><th>검증 일시</th><td>{{ item.verification.completedAt }} ({{ timeZone }})</td></tr>
+            <tr><th>검증자</th><td>{{ v(item.verification.performedBy) }}</td></tr>
+            <tr><th>결과 설명</th><td>{{ v(item.verification.reason) }}</td></tr>
+        </table>
+        <p class="label">검증 시 계산한 SHA-256</p>
+        <p class="hash">{{ v(item.verification.currentHash) }}</p>
+        {% endif %}
+        {% endif %}
+
+        {% if 'custody' in opts %}
+        <p class="hash">관리 이력 기준점: {{ item.custodySnapshot.sequenceNo }} · {{ item.custodySnapshot.eventHash }}</p>
+        {% endif %}
     </div>
+    {% else %}
+    <p>포함된 증거 없음</p>
     {% endfor %}
 </body>
 </html>

@@ -1,27 +1,36 @@
 {
-  "bundleVersion": "v1.0",
-  "jobId": "JOB-98765",
-  "kind": "REPORT",
+  "bundleVersion": "report-v1",
   "reportId": "RPT-1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
-  "created": "2026/11/07 17:00:00",
+  "created": "2026/11/11 23:40:12",
+  "timeZone": "KST",
   "report": {
     "title": "사이버폭력 디지털 증거 수집 보고서",
+    "project": "2026-사건-001",
     "description": "카카오톡 협박 메시지 및 웹페이지 캡처 증거물 통합본",
     "author": "홍길동",
-    "options": {
-      "showVerifications": true,
-      "showCustody": true
-    }
+    "options": ["basic", "metadata", "hash", "results", "custody"]
   },
   "evidence": [
     {
-      "evidenceId": "EVI-001",
+      "id": "EV-0f3c2d1e9a8b4c7d8e6f5a4b3c2d1e0f",
+      "name": "협박 메시지 캡처",
       "filename": "chat_capture_01.png",
-      "sha256": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
       "size": 102400,
-      "custodySnapshot": "SNAP-1122",
-      "metadata": {
-        "source_url": "N/A"
+      "registeredAt": "2026/11/10 14:02:55",
+      "registeredBy": "홍길동",
+      "source": "직접 수집",
+      "mime": "image/png",
+      "sha256": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "status": "일치",
+      "verification": {
+        "completedAt": "2026/11/11 09:15:03",
+        "performedBy": "홍길동",
+        "currentHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+        "reason": null
+      },
+      "custodySnapshot": {
+        "sequenceNo": 3,
+        "eventHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
       }
     }
   ]
