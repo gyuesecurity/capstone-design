@@ -19,6 +19,7 @@ from contextlib import closing
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..access import OWNER, PERMISSIONS, active_permissions, deny, viewable_evidence
+from ..audit import append_audit
 from ..config import EMAIL_PATTERN
 from ..custody import append_event
 from ..db import Storage, get_storage, write_transaction
@@ -101,8 +102,7 @@ def update_share(evidence_id: str, payload: ShareUpdate, user: sqlite3.Row = Dep
                                (now, evidence_id, target["id"], permission))
             _permission_event(connection, evidence_id, user, target, permission, "PERMISSION_REVOKED")
         if wanted != current:
-            connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
-                               (user["id"], "share_update", evidence_id, now))
+            append_audit(connection, storage, user["id"], "share_update", evidence_id, now)
         return _share_rows(connection, evidence_id, target["id"])[0]
 
 
@@ -122,6 +122,5 @@ def revoke_share(evidence_id: str, user_id: str, user: sqlite3.Row = Depends(cur
                                   WHERE evidence_id = ? AND user_id = ? AND permission = ? AND revoked_at IS NULL""",
                                (now, evidence_id, user_id, permission))
             _permission_event(connection, evidence_id, user, target, permission, "PERMISSION_REVOKED")
-        connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
-                           (user["id"], "share_revoke", evidence_id, now))
+        append_audit(connection, storage, user["id"], "share_revoke", evidence_id, now)
     return {"id": user_id, "revoked": True}

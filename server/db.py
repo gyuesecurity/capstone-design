@@ -12,6 +12,10 @@
 
 5단계(feature/evidence-sharing)에서 바뀐 점
 - 사용자 역할(users.role)과 증거별 공유 권한 표(evidence_permissions)를 만듭니다. (마이그레이션 4)
+
+6단계(feature/evidence-encryption)에서 바뀐 점
+- 증거 파일 암호화 정보, 검증 실패 원인 코드, 활동 기록 서명 체인 컬럼을 추가합니다. (마이그레이션 5)
+- 서버 시작 때 암호화 키를 먼저 읽습니다. 키가 없으면 DB를 건드리기 전에 시작을 멈춥니다. (B 결정: fail-closed)
 """
 
 from __future__ import annotations
@@ -27,6 +31,7 @@ from pathlib import Path
 from fastapi import Request
 
 from .config import ROOT
+from .crypto import EvidenceCrypto
 
 
 @dataclass(frozen=True)
@@ -34,8 +39,9 @@ class Storage:
     """서버 하나가 쓰는 저장 위치 묶음. create_app()이 만들어 app.state.storage에 넣어 둡니다."""
 
     root: Path       # 데이터 폴더 (EVIDENCE_DATA_DIR 또는 ROOT/data)
-    files_dir: Path  # 증거 원본 파일 폴더 (root/files)
+    files_dir: Path  # 증거 원본 파일 폴더 (root/files). 6단계부터 새 파일은 암호문으로 저장
     db_path: Path    # SQLite DB 파일 (root/evidence.sqlite3)
+    crypto: EvidenceCrypto | None = None  # 6단계 추가: B의 암호화 모듈 (키를 들고 있음, 응답·로그에 내보내지 않음)
 
     def connect(self) -> sqlite3.Connection:
         """요청마다 새 DB 연결을 엽니다.
@@ -367,12 +373,97 @@ def _migration_4_sharing(connection: sqlite3.Connection) -> None:
         connection.execute(statement)
 
 
+# 검증 실패 원인 코드 (B 인터페이스 v1, 11/15 확정). 빈 문자열은 일치(MATCH)
+FAILURE_CODES = ("HASH_MISMATCH", "AUTHENTICATION_FAILED", "FILE_UNAVAILABLE")
+
+
+def _migration_5_encryption(connection: sqlite3.Connection) -> None:
+    """마이그레이션 5: 증거 파일 암호화(B 모듈) 정보 + 검증 실패 원인 코드 + 활동 기록 서명 체인
+
+    - evidence: 암호화 방식·키 버전·salt·nonce·태그·AAD 버전·저장 크기 (B의 DB 매핑 그대로)
+      이전 증거는 encryption_algorithm = 'LEGACY'(평문 파일)로 남고, 그대로 읽고 검증할 수 있습니다.
+      새 증거는 반드시 AES-256-GCM 암호화 정보가 있어야 들어갑니다. (트리거)
+      수정 금지 트리거는 새 컬럼까지 포함해서 다시 만듭니다. (2단계에 적어 둔 계획)
+    - verifications.failure_code: '' / HASH_MISMATCH / AUTHENTICATION_FAILED / FILE_UNAVAILABLE
+      상태와 원인 코드가 서로 맞아야 들어갑니다. (MATCH↔'', MISMATCH↔HASH_MISMATCH·AUTHENTICATION_FAILED,
+      UNAVAILABLE↔FILE_UNAVAILABLE). 기존 행은 ''로 남습니다.
+    - audit: B의 사용자별 HMAC 서명 체인 컬럼(previous_hash, entry_hash, key_version). 기존 행은 ''(LEGACY)
+      새 기록은 서명이 있어야 하고, previous_hash가 그 사용자의 마지막 서명과 이어져야 들어갑니다.
+    - 컬럼 추가(ALTER TABLE ADD COLUMN)는 UPDATE가 아니라서 수정 금지 트리거가 실행되지 않습니다.
+    """
+    for column, definition in {
+        "stored_size": "INTEGER",
+        "encryption_algorithm": "TEXT NOT NULL DEFAULT 'LEGACY'",
+        "encryption_key_version": "TEXT",
+        "encryption_salt": "TEXT",
+        "encryption_nonce": "TEXT",
+        "encryption_tag": "TEXT",
+        "encryption_aad_version": "TEXT NOT NULL DEFAULT ''",
+    }.items():
+        _add_column_if_missing(connection, "evidence", column, definition)
+    _add_column_if_missing(connection, "verifications", "failure_code", "TEXT NOT NULL DEFAULT ''")
+    for column in ("previous_hash", "entry_hash", "key_version"):
+        _add_column_if_missing(connection, "audit", column, "TEXT NOT NULL DEFAULT ''")
+
+    codes = ", ".join(f"'{code}'" for code in ("",) + FAILURE_CODES)  # 코드에 적힌 고정 값만 사용
+    zero_hash = "0" * 64
+    triggers = {
+        # evidence 수정 금지 (2단계 트리거를 새 컬럼까지 포함해서 다시 만듦). 바꿀 수 있는 것은 여전히 verification_status 하나
+        "evidence_block_update": """
+            CREATE TRIGGER evidence_block_update BEFORE UPDATE ON evidence
+            WHEN NEW.id IS NOT OLD.id OR NEW.owner_id IS NOT OLD.owner_id OR NEW.name IS NOT OLD.name
+              OR NEW.filename IS NOT OLD.filename OR NEW.stored_name IS NOT OLD.stored_name
+              OR NEW.type IS NOT OLD.type OR NEW.mime IS NOT OLD.mime OR NEW.size IS NOT OLD.size
+              OR NEW.kind IS NOT OLD.kind OR NEW.source IS NOT OLD.source
+              OR NEW.description IS NOT OLD.description OR NEW.memo IS NOT OLD.memo
+              OR NEW.registered_at IS NOT OLD.registered_at OR NEW.sha256 IS NOT OLD.sha256
+              OR NEW.registered_by_name IS NOT OLD.registered_by_name
+              OR NEW.stored_size IS NOT OLD.stored_size OR NEW.encryption_algorithm IS NOT OLD.encryption_algorithm
+              OR NEW.encryption_key_version IS NOT OLD.encryption_key_version
+              OR NEW.encryption_salt IS NOT OLD.encryption_salt OR NEW.encryption_nonce IS NOT OLD.encryption_nonce
+              OR NEW.encryption_tag IS NOT OLD.encryption_tag OR NEW.encryption_aad_version IS NOT OLD.encryption_aad_version
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: evidence 정보는 수정할 수 없습니다 (verification_status만 변경 가능)'); END""",
+        # 새 증거는 암호화 정보가 모두 있어야 함 (평문 저장 금지)
+        "evidence_require_encryption": """
+            CREATE TRIGGER evidence_require_encryption BEFORE INSERT ON evidence
+            WHEN NEW.encryption_algorithm IS NOT 'AES-256-GCM'
+              OR coalesce(NEW.encryption_key_version, '') = '' OR coalesce(NEW.encryption_salt, '') = ''
+              OR coalesce(NEW.encryption_nonce, '') = '' OR coalesce(NEW.encryption_tag, '') = ''
+              OR NEW.encryption_aad_version IS NOT 'v1' OR NEW.stored_size IS NULL
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 새 증거는 AES-256-GCM 암호화 정보가 있어야 합니다'); END""",
+        # 검증 실패 원인 코드: 허용 목록 + 상태와 짝이 맞는지
+        "verifications_check_failure_code": f"""
+            CREATE TRIGGER verifications_check_failure_code BEFORE INSERT ON verifications
+            WHEN NEW.failure_code NOT IN ({codes})
+              OR (NEW.status = 'MATCH' AND NEW.failure_code != '')
+              OR (NEW.status = 'MISMATCH' AND NEW.failure_code NOT IN ('HASH_MISMATCH', 'AUTHENTICATION_FAILED'))
+              OR (NEW.status = 'UNAVAILABLE' AND NEW.failure_code != 'FILE_UNAVAILABLE')
+            BEGIN SELECT RAISE(ABORT, 'INVALID: verifications.failure_code가 허용 목록에 없거나 상태와 맞지 않습니다'); END""",
+        # 활동 기록: 새 기록은 서명이 있어야 함
+        "audit_require_signature": """
+            CREATE TRIGGER audit_require_signature BEFORE INSERT ON audit
+            WHEN length(NEW.entry_hash) != 64 OR NEW.entry_hash GLOB '*[^0-9a-f]*' OR NEW.key_version = ''
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 새 활동 기록에는 서명(entry_hash)과 키 버전이 필요합니다'); END""",
+        # 활동 기록: 사용자별 체인 연결 (그 사용자의 마지막 서명된 기록과 이어져야 함. 첫 기록은 0 64개)
+        "audit_check_link": f"""
+            CREATE TRIGGER audit_check_link BEFORE INSERT ON audit
+            WHEN NEW.previous_hash IS NOT COALESCE((
+                SELECT entry_hash FROM audit WHERE user_id = NEW.user_id AND entry_hash != ''
+                ORDER BY id DESC LIMIT 1), '{zero_hash}')
+            BEGIN SELECT RAISE(ABORT, 'INVALID: audit.previous_hash가 그 사용자의 마지막 서명과 다릅니다'); END""",
+    }
+    for name, statement in triggers.items():
+        connection.execute(f"DROP TRIGGER IF EXISTS {name}")
+        connection.execute(statement)
+
+
 # (버전 번호, 마이그레이션 함수). 번호는 1부터 빈칸 없이 올라갑니다.
 MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [
     (1, _migration_1_base_schema),
     (2, _migration_2_immutable_records),
     (3, _migration_3_chain_of_custody),
     (4, _migration_4_sharing),
+    (5, _migration_5_encryption),
 ]
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 
@@ -431,7 +522,11 @@ def open_storage(data_dir: str | Path | None = None) -> Storage:
     root = Path(data_dir or os.environ.get("EVIDENCE_DATA_DIR", ROOT / "data")).resolve()
     files_dir = root / "files"
     files_dir.mkdir(parents=True, exist_ok=True)
-    storage = Storage(root=root, files_dir=files_dir, db_path=root / "evidence.sqlite3")
+    # 6단계: 키를 먼저 읽습니다. 키가 없거나 설정이 틀리면 KeyConfigurationError로 여기서 멈추고 DB는 건드리지 않습니다.
+    # 키 소스: EVIDENCE_MASTER_KEYS_FILE(시연·운영) / EVIDENCE_MASTER_KEYS / EVIDENCE_MASTER_KEY 중 하나,
+    # 또는 개발 때만 EVIDENCE_ALLOW_DEV_KEY_GENERATION=true (root/keys/에 개발용 키 생성)
+    crypto = EvidenceCrypto.from_storage(root)
+    storage = Storage(root=root, files_dir=files_dir, db_path=root / "evidence.sqlite3", crypto=crypto)
     migrate(storage)
     return storage
 

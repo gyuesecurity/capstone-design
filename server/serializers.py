@@ -3,6 +3,7 @@
 기존 응답 필드 이름과 값은 바꾸지 않습니다. (프론트 A가 이 이름에 맞춰 화면을 그립니다)
 3단계에서 A API 명세에 정한 필드 2개(registeredBy, performedBy)만 추가했습니다.
 5단계에서 증거마다 권한 필드(access)를 추가했습니다. (A API 명세 3장)
+6단계에서 검증 결과에 실패 원인 코드(failureCode), 증거에 암호화 정보(encryption: 알고리즘·키 버전)를 추가했습니다.
 """
 
 from __future__ import annotations
@@ -21,6 +22,9 @@ def verification_dict(row: sqlite3.Row, filename: str = "") -> dict:
         "filename": filename,
         # 검증 당시 검증자 이름 (3단계 추가). 3단계 이전 기록은 null → 화면에서 "미기록"
         "performedBy": row["performed_by_name"],
+        # 실패 원인 코드 (6단계 추가, B 인터페이스 v1): HASH_MISMATCH / AUTHENTICATION_FAILED / FILE_UNAVAILABLE
+        # 일치(MATCH)이거나 6단계 이전 기록이면 null
+        "failureCode": row["failure_code"] or None,
     }
 
 
@@ -43,6 +47,9 @@ def evidence_dict(connection: sqlite3.Connection, row: sqlite3.Row, access: dict
         "date": row["registered_at"][:10], "sha256": row["sha256"],
         "verificationStatus": row["verification_status"], "status": STATUS_LABELS[row["verification_status"]],
         "lastVerification": history[0] if history else None, "verifications": history, "storage": "server",
+        # 암호화 정보 (6단계 추가). 11/15 B 결정으로 알고리즘·키 버전만 내보내고 salt·nonce·태그는 DB에만 둡니다.
+        # 6단계 이전 평문 증거는 {"algorithm": "LEGACY", "keyVersion": null}
+        "encryption": {"algorithm": row["encryption_algorithm"], "keyVersion": row["encryption_key_version"]},
     }
     if access is not None:
         result["access"] = access

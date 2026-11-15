@@ -14,6 +14,10 @@ from unittest import mock
 
 import httpx
 
+import os
+# 6단계: 키가 없으면 서버가 시작하지 않으므로, 테스트에서는 임시 데이터 폴더에 개발용 키를 자동 생성합니다. (키 값은 저장소에 없음)
+os.environ.setdefault("EVIDENCE_ALLOW_DEV_KEY_GENERATION", "true")
+
 from server import db, main
 
 # 2단계까지 쓰던 테이블 구조 (마이그레이션 전 DB를 그대로 흉내 내기 위해 코드와 따로 적어 둠)
@@ -159,10 +163,12 @@ class MigrationTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], db.SCHEMA_VERSION)
             after = self.snapshot_rows(connection)
             # ALTER TABLE ADD COLUMN은 수정 금지 트리거를 실행하지 않고, 기존 값은 그대로이며 새 컬럼만 NULL로 붙음
-            self.assertEqual([tuple(row[:-1]) for row in after["evidence"]], [tuple(row) for row in before["evidence"]])
-            self.assertEqual([tuple(row[:-1]) for row in after["verifications"]], [tuple(row) for row in before["verifications"]])
-            self.assertIsNone(after["evidence"][0][-1])
-            self.assertIsNone(after["verifications"][0][-1])
+            # 6단계부터 뒤에 컬럼이 더 붙으므로 "원래 컬럼 수"까지만 비교합니다. 바로 다음 칸이 3단계 이름 컬럼입니다.
+            evidence_columns, verification_columns = len(before["evidence"][0]), len(before["verifications"][0])
+            self.assertEqual([tuple(row[:evidence_columns]) for row in after["evidence"]], [tuple(row) for row in before["evidence"]])
+            self.assertEqual([tuple(row[:verification_columns]) for row in after["verifications"]], [tuple(row) for row in before["verifications"]])
+            self.assertIsNone(after["evidence"][0][evidence_columns])          # registered_by_name
+            self.assertIsNone(after["verifications"][0][verification_columns])  # performed_by_name
             with self.assertRaises(sqlite3.IntegrityError):
                 connection.execute("UPDATE evidence SET name = 'x'")
 

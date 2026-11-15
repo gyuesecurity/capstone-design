@@ -1,6 +1,7 @@
 """계정 인증 API: 회원가입, 로그인, 로그아웃, 비밀번호 변경
 
 3단계: 쓰기는 모두 write_transaction(BEGIN IMMEDIATE)으로 감쌉니다. 응답과 오류 문구는 그대로입니다.
+6단계: 활동 기록은 append_audit(서명 체인)로만 씁니다.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from contextlib import closing
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 
+from ..audit import append_audit
 from ..config import EMAIL_PATTERN
 from ..db import Storage, get_storage, write_transaction
 from ..schemas import Credentials, PasswordChange, Registration
@@ -36,8 +38,8 @@ def register(payload: Registration, storage: Storage = Depends(get_storage)):
         except sqlite3.IntegrityError:
             raise HTTPException(409, "이미 등록된 이메일입니다.") from None
         token = issue_session(connection, user_id)
-        connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)", (user_id, "register", utc_now()))
-        connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)", (user_id, "login", utc_now()))
+        append_audit(connection, storage, user_id, "register")
+        append_audit(connection, storage, user_id, "login")
     return {"token": token, "user": {"id": user_id, "email": email, "name": name}}
 
 
@@ -53,7 +55,7 @@ def login(payload: Credentials, storage: Storage = Depends(get_storage)):
             raise HTTPException(401, "이메일 또는 비밀번호가 올바르지 않습니다.")
         with write_transaction(connection):
             token = issue_session(connection, user["id"])
-            connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)", (user["id"], "login", utc_now()))
+            append_audit(connection, storage, user["id"], "login")
     # role: 5단계 추가 (설계 문서 3장 "로그인·내 정보 응답에 role 추가"). ADMIN 특권은 아직 없음
     return {"token": token, "user": {"id": user["id"], "email": user["email"], "name": user["name"], "role": user["role"]}}
 
@@ -68,7 +70,7 @@ def logout(
     token = authorization[7:].strip()
     with closing(storage.connect()) as connection, write_transaction(connection):
         connection.execute("DELETE FROM sessions WHERE token_hash = ?", (hashlib.sha256(token.encode()).hexdigest(),))
-        connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)", (user["id"], "logout", utc_now()))
+        append_audit(connection, storage, user["id"], "logout")
     return {"ok": True}
 
 
@@ -86,6 +88,5 @@ def change_password(
     new_hash = password_hash(payload.new_password)  # 시간이 걸리는 계산은 쓰기 잠금 밖에서
     with closing(storage.connect()) as connection, write_transaction(connection):
         connection.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user["id"]))
-        connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)",
-                           (user["id"], "password_change", utc_now()))
+        append_audit(connection, storage, user["id"], "password_change")
     return {"ok": True}

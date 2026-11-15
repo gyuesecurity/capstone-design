@@ -2,6 +2,7 @@
 
 3단계: 쓰기는 write_transaction(BEGIN IMMEDIATE)으로 감쌉니다. 응답과 오류 문구는 그대로입니다.
 이름을 바꿔도 과거 증거·검증 기록의 이름(registered_by_name, performed_by_name)은 바뀌지 않습니다.
+6단계: 활동 기록은 append_audit(서명 체인)로만 씁니다.
 """
 
 from __future__ import annotations
@@ -11,9 +12,10 @@ from contextlib import closing
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from ..audit import append_audit, audit_integrity
 from ..db import Storage, get_storage, write_transaction
 from ..schemas import ProfileUpdate
-from ..security import current_user, utc_now
+from ..security import current_user
 
 router = APIRouter()
 
@@ -38,19 +40,20 @@ def update_profile(
         raise HTTPException(422, "이름은 1~100자로 입력해 주세요.")
     with closing(storage.connect()) as connection, write_transaction(connection):
         connection.execute("UPDATE users SET name = ? WHERE id = ?", (name, user["id"]))
-        connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)",
-                           (user["id"], "profile_update", utc_now()))
+        append_audit(connection, storage, user["id"], "profile_update")
     return {"id": user["id"], "email": user["email"], "name": name, "createdAt": user["created_at"]}
 
 
 # 내 활동 기록 최근 100건 (마이페이지). 증거 이름은 내가 소유한 증거일 때만 붙입니다. (읽기만 함)
+# 6단계: 기록마다 서명 체인 검사 결과(chainStatus: VALID / INVALID / LEGACY / KEY_UNAVAILABLE)를 붙입니다. (B 코드와 같음)
 @router.get("/api/audit")
 def audit_log(user: sqlite3.Row = Depends(current_user), storage: Storage = Depends(get_storage)):
     with closing(storage.connect()) as connection:
-        rows = connection.execute("""SELECT audit.action, audit.evidence_id, audit.created_at,
+        integrity = audit_integrity(connection, storage, user["id"])
+        rows = connection.execute("""SELECT audit.id, audit.action, audit.evidence_id, audit.created_at,
             evidence.name AS evidence_name, evidence.filename AS evidence_filename
             FROM audit LEFT JOIN evidence ON evidence.id = audit.evidence_id AND evidence.owner_id = audit.user_id
             WHERE audit.user_id = ? ORDER BY audit.id DESC LIMIT 100""", (user["id"],)).fetchall()
         return [{"action": row["action"], "evidenceId": row["evidence_id"],
                  "evidenceName": row["evidence_name"], "evidenceFilename": row["evidence_filename"],
-                 "createdAt": row["created_at"]} for row in rows]
+                 "createdAt": row["created_at"], "chainStatus": integrity[row["id"]]} for row in rows]

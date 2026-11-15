@@ -67,13 +67,23 @@ capstone-Backend/
 ├── .gitignore          # Git에 올리지 않을 파일 목록
 ├── README.md           # 이 문서
 ├── requirements.txt    # 백엔드 실행에 필요한 패키지 목록
+├── docs/
+│   └── crypto-interface-v1.md   # B 암호화 모듈 인터페이스 (B 작성)
 ├── scripts/
-│   └── dev_proxy.py    # 개발용 프록시 (화면 + /api 연결)
+│   ├── dev_proxy.py             # 개발용 프록시 (화면 + /api 연결)
+│   └── generate_demo_key.py     # 시연용 키링 파일 만들기 (B 작성)
+├── secrets/
+│   └── evidence-master-keys.example.json  # 키링 파일 견본 (실제 키 없음)
 ├── server/
-│   ├── __init__.py
-│   └── main.py         # FastAPI 서버 (API만 제공)
-└── tests/
-    └── test_api.py     # API 테스트
+│   ├── main.py         # 서버 조립 (API만 제공)
+│   ├── config.py · db.py · security.py · schemas.py · serializers.py
+│   ├── custody.py      # Chain of Custody
+│   ├── access.py       # 증거별 권한 (공유)
+│   ├── crypto.py       # 해시·암호화 모듈 (B 작성, 수정하지 않음)
+│   ├── stored_evidence.py  # 저장 파일 암호화 연결 (AAD, 복호화)
+│   ├── audit.py        # 활동 기록 서명 체인
+│   └── routers/        # 기능별 API
+└── tests/              # 자동 테스트
 ```
 
 ## 환경변수
@@ -84,7 +94,12 @@ capstone-Backend/
 | --- | --- | --- |
 | `EVIDENCE_DATA_DIR` | 사용 중 | 증거 파일과 DB 저장 폴더. 비우면 `data/` |
 | `EVIDENCE_CORS_ORIGINS` | 보류 (현재 코드에서 사용하지 않음) | 개발 중에는 개발용 프록시로 대체. 배포 방식이 정해지면 다시 결정 |
-| `EVIDENCE_MASTER_KEY` | 6단계 예정 | 증거 파일 암호화 마스터 키 |
+| `EVIDENCE_MASTER_KEYS_FILE` | 사용 중 (시연·운영) | 암호화 키링 JSON 파일 경로. **데이터 폴더 밖**에 둡니다. Docker에서는 `/run/secrets/evidence_master_keys` |
+| `EVIDENCE_ALLOW_DEV_KEY_GENERATION` | 사용 중 (개발 전용) | `true`면 키가 없을 때 데이터 폴더의 `keys/`에 개발용 키를 만듭니다. 시연·운영에서는 쓰지 않습니다 |
+| `EVIDENCE_KEY_VERSION` | 선택 | 새 파일을 암호화할 키 버전. 기본 `v1` (MVP는 v1 하나만 사용) |
+| `EVIDENCE_MASTER_KEYS`, `EVIDENCE_MASTER_KEY` | 호환용 | 키링 JSON 또는 키 하나를 환경변수로 직접 넣는 방식. 키 소스는 **하나만** 설정합니다 |
+
+> **키가 없으면 서버가 시작하지 않습니다.** (6단계부터, B 결정) 개발할 때는 아래 실행 방법처럼 `EVIDENCE_ALLOW_DEV_KEY_GENERATION=true`를 붙이고, 시연 PC에서는 키링 파일을 만들어 `EVIDENCE_MASTER_KEYS_FILE`로 지정합니다.
 
 실제 비밀번호, 암호화 키, API 키는 이 저장소의 어떤 파일에도 작성하지 않습니다.
 
@@ -108,14 +123,30 @@ Windows PowerShell
 
 ```powershell
 $env:EVIDENCE_DATA_DIR = "C:\capstone-data\dev"
+$env:EVIDENCE_ALLOW_DEV_KEY_GENERATION = "true"
 uvicorn server.main:app --host 127.0.0.1 --port 8000
 ```
 
 macOS / Linux
 
 ```bash
-EVIDENCE_DATA_DIR=~/capstone-data/dev uvicorn server.main:app --host 127.0.0.1 --port 8000
+EVIDENCE_DATA_DIR=~/capstone-data/dev EVIDENCE_ALLOW_DEV_KEY_GENERATION=true uvicorn server.main:app --host 127.0.0.1 --port 8000
 ```
+
+개발용 키는 `EVIDENCE_DATA_DIR` 안의 `keys/`에 만들어집니다. 이 키를 지우면 그 폴더의 암호화된 증거를 다시 열 수 없습니다.
+
+#### 시연 PC에서 실행할 때 (키링 파일)
+
+키는 데이터 폴더와 **다른 곳**에 만듭니다. 스크립트는 키를 화면에 출력하지 않고, 이미 있는 파일은 덮어쓰지 않습니다.
+
+```powershell
+python scripts/generate_demo_key.py --output "C:\capstone-secrets\evidence-master-keys.json"
+$env:EVIDENCE_DATA_DIR = "C:\capstone-data\demo"
+$env:EVIDENCE_MASTER_KEYS_FILE = "C:\capstone-secrets\evidence-master-keys.json"
+uvicorn server.main:app --host 127.0.0.1 --port 8000
+```
+
+키링 파일은 Git에 올리지 않습니다. (`secrets/`의 실제 파일과 `*.key`는 `.gitignore`로 제외)
 
 `http://127.0.0.1:8000/api/health`에서 `{"backend": true, ...}`가 보이면 정상입니다. API 문서는 `http://127.0.0.1:8000/docs`에서 볼 수 있습니다.
 
@@ -154,6 +185,8 @@ http://127.0.0.1:5500/index.html
 ```bash
 python -m unittest discover -s tests -v
 ```
+
+테스트는 실행할 때마다 임시 폴더에 개발용 키를 새로 만들어 씁니다. 따로 키를 설정할 필요가 없습니다.
 
 ## 개발 방식
 

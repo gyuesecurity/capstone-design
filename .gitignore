@@ -27,6 +27,9 @@ data/
 *.pem
 *.p12
 *.pfx
+# 6단계: 시연용 키링 파일(secrets/)은 견본(*.example.json)만 올립니다.
+secrets/*
+!secrets/*.example.json
 
 # [4] 테스트 중 생기는 임시 데이터
 # 기존 API 테스트는 .test-data/ 에 임시 저장소를 만듭니다.

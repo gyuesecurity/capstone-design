@@ -16,6 +16,10 @@ from unittest import mock
 
 import httpx
 
+import os
+# 6단계: 키가 없으면 서버가 시작하지 않으므로, 테스트에서는 임시 데이터 폴더에 개발용 키를 자동 생성합니다. (키 값은 저장소에 없음)
+os.environ.setdefault("EVIDENCE_ALLOW_DEV_KEY_GENERATION", "true")
+
 from server import custody, db, main
 
 ZERO = "0" * 64
