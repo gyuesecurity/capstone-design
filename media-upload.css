@@ -1,0 +1,73 @@
+/* Actual-file media selection and preview. */
+[data-media-empty][hidden], [data-media-card][hidden], [data-media-video][hidden], [data-media-audio][hidden], [data-media-error][hidden] {
+  display: none !important;
+}
+
+.media-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 24px;
+  width: 100%;
+}
+
+.media-upload-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+  width: 100%;
+  padding: 28px;
+  border: 1px solid var(--evidence-line, #e2e7ef);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(32, 60, 112, .04);
+  color: var(--evidence-ink, #18243a);
+  font-family: "Noto Sans KR", "DM Sans", Arial, sans-serif;
+}
+
+.media-upload-heading, .media-upload-actions, .media-upload-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.media-upload-heading h2 { margin: 0; font-size: 24px; line-height: 1.4; font-weight: 500; }
+.media-upload-badge { padding: 6px 10px; border-radius: 100px; background: #edf3ff; color: #2454c6; font-size: 12px; line-height: 1.5; }
+.media-upload-readonly { color: #647187; font-size: 12px; }
+.media-upload-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-height: 320px; padding: 28px 20px; border: 1px dashed #b8ccf7; border-radius: 12px; background: #f9fbff; text-align: center; }
+.media-upload-empty h3 { margin: 0; font-size: 18px; font-weight: 500; line-height: 1.5; }
+.media-upload-empty p, .media-upload-empty small, .media-upload-note { margin: 0; color: #647187; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.media-upload-selected { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.media-upload-video { display: block; width: 100%; min-width: 0; max-height: 380px; aspect-ratio: 16 / 9; object-fit: contain; border-radius: 12px; background: #18243a; }
+.media-upload-audio { display: block; width: 100%; min-width: 0; margin-block: 24px; }
+.media-upload-file { min-width: 0; overflow-wrap: anywhere; }
+.media-upload-file strong { display: block; font-size: 16px; line-height: 1.6; font-weight: 500; }
+.media-upload-file p { margin: 6px 0 0; color: #647187; font-size: 13px; line-height: 1.6; }
+.media-upload-actions { justify-content: flex-start; }
+.media-upload-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; max-width: 100%; padding: 11px 18px; border: 1px solid transparent; border-radius: 8px; background: #2e63e8; color: #fff; font: 500 14px/1.5 "Noto Sans KR", "DM Sans", Arial, sans-serif; text-decoration: none; cursor: pointer; }
+.media-upload-button--outline { border-color: #e2e7ef; background: #fff; color: #18243a; }
+.media-upload-button:disabled { opacity: .5; cursor: default !important; }
+.media-upload-button:focus-visible { outline: 3px solid #b8ccf7; outline-offset: 3px; }
+.media-upload-message { margin: 0; padding: 14px 16px; border: 1px solid #ead6b2; border-radius: 10px; background: #fbf5e9; color: #815d20; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.media-upload-metadata { display: flex; flex-direction: column; width: 100%; margin: 0; }
+.media-upload-metadata > div { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 14px; padding-block: 16px; border-bottom: 1px solid #e2e7ef; }
+.media-upload-metadata dt { color: #647187; font-size: 13px; line-height: 1.7; }
+.media-upload-metadata dd { min-width: 0; margin: 0; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.media-upload-integrity { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; }
+.media-upload-integrity > div { display: flex; flex-direction: column; gap: 10px; padding: 18px; border: 0; border-radius: 12px; background: #f6f8fb; }
+[data-media-meta="hash"] { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+.media-upload-footer { width: 100%; padding-block: 4px 8px; }
+
+@media (max-width: 760px) {
+  .media-upload-grid, .media-upload-integrity { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .media-upload-panel { padding: 20px; gap: 20px; }
+  .media-upload-empty { min-height: 280px; padding: 24px 16px; }
+  .media-upload-heading h2 { font-size: 22px; }
+}
+
+@media (max-width: 360px) {
+  .media-upload-metadata > div { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+}

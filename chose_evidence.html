@@ -5,9 +5,10 @@
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0">
   <title>캡디아메리카</title>
-  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="app.css?v=operation-feedback-1">
   <script src="navigation.js" defer></script>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=evidence-list-1" defer></script>
+<link rel="stylesheet" href="feature-status.css?v=pending-features-1">
 <link rel="stylesheet" href="responsive.css">
 </head>
 <body class="layout-page">
@@ -17,9 +18,7 @@
   <div style="align-self: stretch; height: 88px; padding-left: 96px; padding-right: 96px; background: white; overflow: hidden; border-bottom: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex" class="layout-header layout-section">
     <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex" class="layout-brand layout-wrap">
       <div style="width: 32px; height: 36px; overflow: hidden; justify-content: center; align-items: center; display: flex">
-        <div style="width: 30px; height: 30px; position: relative; overflow: hidden">
-          <div style="width: 20px; height: 25px; left: 5px; top: 2.50px; position: absolute; outline: 1.70px #2E63E8 solid; outline-offset: -0.85px"></div>
-        </div>
+        <div style="width: 30px; height: 30px; position: relative; overflow: hidden"><img src="assets/report/1befa.svg" alt="" aria-hidden="true" width="30" height="30" style="display: block; flex-shrink: 0"></div>
       </div>
       <div style="color: #18243A; font-size: 23px; font-family: Inter; font-weight: 400; word-wrap: break-word">EVIDENCE</div>
       <div style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">디지털 증거 플랫폼</div>
@@ -84,7 +83,7 @@
             </div>
             <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 8px; display: flex">
               <div style="align-self: stretch; color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">이미지 증거</div>
-              <div style="align-self: stretch; color: #647187; font-size: 14px; font-family: Noto Sans KR; font-weight: 400; line-height: 23.80px; word-wrap: break-word">사진 및 이미지 파일을 등록하고<br/>EXIF 등의 메타데이터를 확인합니다.</div>
+              <div style="align-self: stretch; color: #647187; font-size: 14px; font-family: Noto Sans KR; font-weight: 400; line-height: 23.80px; word-wrap: break-word">사진 및 이미지 파일을 등록하고<br/>파일 정보와 해시를 확인합니다. EXIF 추출은 준비 중입니다.</div>
             </div>
           </div>
           <div style="align-self: stretch; padding-top: 14px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: flex-start; display: inline-flex">
@@ -131,9 +130,7 @@
     </div>
     <div style="align-self: stretch; padding: 24px; background: #EDF3FF; overflow: hidden; border-radius: 16px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 18px; display: flex">
       <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: inline-flex" class="layout-wrap">
-        <div style="width: 18px; height: 18px; position: relative; overflow: hidden">
-          <div style="width: 15px; height: 15px; left: 1.50px; top: 1.50px; position: absolute; outline: 1.70px #2E63E8 solid; outline-offset: -0.85px"></div>
-        </div>
+        <div style="width: 18px; height: 18px; position: relative; overflow: hidden"><svg data-icon="info" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E63E8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></svg></div>
         <div style="color: #18243A; font-size: 13px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">증거 유형에 따라 수집되는 정보가 다를 수 있습니다.</div>
         <div style="flex: 1 1 0; overflow: hidden; justify-content: flex-end; align-items: flex-start; display: flex">
           <div style="color: #2454C6; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">유형에 맞는 정보가 자동으로 기록됩니다.</div>
@@ -146,7 +143,7 @@
         </div>
         <div style="width: 280px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 7px; display: inline-flex">
           <div style="color: #18243A; font-size: 12px; font-family: Noto Sans KR; font-weight: 700; word-wrap: break-word">이미지 증거</div>
-          <div style="align-self: stretch; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">파일 정보 + EXIF + SHA-256</div>
+          <div style="align-self: stretch; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">파일 정보 + SHA-256 · EXIF 준비 중</div>
         </div>
         <div style="width: 560px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 7px; display: inline-flex" class="layout-fluid">
           <div style="color: #18243A; font-size: 12px; font-family: Noto Sans KR; font-weight: 700; word-wrap: break-word">URL 수집</div>

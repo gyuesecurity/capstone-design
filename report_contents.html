@@ -5,10 +5,10 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>포함 내용 | EVIDENCE</title>
-<link href="app.css" rel="stylesheet"/>
+<link href="app.css?v=operation-feedback-1" rel="stylesheet"/>
 <script defer="" src="navigation.js"></script>
-<script defer="" src="app.js"></script>
-<link href="report.css" rel="stylesheet"/><script defer="" src="report.js"></script><link rel="stylesheet" href="responsive.css">
+<script defer="" src="app.js?v=evidence-list-1"></script>
+<link href="report.css?v=operation-feedback-1" rel="stylesheet"/><script defer="" src="report.js?v=evidence-list-1"></script><link rel="stylesheet" href="responsive.css">
 </head>
 <body data-report-page="contents" class="layout-page"><div class="report-shell layout-shell" style="width: 100%; min-height: 100vh; background: #F6F8FB; display: flex; flex-direction: column"><div class="report-nav layout-header layout-section" style="align-self: stretch; height: 88px; padding-left: 96px; padding-right: 96px; background: white; overflow: hidden; border-bottom: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex">
 <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex" class="layout-brand layout-wrap">
@@ -42,7 +42,7 @@
 <div style="color: #2454C6; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">3단계 화면 예시</div>
 </div>
 </div>
-<div style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.84px; word-wrap: break-word">증거의 원본성과 처리 이력을 설명할 정보를 보고서에 포함합니다.</div>
+<div style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.84px; word-wrap: break-word">보고서에 포함할 증거 정보와 검증 항목을 선택하세요.</div>
 </div>
 <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 12px; display: flex">
 <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 16px; display: inline-flex" class="layout-grid layout-grid--2">
@@ -50,7 +50,7 @@
 <label class="report-checkbox"><input aria-label="증거 기본 정보" checked="" data-report-option="basic" type="checkbox"/><span class="report-checkbox-mark"><img alt="" src="assets/report/b1e8d.svg"/></span></label>
 <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 7px; display: inline-flex">
 <div style="color: #18243A; font-size: 16px; font-family: DM Sans; font-weight: 500; line-height: 20.80px; word-wrap: break-word">증거 기본 정보</div>
-<div style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">파일명, 유형, 크기, 증거 ID, 수집 일시</div>
+<div style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">파일명, 유형, 크기, 증거 ID, 등록 일시</div>
 </div>
 </div>
 <div class="report-option layout-wrap" style="flex: 1 1 0; padding: 20px; background: white; overflow: hidden; border-radius: 12px; outline: 1px #B8CCF7 solid; outline-offset: -1px; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
@@ -69,11 +69,11 @@
 <div style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">파일 및 미디어 메타데이터</div>
 </div>
 </div>
-<div class="report-option layout-wrap" style="flex: 1 1 0; padding: 20px; background: white; overflow: hidden; border-radius: 12px; outline: 1px #B8CCF7 solid; outline-offset: -1px; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
-<label class="report-checkbox"><input aria-label="EXIF 정보" checked="" data-report-option="exif" type="checkbox"/><span class="report-checkbox-mark"><img alt="" src="assets/report/b1e8d.svg"/></span></label>
+<div aria-disabled="true" class="report-option layout-wrap" data-report-pending="exif" style="flex: 1 1 0; padding: 20px; background: white; overflow: hidden; border-radius: 12px; outline: 1px #B8CCF7 solid; outline-offset: -1px; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
+<label class="report-checkbox"><input aria-describedby="report-option-exif-note" aria-label="EXIF 정보" data-report-option="exif" disabled="" type="checkbox"/><span class="report-checkbox-mark"><img alt="" src="assets/report/b1e8d.svg"/></span></label>
 <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 7px; display: inline-flex">
-<div style="color: #18243A; font-size: 16px; font-family: DM Sans; font-weight: 500; line-height: 20.80px; word-wrap: break-word">EXIF 정보</div>
-<div style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">이미지 증거의 EXIF 정보</div>
+<div style="color: #18243A; font-size: 16px; font-family: DM Sans; font-weight: 500; line-height: 20.80px; word-wrap: break-word">EXIF 정보<span class="report-option-pending-badge">준비 중</span></div>
+<div id="report-option-exif-note" style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">촬영 일시·카메라·GPS 정보 추출 기능은 준비 중입니다.</div>
 </div>
 </div>
 </div>
@@ -94,11 +94,11 @@
 </div>
 </div>
 <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 16px; display: inline-flex" class="layout-grid layout-grid--2">
-<div class="report-option layout-wrap" style="flex: 1 1 0; padding: 20px; background: white; overflow: hidden; border-radius: 12px; outline: 1px #B8CCF7 solid; outline-offset: -1px; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
-<label class="report-checkbox"><input aria-label="Chain of Custody" checked="" data-report-option="custody" type="checkbox"/><span class="report-checkbox-mark"><img alt="" src="assets/report/b1e8d.svg"/></span></label>
+<div aria-disabled="true" class="report-option layout-wrap" data-report-pending="custody" style="flex: 1 1 0; padding: 20px; background: white; overflow: hidden; border-radius: 12px; outline: 1px #B8CCF7 solid; outline-offset: -1px; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">
+<label class="report-checkbox"><input aria-describedby="report-option-custody-note" aria-label="Chain of Custody" data-report-option="custody" disabled="" type="checkbox"/><span class="report-checkbox-mark"><img alt="" src="assets/report/b1e8d.svg"/></span></label>
 <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 7px; display: inline-flex">
-<div style="color: #18243A; font-size: 16px; font-family: DM Sans; font-weight: 500; line-height: 20.80px; word-wrap: break-word">Chain of Custody</div>
-<div style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">증거의 수집 및 처리 이력</div>
+<div style="color: #18243A; font-size: 16px; font-family: DM Sans; font-weight: 500; line-height: 20.80px; word-wrap: break-word">Chain of Custody<span class="report-option-pending-badge">준비 중</span></div>
+<div id="report-option-custody-note" style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">증거 관리 이력 기능은 준비 중입니다.</div>
 </div>
 </div>
 <div class="report-option layout-wrap" style="flex: 1 1 0; padding: 20px; background: white; overflow: hidden; border-radius: 12px; outline: 1px #B8CCF7 solid; outline-offset: -1px; justify-content: flex-start; align-items: flex-start; gap: 14px; display: flex">

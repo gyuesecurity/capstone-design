@@ -70,3 +70,14 @@
   .verification-details { grid-template-columns: 1fr; }
   .verification-panel-footer { padding: 16px; }
 }
+
+/* Persistent verification errors and explicit retry actions. */
+.verification-feedback[hidden], .verification-feedback [hidden] { display: none !important; }
+.verification-feedback { display: flex; flex-direction: column; gap: 14px; width: 100%; padding: 18px 20px; border: 1px solid #ccdaf7; border-radius: 12px; background: #edf3ff; color: #2454c6; }
+.verification-feedback[data-state="error"] { border-color: #efc7c7; background: #fff0ef; color: #a33232; }
+.verification-feedback p { margin: 0; color: inherit; overflow-wrap: anywhere; }
+.verification-feedback-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.verification-feedback-actions button { min-height: 44px; white-space: normal; }
+#verification-message[data-state="error"] { color: #a33232; }
+.verification-badge[data-status="REQUEST_FAILED"] { color: #a33232; background: #fff0ef; }
+.verification-result[data-verification-request-failed="true"] { border-color: #efc7c7; }

@@ -3,7 +3,7 @@
 .account-header { min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 32px; padding: 0 6.67%; border-bottom: 1px solid var(--evidence-line); background: #fff; }
 .account-brand, .account-nav { display: flex; align-items: center; }
 .account-brand { gap: 12px; color: var(--evidence-ink); text-decoration: none; }
-.account-brand__mark { width: 20px; height: 25px; border: 2px solid var(--evidence-blue); }
+.account-brand__mark { flex: 0 0 32px; width: 32px; height: 36px; background: url("assets/report/1befa.svg") center / contain no-repeat; }
 .account-brand__name { font: 400 23px/1 Inter, Arial, sans-serif; }
 .account-brand__detail { color: var(--evidence-muted); font-size: 12px; }
 .account-nav { gap: 32px; }
@@ -35,3 +35,9 @@
 .account-confirm { width: min(480px, 100%); margin-top: 88px; }
 .account-confirm .account-actions { padding-top: 8px; border-top: 1px solid var(--evidence-line); }
 @media (max-width: 760px) { .account-header { align-items: flex-start; flex-direction: column; padding: 20px 24px 16px; } .account-brand__detail { display: none; } .account-nav { width: 100%; gap: 18px; overflow-x: auto; } .account-main { width: min(100% - 32px, 612px); padding-top: 28px; } .account-card { padding: 22px; } .account-confirm { margin-top: 32px; } }
+
+.account-status[data-state="error"] { padding: 12px 14px; border-radius: 8px; background: #fff0ef; color: #b43d3d; overflow-wrap: anywhere; }
+.account-status[data-state="processing"] { color: #2454c6; }
+.account-status-retry { display: flex; margin-top: 12px; min-height: 40px; }
+.account-button:disabled { opacity: .55; cursor: wait; }
+.account-field input:disabled { background: #f5f7fa; }

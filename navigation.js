@@ -2,6 +2,10 @@
   "use strict";
 
   const currentPage = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  if (currentPage === "index_home.html" && new URLSearchParams(location.search).get("demo") === "1") {
+    sessionStorage.removeItem("evidence-auth-token");
+    sessionStorage.setItem("evidence-demo-mode", "1");
+  }
   const normalize = (value) => value.replace(/\s+/g, " ").trim();
 
   function exactTextElements(label) {
@@ -112,7 +116,6 @@
     connectFirst("검증", "verification.html", true);
     connectFirst("보고서", "report.html", true);
     connectFirst("My page", "mypage.html", true);
-    connectFirst("👤 소연", "mypage.html", true);
   }
 
   const pageConnections = {
@@ -157,22 +160,6 @@
     "evidence_video.html": [
       ["취소", "chose_evidence.html", false]
     ],
-    "evidence_video_complete.html": [
-      ["증거 관리로 이동", "evidence.html", true],
-      ["증거 상세보기", "evidence.html", true]
-    ],
-  "evidence_file_complete.html": [
-    ["증거 관리로 이동", "evidence.html", true],
-    ["증거 상세보기", "evidence.html", true]
-  ],
-  "evidence_img_complete.html": [
-    ["증거 관리로 이동", "evidence.html", true],
-    ["증거 상세보기", "evidence.html", true]
-  ],
-  "evidence_url_complete.html": [
-    ["증거 관리로 이동", "evidence.html", true],
-    ["증거 상세보기", "evidence.html", true]
-  ],
     "verification.html": [
       ["증거 상세보기", "evidence.html", true],
       ["보고서 생성", "report_select.html", false]
