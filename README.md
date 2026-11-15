@@ -67,6 +67,7 @@ capstone-Backend/
 ├── .gitignore          # Git에 올리지 않을 파일 목록
 ├── README.md           # 이 문서
 ├── requirements.txt    # 백엔드 실행에 필요한 패키지 목록
+├── d_package/          # 보고서 PDF·패키지 ZIP 만들기 (D 작성, 수정하지 않음)
 ├── docs/
 │   └── crypto-interface-v1.md   # B 암호화 모듈 인터페이스 (B 작성)
 ├── scripts/
@@ -82,6 +83,7 @@ capstone-Backend/
 │   ├── crypto.py       # 해시·암호화 모듈 (B 작성, 수정하지 않음)
 │   ├── stored_evidence.py  # 저장 파일 암호화 연결 (AAD, 복호화)
 │   ├── audit.py        # 활동 기록 서명 체인
+│   ├── reports.py      # 보고서: D 렌더러 호출, PDF 검사, 저장
 │   └── routers/        # 기능별 API
 └── tests/              # 자동 테스트
 ```
@@ -180,6 +182,16 @@ http://127.0.0.1:5500/index.html
 - `--frontend`에는 프론트엔드 파일만 있는 폴더를 지정합니다. 다른 프로젝트 파일이 섞인 폴더를 지정하면 그 파일들도 화면 파일처럼 열립니다.
 - 개발용 DB를 새로 시작하려면 `EVIDENCE_DATA_DIR`에 새 폴더를 지정합니다. 기존 `data/` 폴더는 지우지 않습니다.
 
+#### 보고서 PDF를 만들려면 (Pango 설치)
+
+보고서 PDF는 D의 렌더러(WeasyPrint)가 만들고, WeasyPrint는 `pip` 패키지 말고 **Pango** 프로그램이 따로 필요합니다.
+Pango가 없어도 서버는 켜지고 다른 기능은 모두 동작합니다. 보고서 만들기만 500 "PDF 생성기를 사용할 수 없어 보고서를 만들지 못했습니다."가 나옵니다.
+그래서 **보고서를 시연하는 PC에만** 설치하면 됩니다. 자세한 방법은 `d_package/README.md`에 있습니다.
+
+- Windows: [MSYS2](https://www.msys2.org/) 설치 → MSYS2 UCRT64 창에서 `pacman -S mingw-w64-ucrt-x86_64-pango` → DLL을 못 찾으면 `set WEASYPRINT_DLL_DIRECTORIES=C:\msys64\ucrt64\bin`
+- Debian/Ubuntu: `apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0`
+- 확인: `python -m weasyprint --info`
+
 ### 테스트 실행
 
 ```bash
@@ -187,6 +199,7 @@ python -m unittest discover -s tests -v
 ```
 
 테스트는 실행할 때마다 임시 폴더에 개발용 키를 새로 만들어 씁니다. 따로 키를 설정할 필요가 없습니다.
+Pango가 없는 PC에서는 실제 PDF를 만드는 테스트만 자동으로 건너뜁니다. (보고서 API 테스트는 가짜 PDF로 돌아감)
 
 ## 개발 방식
 
