@@ -16,6 +16,9 @@
 6단계(feature/evidence-encryption)에서 바뀐 점
 - 증거 파일 암호화 정보, 검증 실패 원인 코드, 활동 기록 서명 체인 컬럼을 추가합니다. (마이그레이션 5)
 - 서버 시작 때 암호화 키를 먼저 읽습니다. 키가 없으면 DB를 건드리기 전에 시작을 멈춥니다. (B 결정: fail-closed)
+
+7단계(feature/reports)에서 바뀐 점
+- 보고서와 보고서에 넣은 증거 표를 만듭니다. (마이그레이션 6) PDF는 root/reports/에 저장
 """
 
 from __future__ import annotations
@@ -42,6 +45,11 @@ class Storage:
     files_dir: Path  # 증거 원본 파일 폴더 (root/files). 6단계부터 새 파일은 암호문으로 저장
     db_path: Path    # SQLite DB 파일 (root/evidence.sqlite3)
     crypto: EvidenceCrypto | None = None  # 6단계 추가: B의 암호화 모듈 (키를 들고 있음, 응답·로그에 내보내지 않음)
+
+    @property
+    def reports_dir(self) -> Path:
+        """보고서 PDF 폴더 (root/reports). 7단계 추가"""
+        return self.root / "reports"
 
     def connect(self) -> sqlite3.Connection:
         """요청마다 새 DB 연결을 엽니다.
@@ -457,6 +465,79 @@ def _migration_5_encryption(connection: sqlite3.Connection) -> None:
         connection.execute(statement)
 
 
+def _migration_6_reports(connection: sqlite3.Connection) -> None:
+    """마이그레이션 6: 보고서(reports)와 보고서에 넣은 증거(report_evidence)
+
+    - 보고서는 "그 순간의 증거 상태를 찍은 사진"이라 만든 뒤에는 수정·삭제할 수 없습니다. (트리거)
+    - 증거·검증 결과는 원래 고칠 수 없는 기록이므로, 보고서에는 그 기록의 ID(검증 ID)와
+      관리 이력 기준점(번호·해시)만 저장하고 화면용 모습은 그 기록으로 다시 만듭니다.
+    - PDF 파일은 데이터 폴더의 reports/에 저장하고, DB에는 저장 이름·SHA-256·크기만 둡니다.
+      (보고서 PDF 암호화는 B와 AAD 구성을 정한 뒤 추가. 11/15 결정: 지금은 해시로 위조 확인)
+    """
+    connection.execute("""CREATE TABLE IF NOT EXISTS reports (
+          id TEXT PRIMARY KEY,
+          created_by TEXT NOT NULL REFERENCES users(id),
+          author_name TEXT NOT NULL,
+          title TEXT NOT NULL,
+          case_name TEXT NOT NULL,
+          description TEXT NOT NULL,
+          options_json TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          file_storage_key TEXT NOT NULL UNIQUE,
+          file_sha256 TEXT NOT NULL,
+          file_size INTEGER NOT NULL
+        )""")
+    connection.execute("""CREATE TABLE IF NOT EXISTS report_evidence (
+          report_id TEXT NOT NULL REFERENCES reports(id),
+          evidence_id TEXT NOT NULL REFERENCES evidence(id),
+          item_order INTEGER NOT NULL,
+          verification_id TEXT REFERENCES verifications(id),
+          custody_snapshot_sequence_no INTEGER NOT NULL,
+          custody_snapshot_event_hash TEXT NOT NULL,
+          PRIMARY KEY (report_id, evidence_id),
+          UNIQUE (report_id, item_order)
+        )""")
+    connection.execute("CREATE INDEX IF NOT EXISTS reports_created_by ON reports(created_by, created_at)")
+
+    triggers = {
+        "reports_block_update": """
+            CREATE TRIGGER reports_block_update BEFORE UPDATE ON reports
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: 보고서는 수정할 수 없습니다'); END""",
+        "reports_block_delete": """
+            CREATE TRIGGER reports_block_delete BEFORE DELETE ON reports
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: 보고서는 삭제할 수 없습니다'); END""",
+        "report_evidence_block_update": """
+            CREATE TRIGGER report_evidence_block_update BEFORE UPDATE ON report_evidence
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: 보고서에 넣은 증거 목록은 수정할 수 없습니다'); END""",
+        "report_evidence_block_delete": """
+            CREATE TRIGGER report_evidence_block_delete BEFORE DELETE ON report_evidence
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: 보고서에 넣은 증거 목록은 삭제할 수 없습니다'); END""",
+        # 보고서 ID·파일 해시 형식, 작성자 이름
+        "reports_check_values": """
+            CREATE TRIGGER reports_check_values BEFORE INSERT ON reports
+            WHEN length(NEW.id) != 36 OR substr(NEW.id, 1, 4) != 'RPT-' OR substr(NEW.id, 5) GLOB '*[^0-9a-f]*'
+              OR length(NEW.file_sha256) != 64 OR NEW.file_sha256 GLOB '*[^0-9a-f]*'
+              OR trim(NEW.author_name) = '' OR NEW.file_size <= 0
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 보고서 ID·파일 해시·작성자 이름 형식이 올바르지 않습니다'); END""",
+        # 기준점은 그 증거의 관리 이력에 실제로 있는 이벤트(번호·해시)여야 함
+        "report_evidence_check_snapshot": """
+            CREATE TRIGGER report_evidence_check_snapshot BEFORE INSERT ON report_evidence
+            WHEN NOT EXISTS (SELECT 1 FROM chain_of_custody WHERE evidence_id = NEW.evidence_id
+                             AND sequence_no = NEW.custody_snapshot_sequence_no
+                             AND event_hash = NEW.custody_snapshot_event_hash)
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 관리 이력 기준점이 그 증거의 이벤트와 맞지 않습니다'); END""",
+        # 검증 ID는 그 증거의 검증 결과여야 함 (없으면 NULL = 검증한 적 없음)
+        "report_evidence_check_verification": """
+            CREATE TRIGGER report_evidence_check_verification BEFORE INSERT ON report_evidence
+            WHEN NEW.verification_id IS NOT NULL AND NOT EXISTS (
+                SELECT 1 FROM verifications WHERE id = NEW.verification_id AND evidence_id = NEW.evidence_id)
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 검증 ID가 그 증거의 검증 결과가 아닙니다'); END""",
+    }
+    for name, statement in triggers.items():
+        connection.execute(f"DROP TRIGGER IF EXISTS {name}")
+        connection.execute(statement)
+
+
 # (버전 번호, 마이그레이션 함수). 번호는 1부터 빈칸 없이 올라갑니다.
 MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [
     (1, _migration_1_base_schema),
@@ -464,6 +545,7 @@ MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [
     (3, _migration_3_chain_of_custody),
     (4, _migration_4_sharing),
     (5, _migration_5_encryption),
+    (6, _migration_6_reports),
 ]
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 
@@ -522,6 +604,7 @@ def open_storage(data_dir: str | Path | None = None) -> Storage:
     root = Path(data_dir or os.environ.get("EVIDENCE_DATA_DIR", ROOT / "data")).resolve()
     files_dir = root / "files"
     files_dir.mkdir(parents=True, exist_ok=True)
+    (root / "reports").mkdir(exist_ok=True)  # 7단계: 보고서 PDF 폴더
     # 6단계: 키를 먼저 읽습니다. 키가 없거나 설정이 틀리면 KeyConfigurationError로 여기서 멈추고 DB는 건드리지 않습니다.
     # 키 소스: EVIDENCE_MASTER_KEYS_FILE(시연·운영) / EVIDENCE_MASTER_KEYS / EVIDENCE_MASTER_KEY 중 하나,
     # 또는 개발 때만 EVIDENCE_ALLOW_DEV_KEY_GENERATION=true (root/keys/에 개발용 키 생성)

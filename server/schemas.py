@@ -37,3 +37,13 @@ class ShareUpdate(BaseModel):
     email: str
     download: bool = False
     verify: bool = False
+
+
+# 보고서 만들기 (7단계, A 화면 report-server.js generate()가 보내는 모양 그대로)
+# author는 받지 않습니다. 보내도 무시하고 로그인한 사람 이름을 씁니다. (A API 명세 4장)
+class ReportCreate(BaseModel):
+    title: str
+    project: str = ""
+    description: str = ""
+    selected: list[str]
+    options: list[str]
