@@ -6,7 +6,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 COPY requirements.txt ./
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+       libfontconfig1 \
+       libharfbuzz0b \
+       libpango-1.0-0 \
+       libpangoft2-1.0-0 \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN useradd --create-home --uid 10001 evidence \
     && mkdir -p /app/data \
