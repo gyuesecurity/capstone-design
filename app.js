@@ -91,9 +91,12 @@
   }
 
   function displayDate(value) {
+    if (!value) return "기록 없음";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "기록 없음";
     return new Intl.DateTimeFormat("ko-KR", {
       year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZoneName: "short"
-    }).format(new Date(value));
+    }).format(parsed);
   }
 
   async function registerLocalFile(kind, fields, target) {
@@ -109,7 +112,9 @@
     toast("선택한 파일을 등록하고 있습니다.");
     try {
       if (await api.enabled()) {
-        const record = await api.upload(file, { name, kind, source, description, memo });
+        const record = await api.upload(file, {
+          name, kind, source, description, memo, client_selected_at: selection.selectedAt
+        });
         const destination = { "파일": "evidence_file_complete.html", "이미지": "evidence_img_complete.html", "영상·음성": "evidence_video_complete.html" }[kind];
         window.location.href = `${destination}?id=${encodeURIComponent(record.id)}`;
         return;
@@ -148,7 +153,7 @@
   function showLocalEvidence(record) {
     const layer = showDialog(`
       <div class="evidence-dialog__head"><div><h2>증거 상세</h2><p>${record.storage === "server" ? "서버에 보관된 원본 파일입니다." : "이 브라우저에 저장된 파일입니다."}</p></div></div>
-      ${detailsMarkup([["증거 이름", record.name], ["파일명", record.filename], ["증거 ID", record.id], ["파일 유형", record.type], ["파일 크기", `${record.size.toLocaleString("ko-KR")} bytes`], ["등록 일시", displayDate(record.registeredAt)], ["파일 선택 일시", displayDate(record.selectedAt)], ["SHA-256", record.sha256], ["무결성 상태", record.status], ["수집 출처", record.source], ["설명", record.description || "없음"], ["메모", record.memo || "없음"]])}
+      ${detailsMarkup([["증거 이름", record.name], ["파일명", record.filename], ["증거 ID", record.id], ["파일 유형", record.type], ["파일 크기", `${record.size.toLocaleString("ko-KR")} bytes`], ["서버 등록 일시", displayDate(record.registeredAt)], ["클라이언트 파일 선택 일시", displayDate(record.selectedAt)], ["SHA-256", record.sha256], ["무결성 상태", record.status], ["암호화", record.encryption ? `${record.encryption.algorithm} · 키 ${record.encryption.keyVersion}` : "브라우저 로컬 저장"], ["메타데이터 결속", record.encryption?.aadVersion || "미적용"], ["수집 출처", record.source], ["설명", record.description || "없음"], ["메모", record.memo || "없음"]])}
       <div class="evidence-dialog__actions">${button("닫기", "close")}${button("파일 다운로드", "download", "primary")}</div>
     `, { wide: true });
     layer.querySelector('[data-dialog-action="close"]').addEventListener("click", closeDialog);
@@ -1042,9 +1047,10 @@
         summary.textContent = "증거 목록을 확인하거나 파일을 다시 등록해 주세요.";
         return;
       }
-      heading.textContent = "이 브라우저에 증거를 등록했습니다.";
+      const onServer = record.storage === "server";
+      heading.textContent = onServer ? "서버에 암호화하여 증거를 등록했습니다." : "이 브라우저에 증거를 등록했습니다.";
       summary.textContent = "파일과 입력 정보가 저장되었습니다. 검증 화면에서 등록 당시 해시와 비교할 수 있습니다.";
-      card.innerHTML = detailsMarkup([["증거 ID", record.id], ["증거 이름", record.name], ["파일", record.filename], ["파일 크기", `${record.size.toLocaleString("ko-KR")} bytes`], ["SHA-256", record.sha256], ["등록 일시", displayDate(record.registeredAt)], ["무결성 상태", record.status], ["저장 위치", "현재 브라우저"]]);
+      card.innerHTML = detailsMarkup([["증거 ID", record.id], ["증거 이름", record.name], ["파일", record.filename], ["파일 크기", `${record.size.toLocaleString("ko-KR")} bytes`], ["SHA-256", record.sha256], ["서버 등록 일시", displayDate(record.registeredAt)], ["클라이언트 파일 선택 일시", displayDate(record.selectedAt)], ["무결성 상태", record.status], ["암호화", record.encryption ? `${record.encryption.algorithm} · 키 ${record.encryption.keyVersion}` : "미적용"], ["저장 위치", onServer ? "암호화 서버 저장소" : "현재 브라우저"]]);
       card.hidden = false;
       actionTargets("증거 상세보기").forEach(function (target) {
         const openDetail = function (event) {

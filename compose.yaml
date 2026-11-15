@@ -1,0 +1,14 @@
+services:
+  evidence:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      EVIDENCE_DATA_DIR: /app/data
+      EVIDENCE_KEY_VERSION: v1
+    volumes:
+      - evidence-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  evidence-data:
