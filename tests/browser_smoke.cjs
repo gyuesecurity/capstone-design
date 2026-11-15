@@ -10,7 +10,10 @@ const assert = require('node:assert/strict');
 const base = process.env.EVIDENCE_TEST_URL || 'http://127.0.0.1:8177/';
 
 (async () => {
-  const browser = await chromium.launch({ channel: 'msedge', headless: true });
+  const launchOptions = { headless: true };
+  if (process.env.EVIDENCE_CHROME_PATH) launchOptions.executablePath = process.env.EVIDENCE_CHROME_PATH;
+  else if (process.env.EVIDENCE_BROWSER_CHANNEL) launchOptions.channel = process.env.EVIDENCE_BROWSER_CHANNEL;
+  const browser = await chromium.launch(launchOptions);
   const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
   const page = await context.newPage();
   const errors = [];
@@ -50,7 +53,7 @@ const base = process.env.EVIDENCE_TEST_URL || 'http://127.0.0.1:8177/';
   await page.getByRole('checkbox', { name: 'actual.txt 선택' }).check();
   await page.locator('[data-run-verification]').first().click();
   await page.waitForFunction(() => document.querySelector('#verification-message').textContent.includes('결과 저장'));
-  assert.equal(await page.locator('[data-verification-result="MATCH"]').count(), 1);
+  assert.equal(await page.locator('#verification-results [data-verification-result="MATCH"]').count(), 1);
 
   await page.goto(base + 'Dashboard.html');
   await page.waitForFunction(() => document.querySelector('[data-dashboard-count="match"]').textContent === '1');
@@ -88,6 +91,7 @@ const base = process.env.EVIDENCE_TEST_URL || 'http://127.0.0.1:8177/';
   await page.locator('#password').fill('Demo!123');
   await page.getByRole('button', { name: '로그인', exact: true }).click();
   const demoLink = page.getByRole('link', { name: '화면 시연 계속하기' });
+  await demoLink.waitFor();
   assert.equal(await demoLink.count(), 1);
   await demoLink.click();
   await page.waitForURL('**/index_home.html');
