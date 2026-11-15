@@ -1,4 +1,4 @@
-# d_package (D: PDF 보고서 렌더링)
+# d_package (D: PDF 보고서 렌더링 · 증거 패키지 ZIP)
 
 `ReportRenderBundle` v1(dict) → 형식 검증 → Jinja2 템플릿 → WeasyPrint → PDF bytes.
 
@@ -10,6 +10,21 @@ pdf_bytes = render_report_pdf(bundle)  # 파일을 쓰지 않음
 
 - `ReportBundleError`: 묶음 형식 오류 (`e.code`, `e.path`만 담고 입력값은 담지 않음)
 - `PdfRenderError`: 템플릿·PDF 도구 실패 (고정 메시지)
+
+## 증거 패키지 ZIP
+
+`PackageBuildBundle` v1(dict) → 형식 검증 → `entries`를 순서대로 ZIP에 기록 (표준 라이브러리 `zipfile`만 사용).
+
+```python
+from d_package.package_builder import build_package_zip, PackageBundleError, PackageBuildError
+
+build_package_zip(bundle, output)  # output: C가 연 쓰기 스트림 (seek 불가 스트림도 가능)
+```
+
+- 검증 실패 시 `PackageBundleError` (`e.code`, `e.path`), output에 아무것도 쓰지 않음
+- 작성 중 실패 시 `PackageBuildError` (output 정리는 C 담당)
+- 항목 내용은 열거나 고치지 않음, 폴더 항목·README 추가 없음, 암호화 없음
+- DEFLATE 압축, 모든 항목 date_time 1980-01-01 00:00:00 고정 (같은 묶음 → 같은 ZIP 바이트)
 
 ## 시스템 의존성 (Pango)
 
