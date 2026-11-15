@@ -9,6 +9,9 @@
 
 4단계(feature/chain-of-custody)에서 바뀐 점
 - Chain of Custody 표(chain_of_custody)와 추가만 허용하는 트리거를 만듭니다. (마이그레이션 3)
+
+5단계(feature/evidence-sharing)에서 바뀐 점
+- 사용자 역할(users.role)과 증거별 공유 권한 표(evidence_permissions)를 만듭니다. (마이그레이션 4)
 """
 
 from __future__ import annotations
@@ -267,11 +270,109 @@ def _migration_3_chain_of_custody(connection: sqlite3.Connection) -> None:
         connection.execute(statement)
 
 
+# 공유 권한 종류 (통합 설계 문서 7장). VIEW는 공유하면 항상 포함되고, DOWNLOAD·VERIFY는 선택입니다.
+# server/access.py의 PERMISSIONS와 같은 목록이어야 합니다. (테스트가 둘이 같은지 확인)
+PERMISSION_TYPES = ("VIEW", "DOWNLOAD", "VERIFY")
+# 사용자 역할. ADMIN이 무엇을 할 수 있는지는 아직 [결정 필요]라서 지금은 칸과 값만 둡니다. (11/15 결정)
+USER_ROLES = ("ADMIN", "USER", "SYSTEM")
+
+
+def _migration_4_sharing(connection: sqlite3.Connection) -> None:
+    """마이그레이션 4: 사용자 역할(role) + 증거별 공유 권한 표(evidence_permissions)
+
+    - users.role: 기본값 USER. 기존 계정도 모두 USER가 됩니다. (기본값이 있는 NOT NULL 컬럼은 ALTER로 추가 가능)
+    - evidence_permissions: 권한 1개당 1행. 회수할 때 행을 지우지 않고 revoked_at만 채웁니다. (기록이 남음)
+      같은 사람·같은 권한의 "살아 있는 행"(revoked_at IS NULL)은 1개만 있을 수 있습니다. (부분 UNIQUE 인덱스)
+      다시 공유하면 새 행이 생깁니다.
+    - 트리거가 막는 것: 삭제, revoked_at 말고 다른 칸 수정, 회수 취소, 소유자 본인에게 공유,
+      소유자가 아닌 사람이 부여(재공유 금지), VIEW 없이 DOWNLOAD·VERIFY만 있는 상태
+    """
+    roles = ", ".join(f"'{name}'" for name in USER_ROLES)  # 코드에 적힌 고정 값만 사용
+    permissions = ", ".join(f"'{name}'" for name in PERMISSION_TYPES)
+    _add_column_if_missing(connection, "users", "role", "TEXT NOT NULL DEFAULT 'USER'")
+
+    connection.execute("""CREATE TABLE IF NOT EXISTS evidence_permissions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          evidence_id TEXT NOT NULL REFERENCES evidence(id),
+          user_id TEXT NOT NULL REFERENCES users(id),
+          permission TEXT NOT NULL,
+          granted_by TEXT NOT NULL REFERENCES users(id),
+          granted_at TEXT NOT NULL,
+          revoked_at TEXT
+        )""")
+    connection.execute("""CREATE UNIQUE INDEX IF NOT EXISTS evidence_permissions_active
+        ON evidence_permissions(evidence_id, user_id, permission) WHERE revoked_at IS NULL""")
+    # "공유받은 증거" 목록(scope=shared)을 빨리 찾기 위한 인덱스
+    connection.execute("""CREATE INDEX IF NOT EXISTS evidence_permissions_user_active
+        ON evidence_permissions(user_id, evidence_id) WHERE revoked_at IS NULL""")
+
+    triggers = {
+        # 역할 값 검사
+        "users_check_role_insert": f"""
+            CREATE TRIGGER users_check_role_insert BEFORE INSERT ON users
+            WHEN NEW.role NOT IN ({roles})
+            BEGIN SELECT RAISE(ABORT, 'INVALID: users.role 값이 허용 목록에 없습니다'); END""",
+        "users_check_role_update": f"""
+            CREATE TRIGGER users_check_role_update BEFORE UPDATE OF role ON users
+            WHEN NEW.role NOT IN ({roles})
+            BEGIN SELECT RAISE(ABORT, 'INVALID: users.role 값이 허용 목록에 없습니다'); END""",
+        # 권한 기록: 삭제 금지
+        "permissions_block_delete": """
+            CREATE TRIGGER permissions_block_delete BEFORE DELETE ON evidence_permissions
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: 권한 기록은 삭제할 수 없습니다 (revoked_at으로 회수)'); END""",
+        # 권한 기록: "빈 revoked_at에 회수 시각을 한 번 채우기"만 허용
+        "permissions_block_update": """
+            CREATE TRIGGER permissions_block_update BEFORE UPDATE ON evidence_permissions
+            WHEN NEW.id IS NOT OLD.id OR NEW.evidence_id IS NOT OLD.evidence_id OR NEW.user_id IS NOT OLD.user_id
+              OR NEW.permission IS NOT OLD.permission OR NEW.granted_by IS NOT OLD.granted_by
+              OR NEW.granted_at IS NOT OLD.granted_at OR OLD.revoked_at IS NOT NULL OR NEW.revoked_at IS NULL
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: 권한 기록은 회수 시각(revoked_at)을 한 번 채우는 것만 가능합니다'); END""",
+        # 권한 값 검사
+        "permissions_check_value": f"""
+            CREATE TRIGGER permissions_check_value BEFORE INSERT ON evidence_permissions
+            WHEN NEW.permission NOT IN ({permissions})
+            BEGIN SELECT RAISE(ABORT, 'INVALID: evidence_permissions.permission 값이 허용 목록에 없습니다'); END""",
+        # 새 행은 살아 있는 권한으로만 추가 (회수된 행을 직접 넣지 않음)
+        "permissions_insert_active": """
+            CREATE TRIGGER permissions_insert_active BEFORE INSERT ON evidence_permissions
+            WHEN NEW.revoked_at IS NOT NULL
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 새 권한은 revoked_at 없이 추가해야 합니다'); END""",
+        # 소유자 본인에게 공유 금지
+        "permissions_block_owner": """
+            CREATE TRIGGER permissions_block_owner BEFORE INSERT ON evidence_permissions
+            WHEN NEW.user_id IS (SELECT owner_id FROM evidence WHERE id = NEW.evidence_id)
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 증거 소유자에게는 공유할 수 없습니다'); END""",
+        # 부여는 소유자만 (공유받은 사람의 재공유 금지)
+        "permissions_granted_by_owner": """
+            CREATE TRIGGER permissions_granted_by_owner BEFORE INSERT ON evidence_permissions
+            WHEN NEW.granted_by IS NOT (SELECT owner_id FROM evidence WHERE id = NEW.evidence_id)
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 권한은 증거 소유자만 부여할 수 있습니다'); END""",
+        # DOWNLOAD·VERIFY는 살아 있는 VIEW가 있을 때만 부여
+        "permissions_require_view_insert": """
+            CREATE TRIGGER permissions_require_view_insert BEFORE INSERT ON evidence_permissions
+            WHEN NEW.permission IS NOT 'VIEW' AND NOT EXISTS (
+                SELECT 1 FROM evidence_permissions WHERE evidence_id = NEW.evidence_id AND user_id = NEW.user_id
+                  AND permission = 'VIEW' AND revoked_at IS NULL)
+            BEGIN SELECT RAISE(ABORT, 'INVALID: DOWNLOAD·VERIFY는 VIEW 권한이 있어야 부여할 수 있습니다'); END""",
+        # VIEW는 DOWNLOAD·VERIFY를 먼저 회수한 뒤에만 회수
+        "permissions_require_view_revoke": """
+            CREATE TRIGGER permissions_require_view_revoke BEFORE UPDATE OF revoked_at ON evidence_permissions
+            WHEN OLD.permission = 'VIEW' AND NEW.revoked_at IS NOT NULL AND EXISTS (
+                SELECT 1 FROM evidence_permissions WHERE evidence_id = OLD.evidence_id AND user_id = OLD.user_id
+                  AND permission != 'VIEW' AND revoked_at IS NULL)
+            BEGIN SELECT RAISE(ABORT, 'INVALID: VIEW는 DOWNLOAD·VERIFY를 먼저 회수해야 회수할 수 있습니다'); END""",
+    }
+    for name, statement in triggers.items():
+        connection.execute(f"DROP TRIGGER IF EXISTS {name}")
+        connection.execute(statement)
+
+
 # (버전 번호, 마이그레이션 함수). 번호는 1부터 빈칸 없이 올라갑니다.
 MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [
     (1, _migration_1_base_schema),
     (2, _migration_2_immutable_records),
     (3, _migration_3_chain_of_custody),
+    (4, _migration_4_sharing),
 ]
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 

@@ -7,7 +7,8 @@
 #   schemas.py      요청 본문 모양
 #   serializers.py  응답 모양
 #   custody.py      Chain of Custody 이벤트 추가와 사슬 검사 (4단계 추가)
-#   routers/        기능별 API (health, auth, account, evidence, custody)
+#   access.py       증거별 권한 확인과 접근 거부 기록 (5단계 추가)
+#   routers/        기능별 API (health, auth, account, evidence, custody, shares)
 #
 # 바깥에서 쓰는 이름은 그대로입니다.
 #   - create_app(data_dir): 테스트가 임시 폴더로 서버를 만들 때 사용
@@ -20,7 +21,7 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from .db import open_storage
-from .routers import account, auth, custody, evidence, health
+from .routers import account, auth, custody, evidence, health, shares
 
 
 def create_app(data_dir: str | Path | None = None) -> FastAPI:
@@ -37,6 +38,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
     app.include_router(account.router)
     app.include_router(evidence.router)
     app.include_router(custody.router)  # 4단계 추가: Chain of Custody 조회·검사 (C1, C2)
+    app.include_router(shares.router)   # 5단계 추가: 증거 공유 (P2, P3, P4)
     return app
 
 

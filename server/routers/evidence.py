@@ -10,6 +10,11 @@
 4단계에서 바뀐 점 (응답 모양은 그대로)
 - 등록·다운로드·검증 때 Chain of Custody 이벤트를 같은 트랜잭션 안에서 함께 기록합니다.
   EVIDENCE_REGISTERED / EVIDENCE_DOWNLOADED / INTEGRITY_VERIFIED
+
+5단계에서 바뀐 점 (기존 필드는 그대로, access 필드만 추가)
+- 공유받은 사람도 권한만큼 쓸 수 있습니다. 보기(VIEW)=목록·상세, DOWNLOAD=원본 다운로드, VERIFY=무결성 검증
+- VIEW가 없으면 404, VIEW는 있지만 필요한 권한이 없으면 403 + 관리 이력에 ACCESS_DENIED
+- 목록에 scope(owned/shared/all) 추가. 기본값은 내 증거만(기존 동작)
 """
 
 from __future__ import annotations
@@ -28,6 +33,7 @@ from fastapi.responses import FileResponse
 
 from .. import config
 from ..config import ALLOWED_EXTENSIONS, CHUNK_SIZE
+from ..access import access_dict, deny, viewable_evidence
 from ..custody import append_event
 from ..db import Storage, get_storage, write_transaction
 from ..security import current_user, utc_now
@@ -103,7 +109,7 @@ async def upload_evidence(
             append_event(connection, evidence_id, "EVIDENCE_REGISTERED", user, "SUCCESS",
                          {"sha256": digest.hexdigest(), "filename": filename, "size": size})
             row = owned_evidence(connection, user["id"], evidence_id)
-            return evidence_dict(connection, row)
+            return evidence_dict(connection, row, access_dict(connection, row, user))
     except Exception:
         if target.exists():
             target.chmod(0o600)
@@ -113,35 +119,60 @@ async def upload_evidence(
         await file.close()
 
 
-# 내 증거 목록 (최신 등록순, 읽기만 함)
+# 증거 목록 (최신 등록순, 읽기만 함)
+# scope 없음·owned: 내 증거만 (기존 동작 그대로) / shared: 공유받은 증거만 / all: 둘 다
+_SHARED_IDS = """SELECT evidence_id FROM evidence_permissions
+                 WHERE user_id = ? AND permission = 'VIEW' AND revoked_at IS NULL"""
+_SCOPE_QUERIES = {
+    "owned": ("SELECT * FROM evidence WHERE owner_id = ? ORDER BY registered_at DESC", 1),
+    "shared": (f"SELECT * FROM evidence WHERE id IN ({_SHARED_IDS}) ORDER BY registered_at DESC", 1),
+    "all": (f"SELECT * FROM evidence WHERE owner_id = ? OR id IN ({_SHARED_IDS}) ORDER BY registered_at DESC", 2),
+}
+
+
 @router.get("/api/evidence")
-def list_evidence(user: sqlite3.Row = Depends(current_user), storage: Storage = Depends(get_storage)):
+def list_evidence(scope: str = "owned", user: sqlite3.Row = Depends(current_user), storage: Storage = Depends(get_storage)):
+    if scope not in _SCOPE_QUERIES:
+        raise HTTPException(422, "scope 값은 owned, shared, all 중 하나여야 합니다.")
+    sql, user_params = _SCOPE_QUERIES[scope]
     with closing(storage.connect()) as connection:
-        rows = connection.execute("SELECT * FROM evidence WHERE owner_id = ? ORDER BY registered_at DESC", (user["id"],)).fetchall()
-        return [evidence_dict(connection, row) for row in rows]
+        rows = connection.execute(sql, (user["id"],) * user_params).fetchall()
+        return [evidence_dict(connection, row, access_dict(connection, row, user)) for row in rows]
 
 
-# 증거 상세 (읽기만 함)
+# 증거 상세 (읽기만 함). 소유자이거나 VIEW 권한이 있으면 볼 수 있습니다.
 @router.get("/api/evidence/{evidence_id}")
 def get_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user), storage: Storage = Depends(get_storage)):
     with closing(storage.connect()) as connection:
-        return evidence_dict(connection, owned_evidence(connection, user["id"], evidence_id))
+        row, access = viewable_evidence(connection, user, evidence_id)
+        return evidence_dict(connection, row, access)
 
 
-# 원본 다운로드: 파일이 있는지 확인하고 활동 기록(download)을 남긴 뒤 파일을 보냅니다.
+# 원본 다운로드: 권한(DOWNLOAD)과 파일을 확인하고, 활동 기록과 관리 이력을 먼저 저장한 뒤 파일을 보냅니다.
 @router.get("/api/evidence/{evidence_id}/download")
 def download_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user), storage: Storage = Depends(get_storage)):
+    denied = False
     with closing(storage.connect()) as connection:
-        row = owned_evidence(connection, user["id"], evidence_id)
-        target = stored_file(storage, row)
-        if not target.is_file():
-            raise HTTPException(404, "원본 파일을 찾을 수 없습니다.")
-        with write_transaction(connection):
-            connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
-                               (user["id"], "download", evidence_id, utc_now()))
-            # 파일을 보내기 시작하는 시점의 이벤트 (활동 기록과 같은 트랜잭션)
-            append_event(connection, evidence_id, "EVIDENCE_DOWNLOADED", user, "SUCCESS")
-        return FileResponse(target, media_type="application/octet-stream", filename=row["filename"])
+        row, access = viewable_evidence(connection, user, evidence_id)
+        if not access["canDownload"]:
+            denied = True
+        else:
+            target = stored_file(storage, row)
+            if not target.is_file():
+                raise HTTPException(404, "원본 파일을 찾을 수 없습니다.")
+            with write_transaction(connection):
+                # 그사이 권한이 회수됐을 수 있으므로 쓰기 잠금 안에서 다시 확인합니다.
+                row, access = viewable_evidence(connection, user, evidence_id)
+                if not access["canDownload"]:
+                    denied = True  # 아무것도 쓰지 않고 트랜잭션을 끝냄
+                else:
+                    connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
+                                       (user["id"], "download", evidence_id, utc_now()))
+                    # 파일을 보내기 시작하는 시점의 이벤트 (활동 기록과 같은 트랜잭션)
+                    append_event(connection, evidence_id, "EVIDENCE_DOWNLOADED", user, "SUCCESS")
+    if denied:
+        deny(storage, evidence_id, user, "DOWNLOAD", "다운로드 권한이 없습니다.")
+    return FileResponse(target, media_type="application/octet-stream", filename=row["filename"])
 
 
 # 무결성 검증: 저장된 파일의 SHA-256을 다시 계산해 기준 해시와 비교합니다.
@@ -149,9 +180,11 @@ def download_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user
 @router.post("/api/evidence/{evidence_id}/verify")
 def verify_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user), storage: Storage = Depends(get_storage)):
     started = utc_now()
-    # 1) 대상 확인 (읽기만)
+    # 1) 대상과 권한(VERIFY) 확인 (읽기만)
     with closing(storage.connect()) as connection:
-        row = owned_evidence(connection, user["id"], evidence_id)
+        row, access = viewable_evidence(connection, user, evidence_id)
+    if not access["canVerify"]:
+        deny(storage, evidence_id, user, "VERIFY", "검증 권한이 없습니다.")
     target = stored_file(storage, row)
 
     # 2) 해시 계산은 쓰기 잠금 밖에서 합니다. 큰 파일을 읽는 동안 다른 요청이 멈추지 않게 하기 위해서입니다.
@@ -171,20 +204,26 @@ def verify_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user),
     completed = utc_now()
     result_id = f"VERIFY-{uuid.uuid4().hex}"
 
-    # 3) 쓰기 잠금 안에서는 대상을 다시 확인한 뒤 기록만 합니다.
+    # 3) 쓰기 잠금 안에서는 대상과 권한을 다시 확인한 뒤 기록만 합니다.
+    #    해시를 계산하는 사이에 VERIFY 권한이 회수됐으면 아무것도 저장하지 않고 403입니다.
     with closing(storage.connect()) as connection, write_transaction(connection):
-        row = owned_evidence(connection, user["id"], evidence_id)
-        connection.execute("""INSERT INTO verifications (
-                id, evidence_id, user_id, started_at, completed_at, expected_hash,
-                current_hash, status, reason, performed_by_name
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                           (result_id, evidence_id, user["id"], started, completed, row["sha256"],
-                            current_hash, status, reason, user["name"]))
-        connection.execute("UPDATE evidence SET verification_status = ? WHERE id = ?", (status, evidence_id))
-        connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
-                           (user["id"], "verify:" + status, evidence_id, completed))
-        # MATCH·MISMATCH는 검증 작업 자체는 끝났으므로 SUCCESS, 파일을 못 읽은 UNAVAILABLE만 FAILURE
-        append_event(connection, evidence_id, "INTEGRITY_VERIFIED", user,
-                     "FAILURE" if status == "UNAVAILABLE" else "SUCCESS",
-                     {"status": status, "verificationId": result_id})
-        return {"result": verification_dict(connection.execute("SELECT * FROM verifications WHERE id = ?", (result_id,)).fetchone(), row["filename"]), "saved": True}
+        row, access = viewable_evidence(connection, user, evidence_id)
+        denied = not access["canVerify"]
+        if not denied:
+            connection.execute("""INSERT INTO verifications (
+                    id, evidence_id, user_id, started_at, completed_at, expected_hash,
+                    current_hash, status, reason, performed_by_name
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                               (result_id, evidence_id, user["id"], started, completed, row["sha256"],
+                                current_hash, status, reason, user["name"]))
+            connection.execute("UPDATE evidence SET verification_status = ? WHERE id = ?", (status, evidence_id))
+            connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
+                               (user["id"], "verify:" + status, evidence_id, completed))
+            # MATCH·MISMATCH는 검증 작업 자체는 끝났으므로 SUCCESS, 파일을 못 읽은 UNAVAILABLE만 FAILURE
+            append_event(connection, evidence_id, "INTEGRITY_VERIFIED", user,
+                         "FAILURE" if status == "UNAVAILABLE" else "SUCCESS",
+                         {"status": status, "verificationId": result_id})
+            response = {"result": verification_dict(connection.execute("SELECT * FROM verifications WHERE id = ?", (result_id,)).fetchone(), row["filename"]), "saved": True}
+    if denied:
+        deny(storage, evidence_id, user, "VERIFY", "검증 권한이 없습니다.")
+    return response

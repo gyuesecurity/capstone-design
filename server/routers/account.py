@@ -21,7 +21,9 @@ router = APIRouter()
 # 내 정보 조회
 @router.get("/api/me")
 def me(user: sqlite3.Row = Depends(current_user)):
-    return {"id": user["id"], "email": user["email"], "name": user["name"], "createdAt": user["created_at"]}
+    # role: 5단계 추가 (A API 명세 2장). ADMIN 특권은 아직 없음
+    return {"id": user["id"], "email": user["email"], "name": user["name"], "createdAt": user["created_at"],
+            "role": user["role"]}
 
 
 # 이름 수정 (1~100자)

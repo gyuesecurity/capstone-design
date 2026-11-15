@@ -2,6 +2,7 @@
 
 기존 응답 필드 이름과 값은 바꾸지 않습니다. (프론트 A가 이 이름에 맞춰 화면을 그립니다)
 3단계에서 A API 명세에 정한 필드 2개(registeredBy, performedBy)만 추가했습니다.
+5단계에서 증거마다 권한 필드(access)를 추가했습니다. (A API 명세 3장)
 """
 
 from __future__ import annotations
@@ -23,12 +24,15 @@ def verification_dict(row: sqlite3.Row, filename: str = "") -> dict:
     }
 
 
-def evidence_dict(connection: sqlite3.Connection, row: sqlite3.Row) -> dict:
-    """증거 1건 + 그 증거의 검증 기록(최신순)"""
+def evidence_dict(connection: sqlite3.Connection, row: sqlite3.Row, access: dict | None = None) -> dict:
+    """증거 1건 + 그 증거의 검증 기록(최신순)
+
+    access: 요청한 사람의 권한 (5단계 추가, server/access.py의 access_dict). 넘기면 응답 끝에 "access"로 붙습니다.
+    """
     history = [verification_dict(item, row["filename"]) for item in connection.execute(
         "SELECT * FROM verifications WHERE evidence_id = ? ORDER BY completed_at DESC", (row["id"],)
     ).fetchall()]
-    return {
+    result = {
         "id": row["id"], "name": row["name"], "filename": row["filename"],
         "type": row["type"], "mime": row["mime"], "size": row["size"],
         "kind": row["kind"], "source": row["source"], "description": row["description"], "memo": row["memo"],
@@ -40,3 +44,6 @@ def evidence_dict(connection: sqlite3.Connection, row: sqlite3.Row) -> dict:
         "verificationStatus": row["verification_status"], "status": STATUS_LABELS[row["verification_status"]],
         "lastVerification": history[0] if history else None, "verifications": history, "storage": "server",
     }
+    if access is not None:
+        result["access"] = access
+    return result

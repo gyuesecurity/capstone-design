@@ -325,7 +325,7 @@ class CustodyMigrationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(list((self.root / "backups").glob("evidence-v2-*.sqlite3"))), 1)
         with closing(sqlite3.connect(self.db_path)) as connection:
-            self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], 3)
+            self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], db.SCHEMA_VERSION)
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM chain_of_custody").fetchone()[0], 0)
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
             headers = {"Authorization": f"Bearer {token}"}

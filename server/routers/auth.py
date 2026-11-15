@@ -54,7 +54,8 @@ def login(payload: Credentials, storage: Storage = Depends(get_storage)):
         with write_transaction(connection):
             token = issue_session(connection, user["id"])
             connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)", (user["id"], "login", utc_now()))
-    return {"token": token, "user": {"id": user["id"], "email": user["email"], "name": user["name"]}}
+    # role: 5단계 추가 (설계 문서 3장 "로그인·내 정보 응답에 role 추가"). ADMIN 특권은 아직 없음
+    return {"token": token, "user": {"id": user["id"], "email": user["email"], "name": user["name"], "role": user["role"]}}
 
 
 # 로그아웃: 지금 쓰고 있는 토큰만 지웁니다. (세션은 수정·삭제 금지 대상이 아님)
