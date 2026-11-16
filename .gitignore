@@ -4,4 +4,20 @@ data/
 .venv/
 .deps/
 .test-data/
+node_modules/
+.env
+.env.*
+!.env.example
+secrets/*
+!secrets/*.example.json
 *.pyc
+
+# local tooling (not part of the team project)
+venv/
+.claude/
+graphify-out/
+
+# D: generated PDF/ZIP report artifacts
+*.pdf
+*.zip
+output/

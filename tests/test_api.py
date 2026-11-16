@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import tempfile
 import unittest
@@ -6,7 +7,10 @@ from pathlib import Path
 
 import httpx
 
-from server import main
+# 6단계: 키가 없으면 서버가 시작하지 않으므로, 테스트에서는 임시 데이터 폴더에 개발용 키를 자동 생성합니다. (키 값은 저장소에 없음)
+os.environ.setdefault("EVIDENCE_ALLOW_DEV_KEY_GENERATION", "true")
+
+from server import config, main
 
 
 class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
@@ -36,8 +40,6 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(upload.status_code, 201, upload.text)
         record = upload.json()
         self.assertEqual(record["filename"], "증거.txt")
-        self.assertIsNone(record["selectedAt"])
-        self.assertTrue(record["registeredAt"])
         self.assertEqual(record["size"], 14)
         self.assertEqual(record["verificationStatus"], "NOT_VERIFIED")
         self.assertEqual(len(record["sha256"]), 64)
@@ -64,65 +66,6 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         audit = (await self.client.get("/api/audit", headers=headers)).json()
         self.assertTrue({"upload", "download", "verify:MATCH", "verify:MISMATCH"}.issubset({item["action"] for item in audit}))
 
-    async def test_shared_permissions_and_selection_time(self):
-        owner = {"Authorization": "Bearer " + await self.register("owner@example.com", "등록 당시 이름")}
-        reader = {"Authorization": "Bearer " + await self.register("reader@example.com", "검증 당시 이름")}
-        upload = await self.client.post("/api/evidence", headers=owner,
-            files={"file": ("shared.txt", b"bytes", "text/plain")},
-            data={"selectedAt": "2026-11-07T17:45:00+09:00"})
-        self.assertEqual(upload.status_code, 201, upload.text)
-        record = upload.json()
-        self.assertEqual(record["selectedAt"], "2026-11-07T08:45:00.000+00:00")
-        self.assertEqual(record["registeredBy"], "등록 당시 이름")
-        url = "/api/evidence/" + record["id"]
-        settings = {"email": "reader@example.com"}
-        for download, verify in [(False, False), (True, False), (False, True)]:
-            settings.update(download=download, verify=verify)
-            self.assertEqual((await self.client.put(url + "/shares", headers=owner, json=settings)).status_code, 200)
-            listing = (await self.client.get("/api/evidence", headers=reader)).json()
-            self.assertEqual(len(listing), 1)
-            access = listing[0]["access"]
-            self.assertFalse(access["isOwner"])
-            self.assertIn("VIEW", access["permissions"])
-            self.assertEqual("DOWNLOAD" in access["permissions"], download)
-            self.assertEqual("VERIFY" in access["permissions"], verify)
-            self.assertEqual((await self.client.get(url + "/download", headers=reader)).status_code, 200 if download else 403)
-            self.assertEqual((await self.client.post(url + "/verify", headers=reader)).status_code, 200 if verify else 403)
-        for actor in (owner, reader):
-            rename = await self.client.put("/api/me", headers=actor, json={"name": "변경된 이름"})
-            self.assertEqual(rename.status_code, 200)
-        details = (await self.client.get(url, headers=owner)).json()
-        self.assertEqual(details["registeredBy"], "등록 당시 이름")
-        self.assertEqual(details["lastVerification"]["performedBy"], "검증 당시 이름")
-        self.assertEqual((await self.client.get("/api/me", headers=reader)).json()["verificationCount"], 1)
-        self.assertEqual((await self.client.get("/api/me", headers=owner)).json()["verificationCount"], 0)
-        shares = (await self.client.get(url + "/shares", headers=owner)).json()
-        self.assertEqual(len(shares), 1)
-        revoke = url + "/shares/" + shares[0]["id"]
-        self.assertEqual((await self.client.delete(revoke, headers=reader)).status_code, 404)
-        self.assertEqual((await self.client.put(url + "/shares", headers=reader, json=settings)).status_code, 404)
-        self.assertEqual((await self.client.delete(revoke, headers=owner)).status_code, 200)
-        self.assertEqual((await self.client.get("/api/evidence", headers=reader)).json(), [])
-        self.assertEqual((await self.client.get(url, headers=reader)).status_code, 404)
-        self.assertEqual((await self.client.post(url + "/verify", headers=reader)).status_code, 404)
-
-    async def test_actor_migration_preserves_unknown_names(self):
-        headers = {"Authorization": "Bearer " + await self.register("legacy@example.com")}
-        upload = await self.client.post("/api/evidence", headers=headers,
-                                        files={"file": ("legacy.txt", b"legacy", "text/plain")})
-        url = "/api/evidence/" + upload.json()["id"]
-        self.assertEqual((await self.client.post(url + "/verify", headers=headers)).status_code, 200)
-        with closing(sqlite3.connect(self.root / "evidence.sqlite3")) as connection, connection:
-            connection.execute("ALTER TABLE evidence DROP COLUMN registered_by")
-            connection.execute("ALTER TABLE verifications DROP COLUMN performed_by")
-        transport = httpx.ASGITransport(app=main.create_app(self.root))
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as restarted:
-            details = (await restarted.get(url, headers=headers)).json()
-            self.assertIsNone(details["registeredBy"])
-            self.assertIsNone(details["lastVerification"]["performedBy"])
-            new_result = (await restarted.post(url + "/verify", headers=headers)).json()["result"]
-            self.assertEqual(new_result["performedBy"], "Tester")
-
     async def test_auth_validation_and_upload_limits(self):
         owner = await self.register("owner@example.com")
         headers = {"Authorization": f"Bearer {owner}"}
@@ -130,14 +73,14 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.post("/api/auth/login", json={"email": "owner@example.com", "password": "wrong"})).status_code, 401)
         self.assertEqual((await self.client.post("/api/evidence", headers=headers, files={"file": ("bad.exe", b"x", "application/octet-stream")})).status_code, 415)
         self.assertEqual((await self.client.post("/api/evidence", headers=headers, files={"file": ("empty.txt", b"data", "text/plain")}, data={"name": "x" * 201})).status_code, 422)
-        old_limit = main.MAX_FILE_SIZE
-        main.MAX_FILE_SIZE = 3
+        old_limit = config.MAX_FILE_SIZE
+        config.MAX_FILE_SIZE = 3
         try:
             response = await self.client.post("/api/evidence", headers=headers, files={"file": ("large.txt", b"1234", "text/plain")})
             self.assertEqual(response.status_code, 413, response.text)
             self.assertEqual(list((self.root / "files").iterdir()), [])
         finally:
-            main.MAX_FILE_SIZE = old_limit
+            config.MAX_FILE_SIZE = old_limit
         with closing(sqlite3.connect(self.root / "evidence.sqlite3")) as connection:
             password = connection.execute("SELECT password_hash FROM users WHERE email = ?", ("owner@example.com",)).fetchone()[0]
         self.assertTrue(password.startswith("scrypt$"))

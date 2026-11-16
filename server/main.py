@@ -1,451 +1,48 @@
-"""Same-origin API and static app for the EVIDENCE capstone prototype."""
+"""API server for the EVIDENCE capstone prototype (serves /api only; no frontend files)."""
+
+# 이 파일은 서버를 "조립"만 합니다. 실제 기능은 아래 모듈에 나뉘어 있습니다.
+#   config.py       설정 값 (최대 크기, 허용 확장자, 상태 이름 등)
+#   db.py           저장 위치와 DB 연결, 테이블 생성
+#   security.py     시각, 비밀번호 해시, 로그인 세션, 현재 사용자 확인
+#   schemas.py      요청 본문 모양
+#   serializers.py  응답 모양
+#   custody.py      Chain of Custody 이벤트 추가와 사슬 검사 (4단계 추가)
+#   access.py       증거별 권한 확인과 접근 거부 기록 (5단계 추가)
+#   reports.py      보고서 묶음·D 렌더러 호출·PDF 검사·저장 (7단계 추가)
+#   packages.py     패키지 묶음·D ZIP 작성 호출·ZIP 검사·저장 (8단계 추가)
+#   routers/        기능별 API (health, auth, account, evidence, custody, shares, reports, packages)
+#
+# 바깥에서 쓰는 이름은 그대로입니다.
+#   - create_app(data_dir): 테스트가 임시 폴더로 서버를 만들 때 사용
+#   - app: `uvicorn server.main:app`으로 실행할 때 사용
 
 from __future__ import annotations
 
-import hashlib
-import hmac
-import os
-import re
-import secrets
-import sqlite3
-import uuid
-from contextlib import closing
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
-from fastapi.responses import FileResponse, RedirectResponse
-from pydantic import BaseModel
+from fastapi import FastAPI
 
-
-ROOT = Path(__file__).resolve().parent.parent
-MAX_FILE_SIZE = 50 * 1024 * 1024
-CHUNK_SIZE = 1024 * 1024
-ALLOWED_EXTENSIONS = {
-    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".zip", ".txt", ".csv",
-    ".html", ".htm", ".png", ".jpg", ".jpeg", ".gif", ".webp",
-    ".mp4", ".mov", ".webm", ".mp3", ".wav", ".m4a",
-}
-STATUS_LABELS = {
-    "NOT_VERIFIED": "미검증", "MATCH": "일치", "MISMATCH": "불일치", "UNAVAILABLE": "검증 불가"
-}
-EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-
-
-def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
-
-
-def password_hash(password: str, salt: bytes | None = None) -> str:
-    salt = salt or secrets.token_bytes(16)
-    digest = hashlib.scrypt(password.encode("utf-8"), salt=salt, n=16384, r=8, p=1)
-    return f"scrypt$16384$8$1${salt.hex()}${digest.hex()}"
-
-
-def password_matches(password: str, stored: str) -> bool:
-    try:
-        scheme, n, r, p, salt, digest = stored.split("$")
-        if scheme != "scrypt":
-            return False
-        computed = hashlib.scrypt(password.encode("utf-8"), salt=bytes.fromhex(salt), n=int(n), r=int(r), p=int(p))
-        return hmac.compare_digest(computed, bytes.fromhex(digest))
-    except (ValueError, TypeError):
-        return False
-
-
-class Credentials(BaseModel):
-    email: str
-    password: str
-
-
-class Registration(Credentials):
-    name: str
-
-
-class PasswordChange(BaseModel):
-    current_password: str
-    new_password: str
-
-
-class ShareSettings(BaseModel):
-    email: str
-    download: bool = False
-    verify: bool = False
-
-
-class ProfileUpdate(BaseModel):
-    name: str
+from .db import open_storage
+from .routers import account, auth, custody, evidence, health, packages, reports, shares
 
 
 def create_app(data_dir: str | Path | None = None) -> FastAPI:
-    storage = Path(data_dir or os.environ.get("EVIDENCE_DATA_DIR", ROOT / "data")).resolve()
-    files_dir = storage / "files"
-    files_dir.mkdir(parents=True, exist_ok=True)
-    db_path = storage / "evidence.sqlite3"
+    # 1) 저장 폴더·DB 준비 (폴더 결정 순서: data_dir 인자 → EVIDENCE_DATA_DIR → ROOT/data)
+    storage = open_storage(data_dir)
 
-    def connect() -> sqlite3.Connection:
-        connection = sqlite3.connect(db_path, timeout=15)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        return connection
-
-    with closing(connect()) as connection, connection:
-        connection.executescript("""
-            CREATE TABLE IF NOT EXISTS users (
-              id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL,
-              password_hash TEXT NOT NULL, created_at TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS sessions (
-              token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), expires_at TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS evidence (
-              id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id), name TEXT NOT NULL,
-              filename TEXT NOT NULL, stored_name TEXT UNIQUE NOT NULL, type TEXT NOT NULL,
-              mime TEXT NOT NULL, size INTEGER NOT NULL, kind TEXT NOT NULL, source TEXT NOT NULL,
-              description TEXT NOT NULL, memo TEXT NOT NULL, registered_at TEXT NOT NULL,
-              sha256 TEXT NOT NULL, verification_status TEXT NOT NULL DEFAULT 'NOT_VERIFIED'
-            );
-            CREATE INDEX IF NOT EXISTS evidence_owner_date ON evidence(owner_id, registered_at DESC);
-            CREATE TABLE IF NOT EXISTS evidence_shares (
-              evidence_id TEXT NOT NULL REFERENCES evidence(id), recipient_id TEXT NOT NULL REFERENCES users(id),
-              download INTEGER NOT NULL, verify INTEGER NOT NULL, PRIMARY KEY(evidence_id, recipient_id)
-            );
-            CREATE TABLE IF NOT EXISTS verifications (
-              id TEXT PRIMARY KEY, evidence_id TEXT NOT NULL REFERENCES evidence(id), user_id TEXT NOT NULL REFERENCES users(id),
-              started_at TEXT NOT NULL, completed_at TEXT NOT NULL, expected_hash TEXT NOT NULL,
-              current_hash TEXT, status TEXT NOT NULL, reason TEXT NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS verification_evidence_date ON verifications(evidence_id, completed_at DESC);
-            CREATE TABLE IF NOT EXISTS audit (
-              id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL REFERENCES users(id),
-              action TEXT NOT NULL, evidence_id TEXT, created_at TEXT NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS audit_user_date ON audit(user_id, created_at DESC);
-        """)
-
-        connection.execute("BEGIN IMMEDIATE")
-        evidence_columns = {col["name"] for col in connection.execute("PRAGMA table_info(evidence)")}
-        if "selected_at" not in evidence_columns:
-            connection.execute("ALTER TABLE evidence ADD COLUMN selected_at TEXT")
-        if "registered_by" not in evidence_columns:
-            connection.execute("ALTER TABLE evidence ADD COLUMN registered_by TEXT")
-        if "performed_by" not in {col["name"] for col in connection.execute("PRAGMA table_info(verifications)")}:
-            connection.execute("ALTER TABLE verifications ADD COLUMN performed_by TEXT")
-
+    # 2) FastAPI 앱 생성. 각 API는 app.state.storage에서 저장 위치를 꺼내 씁니다.
     app = FastAPI(title="EVIDENCE API", version="0.1.0")
+    app.state.storage = storage
 
-    def issue_session(connection: sqlite3.Connection, user_id: str) -> str:
-        token = secrets.token_urlsafe(32)
-        expires = (datetime.now(timezone.utc) + timedelta(hours=8)).isoformat(timespec="milliseconds")
-        connection.execute("INSERT INTO sessions VALUES (?, ?, ?)", (hashlib.sha256(token.encode()).hexdigest(), user_id, expires))
-        return token
-
-    def current_user(authorization: str | None = Header(default=None)) -> sqlite3.Row:
-        if not authorization or not authorization.startswith("Bearer "):
-            raise HTTPException(401, "로그인이 필요합니다.")
-        token = authorization[7:].strip()
-        if not token:
-            raise HTTPException(401, "로그인이 필요합니다.")
-        with closing(connect()) as connection, connection:
-            user = connection.execute("""
-                SELECT users.* FROM sessions JOIN users ON users.id = sessions.user_id
-                WHERE sessions.token_hash = ? AND sessions.expires_at > ?
-            """, (hashlib.sha256(token.encode()).hexdigest(), utc_now())).fetchone()
-        if user is None:
-            raise HTTPException(401, "로그인이 만료되었습니다. 다시 로그인해 주세요.")
-        return user
-
-    def owned_evidence(connection: sqlite3.Connection, user_id: str, evidence_id: str) -> sqlite3.Row:
-        row = connection.execute("SELECT * FROM evidence WHERE id = ? AND owner_id = ?", (evidence_id, user_id)).fetchone()
-        if row is None:
-            raise HTTPException(404, "증거를 찾을 수 없습니다.")
-        return row
-
-    accessible_query = """SELECT e.*, s.download, s.verify FROM evidence e LEFT JOIN evidence_shares s
-        ON s.evidence_id = e.id AND s.recipient_id = :user WHERE (e.owner_id = :user OR s.recipient_id IS NOT NULL)"""
-
-    def accessible(connection, user_id, evidence_id, permission="VIEW"):
-        row = connection.execute(accessible_query + " AND e.id = :id", {"user": user_id, "id": evidence_id}).fetchone()
-        if row is None:
-            raise HTTPException(404, "증거를 찾을 수 없습니다.")
-        if row["owner_id"] != user_id and permission != "VIEW" and not row[permission.lower()]:
-            raise HTTPException(403, "이 증거에 해당 작업을 수행할 권한이 없습니다.")
-        return row
-
-    def verification_dict(row: sqlite3.Row, filename: str = "") -> dict:
-        return {
-            "id": row["id"], "evidenceId": row["evidence_id"], "startedAt": row["started_at"],
-            "completedAt": row["completed_at"], "expectedHash": row["expected_hash"],
-            "currentHash": row["current_hash"], "status": row["status"], "reason": row["reason"],
-            "filename": filename, "performedBy": row["performed_by"],
-        }
-
-    def evidence_dict(connection: sqlite3.Connection, row: sqlite3.Row, user_id: str) -> dict:
-        owner = row["owner_id"] == user_id
-        permissions = ["VIEW"] + [key for key in ("DOWNLOAD", "VERIFY") if owner or row[key.lower()]]
-        history = [verification_dict(item, row["filename"]) for item in connection.execute(
-            "SELECT * FROM verifications WHERE evidence_id = ? ORDER BY completed_at DESC", (row["id"],)
-        ).fetchall()]
-        return {
-            "id": row["id"], "name": row["name"], "filename": row["filename"],
-            "type": row["type"], "mime": row["mime"], "size": row["size"],
-            "kind": row["kind"], "source": row["source"], "description": row["description"], "memo": row["memo"],
-            "access": {"isOwner": owner, "permissions": permissions},
-            "selectedAt": row["selected_at"], "registeredAt": row["registered_at"], "registeredBy": row["registered_by"],
-            "date": row["registered_at"][:10], "sha256": row["sha256"],
-            "verificationStatus": row["verification_status"], "status": STATUS_LABELS[row["verification_status"]],
-            "lastVerification": history[0] if history else None, "verifications": history, "storage": "server",
-        }
-
-    @app.get("/api/health")
-    def health():
-        return {"backend": True, "maxFileSize": MAX_FILE_SIZE, "extensions": sorted(ALLOWED_EXTENSIONS)}
-
-    @app.post("/api/auth/register", status_code=201)
-    def register(payload: Registration):
-        email = payload.email.strip().lower()
-        name = payload.name.strip()
-        if not EMAIL_PATTERN.fullmatch(email) or not name or len(name) > 100 or not 8 <= len(payload.password) <= 128:
-            raise HTTPException(422, "이름·이메일·비밀번호를 확인해 주세요.")
-        user_id = uuid.uuid4().hex
-        with closing(connect()) as connection, connection:
-            try:
-                connection.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?)",
-                                   (user_id, email, name, password_hash(payload.password), utc_now()))
-            except sqlite3.IntegrityError:
-                raise HTTPException(409, "이미 등록된 이메일입니다.") from None
-            token = issue_session(connection, user_id)
-            connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)", (user_id, "register", utc_now()))
-            connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)", (user_id, "login", utc_now()))
-        return {"token": token, "user": {"id": user_id, "email": email, "name": name}}
-
-    @app.post("/api/auth/login")
-    def login(payload: Credentials):
-        with closing(connect()) as connection, connection:
-            user = connection.execute("SELECT * FROM users WHERE email = ?", (payload.email.strip().lower(),)).fetchone()
-            valid = password_matches(payload.password, user["password_hash"] if user else password_hash("invalid-password"))
-            if not user or not valid:
-                raise HTTPException(401, "이메일 또는 비밀번호가 올바르지 않습니다.")
-            token = issue_session(connection, user["id"])
-            connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)", (user["id"], "login", utc_now()))
-        return {"token": token, "user": {"id": user["id"], "email": user["email"], "name": user["name"]}}
-
-    @app.post("/api/auth/logout")
-    def logout(authorization: str | None = Header(default=None), user: sqlite3.Row = Depends(current_user)):
-        token = authorization[7:].strip()
-        with closing(connect()) as connection, connection:
-            connection.execute("DELETE FROM sessions WHERE token_hash = ?", (hashlib.sha256(token.encode()).hexdigest(),))
-            connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)", (user["id"], "logout", utc_now()))
-        return {"ok": True}
-
-    @app.get("/api/me")
-    def me(user: sqlite3.Row = Depends(current_user)):
-        with closing(connect()) as connection:
-            count = connection.execute("SELECT COUNT(*) FROM verifications WHERE user_id = ?", (user["id"],)).fetchone()[0]
-        return {"id": user["id"], "email": user["email"], "name": user["name"],
-                "createdAt": user["created_at"], "verificationCount": count}
-
-    @app.put("/api/me")
-    def update_profile(payload: ProfileUpdate, user: sqlite3.Row = Depends(current_user)):
-        name = payload.name.strip()
-        if not name or len(name) > 100:
-            raise HTTPException(422, "이름은 1~100자로 입력해 주세요.")
-        with closing(connect()) as connection, connection:
-            connection.execute("UPDATE users SET name = ? WHERE id = ?", (name, user["id"]))
-            connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)",
-                               (user["id"], "profile_update", utc_now()))
-        return {"id": user["id"], "email": user["email"], "name": name, "createdAt": user["created_at"]}
-
-    @app.put("/api/auth/password")
-    def change_password(payload: PasswordChange, user: sqlite3.Row = Depends(current_user)):
-        if not password_matches(payload.current_password, user["password_hash"]):
-            raise HTTPException(403, "현재 비밀번호가 올바르지 않습니다.")
-        if not 8 <= len(payload.new_password) <= 128:
-            raise HTTPException(422, "새 비밀번호는 8자 이상이어야 합니다.")
-        with closing(connect()) as connection, connection:
-            connection.execute("UPDATE users SET password_hash = ? WHERE id = ?",
-                               (password_hash(payload.new_password), user["id"]))
-            connection.execute("INSERT INTO audit(user_id, action, created_at) VALUES (?, ?, ?)",
-                               (user["id"], "password_change", utc_now()))
-        return {"ok": True}
-
-    @app.post("/api/evidence", status_code=201)
-    async def upload_evidence(
-        selectedAt: datetime | None = Form(None), file: UploadFile = File(...), name: str = Form(""), kind: str = Form("파일"),
-        source: str = Form("직접 수집"), description: str = Form(""), memo: str = Form(""),
-        user: sqlite3.Row = Depends(current_user),
-    ):
-        filename = (file.filename or "").replace("\\", "/").split("/")[-1].strip()
-        if not filename or any(ord(char) < 32 for char in filename) or len(filename) > 255:
-            raise HTTPException(422, "파일명을 확인해 주세요.")
-        extension = Path(filename).suffix.lower()
-        if extension not in ALLOWED_EXTENSIONS:
-            raise HTTPException(415, "허용되지 않은 파일 형식입니다.")
-        if len(name) > 200 or len(kind) > 50 or len(source) > 200 or len(description) > 4000 or len(memo) > 4000:
-            raise HTTPException(422, "입력 길이를 확인해 주세요.")
-        if selectedAt is not None and selectedAt.utcoffset() is None:
-            raise HTTPException(422, "파일 선택 시각에는 시간대가 필요합니다.")
-        selected_at = selectedAt.astimezone(timezone.utc).isoformat(timespec="milliseconds") if selectedAt else None
-        evidence_id = f"EV-{uuid.uuid4().hex}"
-        stored_name = uuid.uuid4().hex
-        target = files_dir / stored_name
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-        size = 0
-        digest = hashlib.sha256()
-        try:
-            descriptor = os.open(target, flags, 0o600)
-            with os.fdopen(descriptor, "wb") as output:
-                while chunk := await file.read(CHUNK_SIZE):
-                    size += len(chunk)
-                    if size > MAX_FILE_SIZE:
-                        raise HTTPException(413, "파일은 50 MB 이하만 등록할 수 있습니다.")
-                    digest.update(chunk)
-                    output.write(chunk)
-                output.flush()
-                os.fsync(output.fileno())
-            target.chmod(0o400)
-            now = utc_now()
-            with closing(connect()) as connection, connection:
-                connection.execute("""INSERT INTO evidence
-                    (id, owner_id, name, filename, stored_name, type, mime, size, kind, source, description,
-                     memo, registered_at, sha256, verification_status, selected_at, registered_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT name FROM users WHERE id = ?))""",
-                                   (evidence_id, user["id"], name.strip() or filename, filename, stored_name,
-                                    extension[1:].upper(), file.content_type or "application/octet-stream", size,
-                                    kind, source, description, memo, now, digest.hexdigest(), "NOT_VERIFIED", selected_at, user["id"]))
-                connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
-                                   (user["id"], "upload", evidence_id, now))
-                row = owned_evidence(connection, user["id"], evidence_id)
-                return evidence_dict(connection, row, user["id"])
-        except Exception:
-            if target.exists():
-                target.chmod(0o600)
-            target.unlink(missing_ok=True)
-            raise
-        finally:
-            await file.close()
-
-    @app.get("/api/evidence")
-    def list_evidence(user: sqlite3.Row = Depends(current_user)):
-        with closing(connect()) as connection, connection:
-            rows = connection.execute(accessible_query + " ORDER BY e.registered_at DESC", {"user": user["id"]}).fetchall()
-            return [evidence_dict(connection, row, user["id"]) for row in rows]
-
-    @app.get("/api/evidence/{evidence_id}")
-    def get_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user)):
-        with closing(connect()) as connection, connection:
-            return evidence_dict(connection, accessible(connection, user["id"], evidence_id), user["id"])
-
-    @app.get("/api/evidence/{evidence_id}/shares")
-    def list_shares(evidence_id: str, user: sqlite3.Row = Depends(current_user)):
-        with closing(connect()) as connection:
-            owned_evidence(connection, user["id"], evidence_id)
-            rows = connection.execute("""SELECT u.id, u.email, s.download, s.verify FROM evidence_shares s
-                JOIN users u ON u.id = s.recipient_id WHERE s.evidence_id = ? ORDER BY u.email""", (evidence_id,))
-            return [dict(row) for row in rows]
-
-    @app.put("/api/evidence/{evidence_id}/shares")
-    def set_share(evidence_id: str, settings: ShareSettings, user: sqlite3.Row = Depends(current_user)):
-        with closing(connect()) as connection, connection:
-            owned_evidence(connection, user["id"], evidence_id)
-            recipient = connection.execute("SELECT id FROM users WHERE email = ?", (settings.email.strip().lower(),)).fetchone()
-            if recipient is None or recipient["id"] == user["id"]:
-                raise HTTPException(422, "공유받을 다른 사용자의 가입 이메일을 확인해 주세요.")
-            connection.execute("""INSERT INTO evidence_shares VALUES (?, ?, ?, ?) ON CONFLICT(evidence_id, recipient_id)
-                DO UPDATE SET download = excluded.download, verify = excluded.verify""",
-                (evidence_id, recipient["id"], settings.download, settings.verify))
-            connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
-                               (user["id"], "share_update", evidence_id, utc_now()))
-            return {"ok": True}
-
-    @app.delete("/api/evidence/{evidence_id}/shares/{recipient_id}")
-    def revoke_share(evidence_id: str, recipient_id: str, user: sqlite3.Row = Depends(current_user)):
-        with closing(connect()) as connection, connection:
-            owned_evidence(connection, user["id"], evidence_id)
-            removed = connection.execute("DELETE FROM evidence_shares WHERE evidence_id = ? AND recipient_id = ?", (evidence_id, recipient_id))
-            if removed.rowcount:
-                connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
-                                   (user["id"], "share_revoke", evidence_id, utc_now()))
-            return {"ok": True}
-
-    @app.get("/api/evidence/{evidence_id}/download")
-    def download_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user)):
-        with closing(connect()) as connection, connection:
-            row = accessible(connection, user["id"], evidence_id, "DOWNLOAD")
-            if not re.fullmatch(r"[0-9a-f]{32}", row["stored_name"]):
-                raise HTTPException(500, "저장 파일 경로가 유효하지 않습니다.")
-            target = files_dir / row["stored_name"]
-            if not target.is_file():
-                raise HTTPException(404, "원본 파일을 찾을 수 없습니다.")
-            connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
-                               (user["id"], "download", evidence_id, utc_now()))
-            return FileResponse(target, media_type="application/octet-stream", filename=row["filename"])
-
-    @app.post("/api/evidence/{evidence_id}/verify")
-    def verify_evidence(evidence_id: str, user: sqlite3.Row = Depends(current_user)):
-        started = utc_now()
-        with closing(connect()) as connection, connection:
-            row = accessible(connection, user["id"], evidence_id, "VERIFY")
-            if not re.fullmatch(r"[0-9a-f]{32}", row["stored_name"]):
-                raise HTTPException(500, "저장 파일 경로가 유효하지 않습니다.")
-            target = files_dir / row["stored_name"]
-            current_hash = None
-            status = "UNAVAILABLE"
-            reason = "저장된 파일을 읽을 수 없어 검증하지 못했습니다."
-            try:
-                digest = hashlib.sha256()
-                with target.open("rb") as source:
-                    while chunk := source.read(CHUNK_SIZE):
-                        digest.update(chunk)
-                current_hash = digest.hexdigest()
-                status = "MATCH" if hmac.compare_digest(current_hash, row["sha256"]) else "MISMATCH"
-                reason = "등록 당시 SHA-256과 일치합니다." if status == "MATCH" else "등록 당시 SHA-256과 일치하지 않습니다."
-            except OSError:
-                pass
-            completed = utc_now()
-            result_id = f"VERIFY-{uuid.uuid4().hex}"
-            connection.execute("""INSERT INTO verifications
-                (id, evidence_id, user_id, started_at, completed_at, expected_hash, current_hash, status, reason, performed_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT name FROM users WHERE id = ?))""",
-                               (result_id, evidence_id, user["id"], started, completed, row["sha256"], current_hash,
-                                status, reason, user["id"]))
-            connection.execute("UPDATE evidence SET verification_status = ? WHERE id = ?", (status, evidence_id))
-            connection.execute("INSERT INTO audit(user_id, action, evidence_id, created_at) VALUES (?, ?, ?, ?)",
-                               (user["id"], "verify:" + status, evidence_id, completed))
-            return {"result": verification_dict(connection.execute("SELECT * FROM verifications WHERE id = ?", (result_id,)).fetchone(), row["filename"]), "saved": True}
-
-    @app.get("/api/audit")
-    def audit_log(user: sqlite3.Row = Depends(current_user)):
-        with closing(connect()) as connection, connection:
-            rows = connection.execute("""SELECT audit.action, audit.evidence_id, audit.created_at,
-                evidence.name AS evidence_name, evidence.filename AS evidence_filename
-                FROM audit LEFT JOIN evidence ON evidence.id = audit.evidence_id AND evidence.owner_id = audit.user_id
-                WHERE audit.user_id = ? ORDER BY audit.id DESC LIMIT 100""", (user["id"],)).fetchall()
-            return [{"action": row["action"], "evidenceId": row["evidence_id"],
-                     "evidenceName": row["evidence_name"], "evidenceFilename": row["evidence_filename"],
-                     "createdAt": row["created_at"]} for row in rows]
-
-    @app.get("/")
-    def home():
-        return RedirectResponse("/index.html")
-
-    @app.get("/{file_path:path}", include_in_schema=False)
-    def static_file(file_path: str):
-        requested = Path(file_path)
-        if requested.is_absolute() or ".." in requested.parts:
-            raise HTTPException(404)
-        if len(requested.parts) == 1 and requested.suffix.lower() in {".html", ".css", ".js"}:
-            target = ROOT / requested.name
-        elif requested.as_posix() == "assets/report/pdfmake.min.js":
-            target = ROOT / requested
-        elif len(requested.parts) == 3 and requested.parts[0] == "assets" and requested.suffix.lower() in {".svg", ".ttf", ".txt"}:
-            target = ROOT.joinpath(*requested.parts)
-        else:
-            raise HTTPException(404)
-        if not target.is_file():
-            raise HTTPException(404)
-        return FileResponse(target)
-
+    # 3) 기능별 API 연결 (주소는 각 라우터 파일에 기존 그대로 적혀 있습니다)
+    app.include_router(health.router)
+    app.include_router(auth.router)
+    app.include_router(account.router)
+    app.include_router(evidence.router)
+    app.include_router(custody.router)  # 4단계 추가: Chain of Custody 조회·검사 (C1, C2)
+    app.include_router(shares.router)   # 5단계 추가: 증거 공유 (P2, P3, P4)
+    app.include_router(reports.router)  # 7단계 추가: 보고서 (R1~R4)
+    app.include_router(packages.router)  # 8단계 추가: 증거 패키지 (K1~K4)
     return app
 
 

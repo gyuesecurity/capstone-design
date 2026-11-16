@@ -273,7 +273,10 @@ async function runSmoke(browser) {
 }
 
 (async () => {
-  const browser = await chromium.launch({ channel: 'msedge', headless: true });
+  const launchOptions = { headless: true };
+  if (process.env.EVIDENCE_CHROME_PATH) launchOptions.executablePath = process.env.EVIDENCE_CHROME_PATH;
+  else if (process.env.EVIDENCE_BROWSER_CHANNEL) launchOptions.channel = process.env.EVIDENCE_BROWSER_CHANNEL;
+  const browser = await chromium.launch(launchOptions);
   try { await runSmoke(browser); }
   finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
