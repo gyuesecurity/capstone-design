@@ -22,6 +22,9 @@
 
 8단계(feature/packages)에서 바뀐 점
 - 증거 패키지와 패키지에 넣은 증거 표를 만듭니다. (마이그레이션 7) ZIP은 root/packages/에 저장
+
+보안 보완(feature/backend/security-hardening)에서 바뀐 점
+- 로그인 실패 횟수 표(login_attempts)를 만듭니다. (마이그레이션 8, B 코드와 같은 구조)
 """
 
 from __future__ import annotations
@@ -638,6 +641,20 @@ def _migration_7_packages(connection: sqlite3.Connection) -> None:
         connection.execute(statement)
 
 
+def _migration_8_login_attempts(connection: sqlite3.Connection) -> None:
+    """마이그레이션 8: 로그인 실패 횟수 (B 코드 feature/evidence-crypto와 같은 표)
+
+    증거 기록이 아니라 "지금 막혀 있는지"를 알기 위한 상태 값이라, 수정·삭제 금지 트리거를 두지 않습니다.
+    (로그인에 성공하면 행을 지우고, 실패하면 횟수를 고침) identifier는 "이메일|접속 주소"의 SHA-256입니다.
+    """
+    connection.execute("""CREATE TABLE IF NOT EXISTS login_attempts (
+          identifier TEXT PRIMARY KEY,
+          failures INTEGER NOT NULL,
+          first_failed_at TEXT NOT NULL,
+          blocked_until TEXT
+        )""")
+
+
 # (버전 번호, 마이그레이션 함수). 번호는 1부터 빈칸 없이 올라갑니다.
 MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [
     (1, _migration_1_base_schema),
@@ -647,6 +664,7 @@ MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [
     (5, _migration_5_encryption),
     (6, _migration_6_reports),
     (7, _migration_7_packages),
+    (8, _migration_8_login_attempts),
 ]
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 

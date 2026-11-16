@@ -20,6 +20,9 @@
 - 등록: 원본 SHA-256을 계산하면서 같은 조각을 AES-256-GCM으로 암호화해 저장 (디스크에는 암호문만)
 - 다운로드·검증: 쓰기 잠금 밖에서 복호화. 인증 태그가 맞아야만 평문을 씀
 - 6단계 이전에 평문으로 저장된 증거(LEGACY)도 그대로 다운로드·검증 가능
+
+보안 보완 (B 코드 feature/evidence-crypto에서 옮겨 옴)
+- 등록: 빈 파일은 422, 확장자와 실제 파일 형식(앞부분 서명)이 다르면 415
 """
 
 from __future__ import annotations
@@ -58,6 +61,7 @@ from ..stored_evidence import (
     evidence_aad_v1,
     verified_plaintext,
 )
+from ..upload_checks import SNIFF_SIZE, file_signature_matches
 
 router = APIRouter()
 
@@ -95,6 +99,16 @@ async def upload_evidence(
         raise HTTPException(415, "허용되지 않은 파일 형식입니다.")
     if len(name) > 200 or len(kind) > 50 or len(source) > 200 or len(description) > 4000 or len(memo) > 4000:
         raise HTTPException(422, "입력 길이를 확인해 주세요.")
+    # 빈 파일·형식 위장 거부 (B 코드와 같은 순서·문구). 앞부분 1바이트를 더 읽어 "파일이 더 긴지"도 압니다.
+    header = await file.read(SNIFF_SIZE + 1)
+    await file.seek(0)
+    if not header:
+        await file.close()
+        raise HTTPException(422, "빈 파일은 등록할 수 없습니다.")
+    if not file_signature_matches(extension, header[:SNIFF_SIZE], file.file, truncated=len(header) > SNIFF_SIZE):
+        await file.close()
+        raise HTTPException(415, "파일 확장자와 실제 파일 형식이 일치하지 않습니다.")
+    await file.seek(0)
     evidence_id = f"EV-{uuid.uuid4().hex}"
     stored_name = uuid.uuid4().hex
     target = storage.files_dir / stored_name

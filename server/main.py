@@ -10,6 +10,8 @@
 #   access.py       증거별 권한 확인과 접근 거부 기록 (5단계 추가)
 #   reports.py      보고서 묶음·D 렌더러 호출·PDF 검사·저장 (7단계 추가)
 #   packages.py     패키지 묶음·D ZIP 작성 호출·ZIP 검사·저장 (8단계 추가)
+#   login_limits.py · upload_checks.py · security_headers.py
+#                   로그인 실패 제한 · 업로드 형식 확인 · 보안 응답 헤더 (B 코드에서 옮겨 옴)
 #   routers/        기능별 API (health, auth, account, evidence, custody, shares, reports, packages)
 #
 # 바깥에서 쓰는 이름은 그대로입니다.
@@ -24,6 +26,7 @@ from fastapi import FastAPI
 
 from .db import open_storage
 from .routers import account, auth, custody, evidence, health, packages, reports, shares
+from .security_headers import SecurityHeadersMiddleware
 
 
 def create_app(data_dir: str | Path | None = None) -> FastAPI:
@@ -33,6 +36,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
     # 2) FastAPI 앱 생성. 각 API는 app.state.storage에서 저장 위치를 꺼내 씁니다.
     app = FastAPI(title="EVIDENCE API", version="0.1.0")
     app.state.storage = storage
+    app.add_middleware(SecurityHeadersMiddleware)  # 모든 응답에 보안 헤더 (B 코드에서 옮겨 옴)
 
     # 3) 기능별 API 연결 (주소는 각 라우터 파일에 기존 그대로 적혀 있습니다)
     app.include_router(health.router)
