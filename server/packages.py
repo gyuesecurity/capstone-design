@@ -36,7 +36,11 @@ from contextlib import closing
 
 from fastapi import HTTPException
 
-from d_package.package_builder import PackageBuildError, PackageBundleError, build_package_zip
+from d_package.package_builder import (
+    PackageBuildError,
+    PackageBundleError,
+    build_package_zip,
+)
 
 from .access import access_dict
 from .audit import append_audit
@@ -273,7 +277,7 @@ def build_json_files(package_id: str, report: sqlite3.Row, report_pdf: bytes, cr
             "verificationStatus": item["latest"]["status"] if item["latest"] else "NOT_VERIFIED",
             "reportVerificationId": item["row"]["report_verification_id"],
             "custodySnapshot": {"sequenceNo": item["snapshot"][0], "eventHash": item["snapshot"][1]},
-        } for item, entry in zip(items, packaged)],
+        } for item, entry in zip(items, packaged, strict=True)],
     }
     return {"manifest.json": _json_bytes(manifest), "verification.json": verification_bytes,
             "custody.json": custody_bytes}
@@ -306,7 +310,7 @@ def check_package_zip(path, entries: list[dict]) -> None:
         infos = archive.infolist()
         if [info.filename for info in infos] != [item["path"] for item in entries]:
             raise ValueError("ZIP 항목 목록이 예상과 다릅니다.")
-        for info, item in zip(infos, entries):
+        for info, item in zip(infos, entries, strict=True):
             if info.flag_bits & 0x1:
                 raise ValueError("암호화된 ZIP 항목이 있습니다.")
             if info.is_dir() or info.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
@@ -348,7 +352,7 @@ def _write_package_file(storage: Storage, bundle: dict, entries: list[dict]) -> 
             os.fsync(output.fileno())
         try:
             check_package_zip(part, entries)
-        except Exception as error:  # noqa: BLE001 - zipfile 오류 포함, 모두 "D 결과 불합격"
+        except Exception as error:
             raise HTTPException(500, "생성된 패키지가 검사를 통과하지 못했습니다.") from error
         digest, size = hashlib.sha256(), 0
         with part.open("rb") as source:
@@ -443,7 +447,7 @@ def _insert_package(connection, storage, user, package_id, report_id, created_at
             id, report_id, created_by, creator_name, created_at, file_storage_key, file_sha256, file_size
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                        (package_id, report_id, user["id"], user["name"], created_at, key, file_sha256, file_size))
-    for order, (item, entry) in enumerate(zip(items, packaged), start=1):
+    for order, (item, entry) in enumerate(zip(items, packaged, strict=True), start=1):
         latest = item["latest"]
         sequence_no, event_hash = item["snapshot"]
         connection.execute("""INSERT INTO evidence_package_items (

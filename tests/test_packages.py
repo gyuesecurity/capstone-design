@@ -6,6 +6,7 @@ ZIP은 D의 실제 build_package_zip으로 만듭니다.
 """
 
 import os
+
 # 키가 없으면 서버가 시작하지 않으므로, 테스트에서는 임시 데이터 폴더에 개발용 키를 자동 생성합니다. (키 값은 저장소에 없음)
 os.environ.setdefault("EVIDENCE_ALLOW_DEV_KEY_GENERATION", "true")
 
@@ -177,7 +178,7 @@ class PackageTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(manifest["report"]["sha256"], hashlib.sha256(report_pdf).hexdigest())
         for entry in manifest["files"]:
             self.assertEqual(entry["sha256"], hashlib.sha256(files[entry["path"]]).hexdigest())
-        for item, expected in zip(manifest["items"], package["items"]):
+        for item, expected in zip(manifest["items"], package["items"], strict=True):
             self.assertEqual(hashlib.sha256(files[item["path"]]).hexdigest(), item["packagedFileSha256"])
             self.assertEqual((item["path"], item["custodySnapshot"]), (expected["pathInPackage"], expected["custodySnapshot"]))
         self.assertEqual(manifest["items"][0]["reportVerificationId"], self.verification["id"])
@@ -273,7 +274,9 @@ class PackageTests(unittest.IsolatedAsyncioTestCase):
         path = self.stored_path(self.ev2)
         data = bytearray(path.read_bytes())
         data[-1] ^= 0x01
+        path.chmod(0o600)
         path.write_bytes(bytes(data))
+        path.chmod(0o400)
         before = self.counts()
         response = await self.create()
         self.assertEqual((response.status_code, response.json()["detail"]), (409, packages.HASH_PROBLEM))

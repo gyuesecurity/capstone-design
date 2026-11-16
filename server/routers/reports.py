@@ -19,7 +19,14 @@ from fastapi.responses import Response
 
 from ..audit import append_audit
 from ..db import Storage, get_storage, write_transaction
-from ..reports import create_report, load_report, pdf_filename, read_report_pdf, report_dict, report_list_item
+from ..reports import (
+    create_report,
+    load_report,
+    pdf_filename,
+    read_report_pdf,
+    report_dict,
+    report_list_item,
+)
 from ..schemas import ReportCreate
 from ..security import current_user
 from ..stored_evidence import content_disposition

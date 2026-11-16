@@ -230,7 +230,7 @@ def create_report(storage: Storage, user, title: str, project: str, description:
             raise HTTPException(500, "PDF 생성기를 사용할 수 없어 보고서를 만들지 못했습니다.") from error
         try:
             check_report_pdf(pdf, report_id)
-        except Exception as error:  # noqa: BLE001 - pypdf 파싱 오류 포함, 모두 "D 결과 불합격"
+        except Exception as error:
             raise HTTPException(500, "생성된 PDF가 검사를 통과하지 못했습니다.") from error
 
         key = _write_report_file(storage, pdf)
