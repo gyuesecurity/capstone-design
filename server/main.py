@@ -9,7 +9,8 @@
 #   custody.py      Chain of Custody 이벤트 추가와 사슬 검사 (4단계 추가)
 #   access.py       증거별 권한 확인과 접근 거부 기록 (5단계 추가)
 #   reports.py      보고서 묶음·D 렌더러 호출·PDF 검사·저장 (7단계 추가)
-#   routers/        기능별 API (health, auth, account, evidence, custody, shares, reports)
+#   packages.py     패키지 묶음·D ZIP 작성 호출·ZIP 검사·저장 (8단계 추가)
+#   routers/        기능별 API (health, auth, account, evidence, custody, shares, reports, packages)
 #
 # 바깥에서 쓰는 이름은 그대로입니다.
 #   - create_app(data_dir): 테스트가 임시 폴더로 서버를 만들 때 사용
@@ -22,7 +23,7 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from .db import open_storage
-from .routers import account, auth, custody, evidence, health, reports, shares
+from .routers import account, auth, custody, evidence, health, packages, reports, shares
 
 
 def create_app(data_dir: str | Path | None = None) -> FastAPI:
@@ -41,6 +42,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
     app.include_router(custody.router)  # 4단계 추가: Chain of Custody 조회·검사 (C1, C2)
     app.include_router(shares.router)   # 5단계 추가: 증거 공유 (P2, P3, P4)
     app.include_router(reports.router)  # 7단계 추가: 보고서 (R1~R4)
+    app.include_router(packages.router)  # 8단계 추가: 증거 패키지 (K1~K4)
     return app
 
 

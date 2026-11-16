@@ -47,3 +47,8 @@ class ReportCreate(BaseModel):
     description: str = ""
     selected: list[str]
     options: list[str]
+
+
+# 패키지 만들기 (8단계, A 화면 report-packages.js가 보내는 모양 그대로)
+class PackageCreate(BaseModel):
+    reportId: str

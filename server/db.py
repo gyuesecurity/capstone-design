@@ -19,6 +19,9 @@
 
 7단계(feature/reports)에서 바뀐 점
 - 보고서와 보고서에 넣은 증거 표를 만듭니다. (마이그레이션 6) PDF는 root/reports/에 저장
+
+8단계(feature/packages)에서 바뀐 점
+- 증거 패키지와 패키지에 넣은 증거 표를 만듭니다. (마이그레이션 7) ZIP은 root/packages/에 저장
 """
 
 from __future__ import annotations
@@ -50,6 +53,11 @@ class Storage:
     def reports_dir(self) -> Path:
         """보고서 PDF 폴더 (root/reports). 7단계 추가"""
         return self.root / "reports"
+
+    @property
+    def packages_dir(self) -> Path:
+        """증거 패키지 ZIP 폴더 (root/packages). 8단계 추가"""
+        return self.root / "packages"
 
     def connect(self) -> sqlite3.Connection:
         """요청마다 새 DB 연결을 엽니다.
@@ -538,6 +546,98 @@ def _migration_6_reports(connection: sqlite3.Connection) -> None:
         connection.execute(statement)
 
 
+def _migration_7_packages(connection: sqlite3.Connection) -> None:
+    """마이그레이션 7: 증거 패키지(evidence_packages)와 패키지에 넣은 증거(evidence_package_items)
+
+    - 패키지는 "보고서 PDF + 증거 원본 + 검증 기록 + 관리 이력"을 묶은 ZIP입니다. 만든 뒤에는 수정·삭제할 수 없습니다.
+    - 패키지는 보고서를 만든 사람만 만들 수 있습니다. (트리거가 보고서 작성자와 같은지 확인)
+    - 넣은 원본의 SHA-256(packaged_file_sha256)은 기준 해시(evidence.sha256)와 같아야만 기록됩니다.
+      다르면 C 코드가 먼저 막지만, 코드에 실수가 있어도 DB가 받아들이지 않게 한 번 더 막습니다.
+    - ZIP 파일은 데이터 폴더의 packages/에 저장하고, DB에는 저장 이름·SHA-256·크기만 둡니다.
+      (ZIP 암호화는 B와 AAD 구성을 정한 뒤 추가. 11/16 결정: 지금은 해시로 위조 확인)
+    """
+    connection.execute("""CREATE TABLE IF NOT EXISTS evidence_packages (
+          id TEXT PRIMARY KEY,
+          report_id TEXT NOT NULL REFERENCES reports(id),
+          created_by TEXT NOT NULL REFERENCES users(id),
+          creator_name TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          file_storage_key TEXT NOT NULL UNIQUE,
+          file_sha256 TEXT NOT NULL,
+          file_size INTEGER NOT NULL
+        )""")
+    connection.execute("""CREATE TABLE IF NOT EXISTS evidence_package_items (
+          package_id TEXT NOT NULL REFERENCES evidence_packages(id),
+          evidence_id TEXT NOT NULL REFERENCES evidence(id),
+          item_order INTEGER NOT NULL,
+          evidence_sha256 TEXT NOT NULL,
+          packaged_file_sha256 TEXT NOT NULL,
+          verification_id TEXT REFERENCES verifications(id),
+          verification_status TEXT NOT NULL,
+          path_in_package TEXT NOT NULL,
+          custody_snapshot_sequence_no INTEGER NOT NULL,
+          custody_snapshot_event_hash TEXT NOT NULL,
+          PRIMARY KEY (package_id, evidence_id),
+          UNIQUE (package_id, item_order),
+          UNIQUE (package_id, path_in_package)
+        )""")
+    connection.execute("CREATE INDEX IF NOT EXISTS evidence_packages_report ON evidence_packages(report_id, created_at)")
+
+    triggers = {
+        "packages_block_update": """
+            CREATE TRIGGER packages_block_update BEFORE UPDATE ON evidence_packages
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: 증거 패키지는 수정할 수 없습니다'); END""",
+        "packages_block_delete": """
+            CREATE TRIGGER packages_block_delete BEFORE DELETE ON evidence_packages
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: 증거 패키지는 삭제할 수 없습니다'); END""",
+        "package_items_block_update": """
+            CREATE TRIGGER package_items_block_update BEFORE UPDATE ON evidence_package_items
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: 패키지에 넣은 증거 목록은 수정할 수 없습니다'); END""",
+        "package_items_block_delete": """
+            CREATE TRIGGER package_items_block_delete BEFORE DELETE ON evidence_package_items
+            BEGIN SELECT RAISE(ABORT, 'IMMUTABLE: 패키지에 넣은 증거 목록은 삭제할 수 없습니다'); END""",
+        # 패키지 ID·파일 해시 형식, 만든 사람 이름, 크기
+        "packages_check_values": """
+            CREATE TRIGGER packages_check_values BEFORE INSERT ON evidence_packages
+            WHEN length(NEW.id) != 36 OR substr(NEW.id, 1, 4) != 'PKG-' OR substr(NEW.id, 5) GLOB '*[^0-9a-f]*'
+              OR length(NEW.file_sha256) != 64 OR NEW.file_sha256 GLOB '*[^0-9a-f]*'
+              OR trim(NEW.creator_name) = '' OR NEW.file_size <= 0
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 패키지 ID·파일 해시·만든 사람 이름 형식이 올바르지 않습니다'); END""",
+        # 패키지는 그 보고서를 만든 사람만 만들 수 있음
+        "packages_check_owner": """
+            CREATE TRIGGER packages_check_owner BEFORE INSERT ON evidence_packages
+            WHEN NOT EXISTS (SELECT 1 FROM reports WHERE id = NEW.report_id AND created_by = NEW.created_by)
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 패키지는 보고서를 만든 사람만 만들 수 있습니다'); END""",
+        # 넣은 원본 해시 = 기록한 기준 해시 = 증거의 기준 해시, 그리고 그 보고서에 들어 있던 증거여야 함
+        "package_items_check_hash": """
+            CREATE TRIGGER package_items_check_hash BEFORE INSERT ON evidence_package_items
+            WHEN NEW.packaged_file_sha256 IS NOT NEW.evidence_sha256
+              OR NEW.evidence_sha256 IS NOT (SELECT sha256 FROM evidence WHERE id = NEW.evidence_id)
+              OR NOT EXISTS (SELECT 1 FROM report_evidence JOIN evidence_packages
+                             ON evidence_packages.report_id = report_evidence.report_id
+                             WHERE evidence_packages.id = NEW.package_id AND report_evidence.evidence_id = NEW.evidence_id)
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 패키지 원본 해시가 기준 해시와 다르거나 보고서에 없는 증거입니다'); END""",
+        # 기준점은 그 증거의 관리 이력에 실제로 있는 이벤트(번호·해시)여야 함
+        "package_items_check_snapshot": """
+            CREATE TRIGGER package_items_check_snapshot BEFORE INSERT ON evidence_package_items
+            WHEN NOT EXISTS (SELECT 1 FROM chain_of_custody WHERE evidence_id = NEW.evidence_id
+                             AND sequence_no = NEW.custody_snapshot_sequence_no
+                             AND event_hash = NEW.custody_snapshot_event_hash)
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 관리 이력 기준점이 그 증거의 이벤트와 맞지 않습니다'); END""",
+        # 검증 ID는 그 증거의 검증 결과이고 상태도 같아야 함. 검증한 적 없으면 ID는 NULL, 상태는 NOT_VERIFIED
+        "package_items_check_verification": """
+            CREATE TRIGGER package_items_check_verification BEFORE INSERT ON evidence_package_items
+            WHEN (NEW.verification_id IS NULL AND NEW.verification_status IS NOT 'NOT_VERIFIED')
+              OR (NEW.verification_id IS NOT NULL AND NOT EXISTS (
+                  SELECT 1 FROM verifications WHERE id = NEW.verification_id AND evidence_id = NEW.evidence_id
+                  AND status = NEW.verification_status))
+            BEGIN SELECT RAISE(ABORT, 'INVALID: 검증 ID·상태가 그 증거의 검증 결과와 맞지 않습니다'); END""",
+    }
+    for name, statement in triggers.items():
+        connection.execute(f"DROP TRIGGER IF EXISTS {name}")
+        connection.execute(statement)
+
+
 # (버전 번호, 마이그레이션 함수). 번호는 1부터 빈칸 없이 올라갑니다.
 MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [
     (1, _migration_1_base_schema),
@@ -546,6 +646,7 @@ MIGRATIONS: list[tuple[int, Callable[[sqlite3.Connection], None]]] = [
     (4, _migration_4_sharing),
     (5, _migration_5_encryption),
     (6, _migration_6_reports),
+    (7, _migration_7_packages),
 ]
 SCHEMA_VERSION = MIGRATIONS[-1][0]
 
@@ -605,6 +706,7 @@ def open_storage(data_dir: str | Path | None = None) -> Storage:
     files_dir = root / "files"
     files_dir.mkdir(parents=True, exist_ok=True)
     (root / "reports").mkdir(exist_ok=True)  # 7단계: 보고서 PDF 폴더
+    (root / "packages").mkdir(exist_ok=True)  # 8단계: 증거 패키지 ZIP 폴더
     # 6단계: 키를 먼저 읽습니다. 키가 없거나 설정이 틀리면 KeyConfigurationError로 여기서 멈추고 DB는 건드리지 않습니다.
     # 키 소스: EVIDENCE_MASTER_KEYS_FILE(시연·운영) / EVIDENCE_MASTER_KEYS / EVIDENCE_MASTER_KEY 중 하나,
     # 또는 개발 때만 EVIDENCE_ALLOW_DEV_KEY_GENERATION=true (root/keys/에 개발용 키 생성)

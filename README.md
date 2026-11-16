@@ -84,6 +84,7 @@ capstone-Backend/
 │   ├── stored_evidence.py  # 저장 파일 암호화 연결 (AAD, 복호화)
 │   ├── audit.py        # 활동 기록 서명 체인
 │   ├── reports.py      # 보고서: D 렌더러 호출, PDF 검사, 저장
+│   ├── packages.py     # 증거 패키지: 원본 확인, D ZIP 작성 호출, ZIP 검사, 저장
 │   └── routers/        # 기능별 API
 └── tests/              # 자동 테스트
 ```
