@@ -2,17 +2,23 @@
 
 디지털 증거 파일을 등록하고 SHA-256으로 원본 일치 여부를 재검증하는 캡스톤 프로젝트입니다. 소유자는 증거 상세의 **공유 관리**에서 가입한 이메일로 조회를 허용하고, 원본 다운로드와 검증 권한을 각각 부여하거나 회수할 수 있습니다. 증거 관리, 검증, 대시보드, 보고서 증거 선택 화면은 같은 서버 데이터베이스를 사용합니다.
 
-## 기술과 실행
+## Windows 로컬 실행
+
+1. `d_soyeon` 브랜치의 ZIP 파일을 내려받아 압축을 풉니다. [브랜치 ZIP 다운로드](https://github.com/gyuesecurity/capstone-design/archive/refs/heads/d_soyeon.zip)
+2. 처음 실행할 때는 Python 3.11 이상을 설치하고, 압축을 푼 폴더 안에서 `start-server.cmd`가 있는 폴더를 엽니다. 그 폴더에서 터미널을 열고 `python -m pip install -r requirements.txt`를 실행합니다.
+3. `start-server.cmd`를 더블 클릭한 뒤 브라우저로 접속합니다. 사용하는 동안 서버 창을 열어 두세요. [로컬 사이트 열기](http://127.0.0.1:8000/)
+
+다음부터는 3번만 진행하면 됩니다. 각자 등록한 증거는 실행한 사람의 PC에 저장됩니다.
+
+## 실행 환경
 
 - 프런트엔드: HTML, CSS, JavaScript
 - 서버: Python 3.11+, FastAPI, SQLite
 - 파일 저장: `data/files/`, 메타데이터와 이력: `data/evidence.sqlite3`
 
-이미 실행 환경이 준비된 PC에서는 `start-server.cmd`를 더블 클릭하면 됩니다. 이 실행 파일은 프로젝트의 `.deps` 라이브러리가 있으면 우선 사용합니다. 사이트를 사용하는 동안 서버 창을 열어 두세요. 처음 설치하는 경우에는 아래 명령을 사용합니다.
+`start-server.cmd`는 프로젝트의 `.deps` 라이브러리가 있으면 우선 사용합니다. 터미널에서 서버를 직접 시작할 때는 프로젝트 폴더에서 다음 명령을 실행합니다.
 
 ```powershell
-cd D:\CDamerica\capstone-design
-python -m pip install -r requirements.txt
 python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
 ```
 
