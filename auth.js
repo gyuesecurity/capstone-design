@@ -4,43 +4,77 @@
   const signup = document.getElementById("signup-form");
   const terms = document.getElementById("terms-form");
   async function backendEnabled() {
-    try {
-      const response = await fetch("/api/health", { cache: "no-store" });
-      return response.ok && (await response.json()).backend === true;
-    } catch (error) { return false; }
+    let response;
+    try { response = await fetch("/api/health", { cache: "no-store" }); }
+    catch (_) { throw new Error("서버에 연결할 수 없습니다. 연결을 확인한 뒤 다시 시도해 주세요."); }
+    if (response.status === 404 || response.status === 405) return false;
+    if (!response.ok) throw new Error("인증 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    if (!response.headers.get("content-type")?.includes("application/json")) return false;
+    let result;
+    try { result = await response.json(); }
+    catch (_) { throw new Error("인증 서버 응답을 확인하지 못했습니다. 다시 시도해 주세요."); }
+    return result.backend === true;
   }
   async function authenticate(path, payload) {
-    const response = await fetch(path, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "요청에 실패했습니다.");
+    let response;
+    try {
+      response = await fetch(path, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    } catch (_) {
+      throw new Error(path.endsWith("register")
+        ? "가입 요청 결과를 확인하지 못했습니다. 다시 가입하기 전에 입력한 계정으로 로그인을 확인해 주세요."
+        : "서버에 연결할 수 없습니다. 연결을 확인한 뒤 다시 로그인해 주세요.");
+    }
+    let result;
+    try { result = await response.json(); }
+    catch (_) { throw new Error("서버 응답을 확인하지 못했습니다. 입력한 계정 정보를 확인한 뒤 다시 시도해 주세요."); }
+    if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "요청에 실패했습니다. 입력 내용을 확인한 뒤 다시 시도해 주세요.");
+    if (typeof result.token !== "string" || !result.token) throw new Error("서버에서 로그인 정보를 받지 못했습니다. 다시 로그인해 주세요.");
     sessionStorage.setItem("evidence-auth-token", result.token);
-    localStorage.setItem("evidence-profile-name", result.user.name);
+    sessionStorage.removeItem("evidence-demo-mode");
     return result;
   }
-  function showAuthError(form, message) {
-    let status = form.querySelector("[role=status]");
+  function showAuthStatus(form, message, state = "error") {
+    let status = form.querySelector("[data-auth-feedback], #auth-status");
     if (!status) {
       status = document.createElement("p");
-      status.setAttribute("role", "status");
       status.className = "auth-status";
       form.append(status);
     }
-    status.hidden = false;
+    status.dataset.authFeedback = "";
+    status.dataset.state = state;
+    status.setAttribute("role", state === "error" ? "alert" : "status");
+    status.setAttribute("aria-live", state === "error" ? "assertive" : "polite");
+    status.hidden = !message;
     status.textContent = message;
+    return status;
+  }
+  function showAuthError(form, message) { return showAuthStatus(form, message, "error"); }
+  function beginAuth(form, message) {
+    form.dataset.authBusy = "true";
+    form.setAttribute("aria-busy", "true");
+    const controls = Array.from(form.querySelectorAll("input, button, select, textarea"), node => ({ node, disabled: node.disabled }));
+    const submit = form.querySelector('button[type="submit"]');
+    const label = submit?.textContent;
+    controls.forEach(({ node }) => { node.disabled = true; });
+    if (submit) submit.textContent = message;
+    showAuthStatus(form, message, "processing");
+    return () => {
+      controls.forEach(({ node, disabled }) => { node.disabled = disabled; });
+      if (submit) submit.textContent = label;
+      form.dataset.authBusy = "false";
+      form.setAttribute("aria-busy", "false");
+    };
   }
   function showStaticDemoLink(form) {
-    showAuthError(form, "이 배포에는 인증 서버가 없습니다. 실제 계정과 파일은 로컬 서버에서 사용할 수 있습니다. ");
-    const status = form.querySelector("[role=status]");
-    let link = status.querySelector("a");
-    if (!link) {
-      link = document.createElement("a");
-      link.href = "index_home.html";
-      link.textContent = "화면 시연 계속하기";
-      status.append(link);
-    }
+    const status = showAuthStatus(form, "이 배포에는 인증 서버가 없습니다. 실제 계정과 파일은 로컬 서버에서 사용할 수 있습니다.", "error");
+    if (document.querySelector("[data-demo-entry]")) return;
+    const link = document.createElement("a");
+    link.href = "index_home.html?demo=1";
+    link.textContent = "화면 시연 계속하기";
+    status.append(" ", link);
   }
   function destination() {
     const next = new URLSearchParams(location.search).get("next");
@@ -54,14 +88,20 @@
     }
     login.addEventListener("submit", async function (event) {
       event.preventDefault();
-      if (!await backendEnabled()) {
-        showStaticDemoLink(login);
-        return;
-      }
+      if (login.dataset.authBusy === "true" || !login.reportValidity()) return;
+      const payload = { email: login.querySelector("#email").value, password: login.querySelector("#password").value };
+      const release = beginAuth(login, "로그인 중…");
+      let navigating = false;
       try {
-        await authenticate("/api/auth/login", { email: login.querySelector("#email").value, password: login.querySelector("#password").value });
+        if (!await backendEnabled()) {
+          showStaticDemoLink(login);
+          return;
+        }
+        await authenticate("/api/auth/login", payload);
+        navigating = true;
         location.href = destination();
       } catch (error) { showAuthError(login, error.message); }
+      finally { if (!navigating) release(); }
     });
     document.querySelectorAll("[data-recovery]").forEach(function (button) {
       button.addEventListener("click", function () {
@@ -83,6 +123,7 @@
     function showVerificationStatus(message, state) {
       verificationStatus.textContent = message;
       verificationStatus.dataset.state = state || "info";
+      verificationStatus.setAttribute("role", state === "error" ? "alert" : "status");
     }
     email.addEventListener("input", function () {
       const hadChallenge = challenge !== null;
@@ -158,6 +199,7 @@
     });
     signup.addEventListener("submit", async function (event) {
       event.preventDefault();
+      if (signup.dataset.authBusy === "true") return;
       validatePassword();
       if (!demoVerified || !challenge || challenge.email !== email.value) {
         showVerificationStatus("인증코드를 요청한 뒤 확인 버튼을 눌러 주세요.", "error");
@@ -165,17 +207,20 @@
         return;
       }
       if (!signup.reportValidity()) return;
-      if (!await backendEnabled()) {
-        showStaticDemoLink(signup);
-        return;
-      }
+      const payload = { name: document.getElementById("name").value.trim(), email: email.value, password: password.value };
+      const release = beginAuth(signup, "가입 요청 중…");
+      let navigating = false;
       try {
-        await authenticate("/api/auth/register", {
-          name: document.getElementById("name").value.trim(), email: email.value,
-          password: password.value
-        });
+        if (!await backendEnabled()) {
+          navigating = true;
+          location.href = "login.html?signup-demo=1";
+          return;
+        }
+        await authenticate("/api/auth/register", payload);
+        navigating = true;
         location.href = "Dashboard.html";
       } catch (error) { showAuthError(signup, error.message); }
+      finally { if (!navigating) release(); }
     });
   }
   if (terms) {

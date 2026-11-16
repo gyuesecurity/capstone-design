@@ -1,23 +1,26 @@
-(function () {
+(async function () {
   'use strict';
 
   const page = document.body.dataset.reportPage;
   if (!page) return;
-  const DRAFT_KEY = 'evidence-report:draft:v1';
-  const RESULT_KEY = 'evidence-report:result:v1';
-  const GENERATION_KEY = 'evidence-report:generating:v1';
+  const savedPage = page === 'complete' || page === 'detail';
   const options = ['basic', 'preview', 'metadata', 'exif', 'hash', 'results', 'custody', 'url'];
+  const pendingOptions = new Set(['exif', 'custody']);
+  const defaultOptions = options.filter(key => !pendingOptions.has(key));
   const optionNames = ['증거 기본 정보', '증거 미리보기', '메타데이터', 'EXIF 정보', 'SHA-256', '무결성 검증 결과', 'Chain of Custody', 'URL 수집 정보'];
-  let evidence = [];
   const statusNames = { NOT_VERIFIED: '미검증', MATCH: '일치', MISMATCH: '불일치', UNAVAILABLE: '검증 불가' };
   const select = (query) => document.querySelector(query);
   const all = (query) => Array.from(document.querySelectorAll(query));
-  const date = (value) => new Date(value).toLocaleDateString('sv-SE').replace(/-/g, '/');
-  const defaults = () => ({ title: '디지털 증거 검증 보고서', author: '소연', project: '', description: '', selected: [], options: options.slice(), date: date(Date.now()) });
+  const timeZone = 'Asia/Seoul';
+  const date = (value) => new Date(value).toLocaleDateString('sv-SE', { timeZone }).replace(/-/g, '/');
+  const defaults = () => ({ title: '디지털 증거 검증 보고서', author: '', project: '', description: '', selected: [], options: defaultOptions.slice(), date: date(Date.now()) });
 
-  function formatDate(value) {
+  function formatDate(value, withSeconds = false) {
+    if (value == null || value === '') return '기록 없음';
     const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? '기록 없음' : `${date(parsed)} ${parsed.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+    if (Number.isNaN(parsed.getTime())) return '기록 없음';
+    const time = parsed.toLocaleTimeString('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', second: withSeconds ? '2-digit' : undefined });
+    return `${date(parsed)} ${time}`;
   }
 
   function typeName(record) {
@@ -29,20 +32,37 @@
     return type || '기타';
   }
 
-  function storedEvidence(record) {
+  // Reports saved by earlier browser versions stored the custody reference as text.
+  function normalizeCustody(item) {
+    if (!Object.hasOwn(item, 'custodyAnchor')) return item;
+    const { custodyAnchor, custodySnapshot = custodyAnchor || null, ...record } = item;
+    return { ...record, custodySnapshot };
+  }
+
+  // Keep display metadata for live rows separate from the saved report evidence snapshot.
+  const registrationById = new Map();
+  function sortedEvidence(items) {
+    return items.map(storedEvidence).sort((a, b) => registrationById.get(b.id).timestamp - registrationById.get(a.id).timestamp);
+  }
+
+  function storedEvidence(item) {
+    const record = normalizeCustody(item);
+    registrationById.set(record.id, window.EvidenceListDisplay.registrationTime(record));
     const statusCode = statusNames[record.verificationStatus] ? record.verificationStatus : 'NOT_VERIFIED';
     return {
       id: record.id, name: record.name || record.filename || record.id, filename: record.filename || '',
       type: typeName(record), date: formatDate(record.registeredAt), registeredAt: record.registeredAt, statusCode,
       status: statusNames[statusCode], size: record.size, mime: record.mime || '',
       sha256: record.sha256 || '', source: record.source || '',
-      lastVerification: record.lastVerification || null
+      registeredBy: record.registeredBy || null,
+      custodySnapshot: record.custodySnapshot ?? null,
+      lastVerification: record.lastVerification || null, isOwner: !record.access || record.access.isOwner === true
     };
   }
 
-  async function loadStoredEvidence() {
-    if (window.EvidenceApi && await window.EvidenceApi.enabled()) {
-      return (await window.EvidenceApi.list()).map(storedEvidence).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt));
+  async function loadStoredEvidence(profile) {
+    if (profile) {
+      return sortedEvidence((await window.EvidenceApi.list('all')).filter(item => item.access?.canView !== false));
     }
     return new Promise((resolve, reject) => {
       const opening = indexedDB.open('evidence-local-files', 1);
@@ -58,29 +78,68 @@
         db.onversionchange = () => db.close();
         const transaction = db.transaction('records', 'readonly');
         const request = transaction.objectStore('records').getAll();
-        transaction.oncomplete = () => { db.close(); resolve(request.result.map(storedEvidence).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))); };
+        transaction.oncomplete = () => { db.close(); resolve(sortedEvidence(request.result)); };
         transaction.onabort = () => { db.close(); reject(transaction.error || new Error('증거 목록을 읽을 수 없습니다.')); };
       };
     });
   }
 
-  async function boot() {
-    try { evidence = await loadStoredEvidence(); }
-    catch (error) { message(`등록된 증거를 읽지 못했습니다: ${error.message}`); return; }
-
-  function read(key) {
-    try { return JSON.parse(sessionStorage.getItem(key)); } catch (_) { return null; }
-  }
-
-  function message(text) {
+  function message(text, retry, label = '다시 시도', busy = false) {
     let element = select('.report-message');
     if (!element) {
       element = document.createElement('div');
       element.className = 'report-message';
-      element.setAttribute('role', 'alert');
       select('main').prepend(element);
     }
-    element.textContent = text;
+    element.hidden = !text;
+    element.setAttribute('role', busy ? 'status' : 'alert');
+    element.setAttribute('aria-busy', String(busy));
+    element.classList.toggle('report-message--busy', busy);
+    const description = document.createElement('p');
+    description.textContent = text;
+    element.replaceChildren(description);
+    if (retry) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'report-retry';
+      button.dataset.reportRetry = 'operation';
+      button.textContent = label;
+      button.addEventListener('click', async () => {
+        if (button.disabled) return;
+        button.disabled = true;
+        element.setAttribute('aria-busy', 'true');
+        try { await retry(); }
+        catch (error) { message(error.message, retry, label); }
+        finally {
+          if (button.isConnected) button.disabled = false;
+          element.setAttribute('aria-busy', 'false');
+        }
+      });
+      element.append(button);
+    }
+  }
+
+  function lockReportControls(nodes) {
+    const snapshots = Array.from(new Set(nodes)).map(node => ({ node, disabled: node.disabled, aria: node.getAttribute('aria-disabled'), tab: node.getAttribute('tabindex') }));
+    const block = event => {
+      if (event.type === 'keydown' && !['Enter', ' '].includes(event.key)) return;
+      event.preventDefault(); event.stopImmediatePropagation();
+    };
+    snapshots.forEach(({ node }) => {
+      if ('disabled' in node) node.disabled = true;
+      node.setAttribute('aria-disabled', 'true');
+      node.classList.add('report-control-busy');
+      node.addEventListener('click', block, true);
+      node.addEventListener('keydown', block, true);
+    });
+    return () => snapshots.forEach(({ node, disabled, aria, tab }) => {
+      if ('disabled' in node) node.disabled = disabled;
+      if (aria === null) node.removeAttribute('aria-disabled'); else node.setAttribute('aria-disabled', aria);
+      if (tab === null) node.removeAttribute('tabindex'); else node.setAttribute('tabindex', tab);
+      node.classList.remove('report-control-busy');
+      node.removeEventListener('click', block, true);
+      node.removeEventListener('keydown', block, true);
+    });
   }
 
   function write(key, value) {
@@ -92,44 +151,142 @@
     try { sessionStorage.removeItem(key); } catch (_) { /* Storage may be disabled. */ }
   }
 
+  function read(key) {
+    try { return JSON.parse(sessionStorage.getItem(key)); } catch (_) { return null; }
+  }
+
+  let profile;
+  let server;
+  let evidence = [];
+  let draftAuthor;
+  const screen = select('[data-report-screen]');
+  if (savedPage) screen.hidden = true;
+  try {
+    profile = await window.EvidenceApi.profile();
+    if (profile) server = await import('./report-server.js?v=operation-feedback-1');
+    draftAuthor = profile?.name ?? 'user';
+    if (page === 'info') {
+      select('[data-report-value="author"]').textContent = draftAuthor;
+      select('[data-report-author-note]').textContent = profile
+        ? '보고서를 생성할 때의 프로필 이름으로 기록됩니다.'
+        : '비로그인 시연에서는 user로 기록됩니다.';
+    }
+    if (!server || (!savedPage && !['list', 'progress'].includes(page))) evidence = await loadStoredEvidence(profile);
+  } catch (error) {
+    if (screen) screen.hidden = true;
+    message(error.message, () => location.reload(), '다시 불러오기');
+    return;
+  }
+  const scope = profile ? profile.id : 'demo';
+  const DRAFT_KEY = `evidence-report:draft:v2:${scope}`;
+  const RESULT_KEY = `evidence-report:result:v2:${scope}`;
+  const GENERATION_KEY = `evidence-report:generating:v2:${scope}`;
+
   function clean(value) {
-    const fallback = defaults();
+    // Preserve the interpretation of historical reports; draft filtering happens separately.
+    const fallback = { ...defaults(), options: options.slice() };
     if (!value || typeof value !== 'object') return fallback;
+    const snapshot = Array.isArray(value.evidenceSnapshot)
+      ? value.evidenceSnapshot.filter((item) => item && typeof item.id === 'string').map(normalizeCustody) : [];
+    const availableIds = new Set([...evidence, ...snapshot].map((item) => item.id));
     return {
       ...fallback,
+      author: profile ? (typeof value.author === 'string' ? value.author.trim() : '') : 'user',
+      legacyTime: value.legacyTime === true,
       title: typeof value.title === 'string' ? value.title.slice(0, 150) : fallback.title,
       project: typeof value.project === 'string' ? value.project.slice(0, 200) : '',
       description: typeof value.description === 'string' ? value.description.slice(0, 4000) : '',
-      selected: Array.isArray(value.selected) ? [...new Set(value.selected.filter((id) => typeof id === 'string' && (evidence.some((item) => item.id === id) || value.evidenceSnapshot?.some((item) => item.id === id))))] : fallback.selected,
+      selected: Array.isArray(value.selected) ? [...new Set(value.selected.filter((id) => availableIds.has(id)))] : fallback.selected,
       options: Array.isArray(value.options) ? options.filter((key) => value.options.includes(key)) : fallback.options,
       date: typeof value.date === 'string' ? value.date : fallback.date,
       id: typeof value.id === 'string' ? value.id : '',
       created: typeof value.created === 'string' ? value.created : '',
-      evidenceSnapshot: Array.isArray(value.evidenceSnapshot) ? value.evidenceSnapshot.filter((item) => item && typeof item.id === 'string') : []
+      evidenceSnapshot: snapshot
     };
   }
 
-  let draft = clean(read(DRAFT_KEY));
-  const result = read(RESULT_KEY);
-  const isCurrent = page === 'complete' || new URLSearchParams(location.search).get('report') === 'current';
+  // Old drafts and results had no owner. Only adopt ones tied entirely to this user's own evidence.
+  function migrateLegacy(key, legacyKey, isResult) {
+    if (read(key)) return;
+    const legacy = read(legacyKey);
+    if (!Array.isArray(legacy?.selected) || !legacy.selected.length) return;
+    const ownIds = new Set(evidence.filter((item) => item.isOwner).map((item) => item.id));
+    if (!legacy.selected.every((id) => ownIds.has(id))) return;
+    const data = clean(legacy);
+    data.author = profile ? '' : 'user'; // Legacy account reports did not record the author's real name.
+    data.evidenceSnapshot = data.evidenceSnapshot.filter((item) => data.selected.includes(item.id));
+    data.legacyTime = isResult;
+    if (!isResult) data.date = date(Date.now());
+    if (isResult && !data.id) return;
+    if (write(key, data)) remove(legacyKey);
+  }
+  migrateLegacy(DRAFT_KEY, 'evidence-report:draft:v1', false);
+  if (!server) migrateLegacy(RESULT_KEY, 'evidence-report:result:v1', true);
+  function availableDraftOptions(value) {
+    const selected = Array.isArray(value) ? value : defaultOptions;
+    return options.filter(key => !pendingOptions.has(key) && selected.includes(key) && (!server || server.draftOptions.includes(key)));
+  }
+  const storedDraft = read(DRAFT_KEY);
+  let draft = { ...clean(storedDraft), author: draftAuthor };
+  draft.options = availableDraftOptions(draft.options);
+  if (server) {
+    draft.options = draft.options.filter(option => server.draftOptions.includes(option));
+    // On the progress route the server validates the actual selection at creation time.
+    if (page === 'progress') draft.selected = read(DRAFT_KEY)?.selected || [];
+  }
+  // Only repair an in-progress draft. Saved results and server snapshots keep their original options.
+  if (!savedPage && page !== 'list' && storedDraft && JSON.stringify(storedDraft.options) !== JSON.stringify(draft.options)) {
+    write(DRAFT_KEY, { ...storedDraft, options: draft.options });
+  }
+  const search = new URLSearchParams(location.search);
+  const requestedId = search.get('report') || search.get('reportId') || search.get('id');
+  const isCurrent = savedPage && (server || page === 'complete' || requestedId === 'current');
+  let result = server ? null : read(RESULT_KEY);
+  if (savedPage && server) {
+    try {
+      result = await server.loadDetail(requestedId);
+    } catch (error) {
+      message(error.message, () => location.reload(), '보고서 다시 불러오기');
+      if (page === 'complete') {
+        const back = document.createElement('a');
+        back.className = 'report-back';
+        back.href = 'report.html';
+        back.textContent = '← 보고서 목록';
+        select('main').append(back);
+      }
+      return;
+    }
+  } else if (savedPage && requestedId && requestedId !== 'current') {
+    message('서버 보고서는 로그인 후 확인할 수 있습니다.');
+    return;
+  }
   if (isCurrent && (!result || !result.id)) { location.replace('report.html'); return; }
   const sampleEvidence = [
     { id: 'EV-20261006-001', name: 'evidence_001.html', filename: 'evidence_001.html', type: 'HTML', date: '2026/10/06 10:32', statusCode: 'MATCH', status: '일치' },
     { id: 'EV-20261006-002', name: 'screenshot_001.png', filename: 'screenshot_001.png', type: '이미지', date: '2026/10/06 10:21', statusCode: 'MATCH', status: '일치' }
   ];
-  const sample = { ...defaults(), title: '디지털 증거 검증 보고서_001', id: 'RPT-20261008-001', date: '2026/10/08', created: '2026/10/08 16:02:31', selected: sampleEvidence.map((item) => item.id), evidenceSnapshot: sampleEvidence };
-  const report = isCurrent ? clean(result) : (page === 'detail' || page === 'list' ? sample : draft);
-  if (isCurrent && page === 'detail') {
+  const sample = { ...defaults(), author: draftAuthor, title: '디지털 증거 검증 보고서_001', id: 'RPT-20261008-001', date: '2026/10/08', created: '2026/10/08 16:02:31', selected: sampleEvidence.map((item) => item.id), evidenceSnapshot: sampleEvidence };
+  const report = isCurrent ? clean(result) : (page === 'detail' ? sample : draft);
+  if (server && isCurrent) {
+    report.filename = result.file?.filename;
+    if (page === 'complete') select('[data-report-detail-link]').href = server.reportUrl('detail', report.id);
+  }
+  if (savedPage) screen.hidden = false;
+  if (page === 'detail') {
     const heading = select('[role="heading"][aria-level="1"]');
-    if (heading) heading.textContent = '보고서 상세 보기';
+    if (heading) heading.textContent = isCurrent ? '보고서 상세 보기' : '예시 보고서 상세 보기';
+    if (server || !isCurrent) select('[data-report-delete]')?.remove();
   }
 
   function itemsFor(data) {
-    const source = data.evidenceSnapshot?.length ? data.evidenceSnapshot : evidence;
+    const source = data.id ? data.evidenceSnapshot : evidence;
     return data.selected.map((id) => source.find((item) => item.id === id)).filter(Boolean);
   }
 
-  function saveDraft() { return write(DRAFT_KEY, draft); }
+  function saveDraft() {
+    draft.options = availableDraftOptions(draft.options);
+    return write(DRAFT_KEY, draft);
+  }
   function valid() {
     if (!draft.selected.length) { message('보고서에 포함할 증거를 한 개 이상 선택해 주세요.'); return false; }
     if (!draft.title.trim()) {
@@ -143,6 +300,10 @@
 
   function summary(data) {
     const counts = itemsFor(data).reduce((result, item) => { result[item.statusCode] = (result[item.statusCode] || 0) + 1; return result; }, {});
+    return countSummary(counts);
+  }
+
+  function countSummary(counts) {
     return `일치 ${counts.MATCH || 0}건 · 미검증 ${counts.NOT_VERIFIED || 0}건 · 불일치 ${counts.MISMATCH || 0}건 · 검증 불가 ${counts.UNAVAILABLE || 0}건`;
   }
 
@@ -157,38 +318,34 @@
 
   function renderValues(data) {
     const count = data.selected.length;
+    const items = itemsFor(data);
     const values = {
-      title: data.title, author: data.author, date: data.date,
+      title: data.title, author: data.author || '작성자 미기록', date: data.date,
+      'created-label': data.legacyTime ? '생성 일시 (시간대 미기록)' : '생성 일시 (KST)',
+      'date-label': data.legacyTime ? '작성일 (시간대 미기록)' : '작성일 (KST)',
       id: data.id || '생성 시 발급', 'id-prefixed': `보고서 ID　${data.id || '생성 시 발급'}`,
-      filename: `${data.title}.pdf`, created: data.created || '', count: `${count}건`,
+      filename: data.filename || `${data.title}.pdf`, created: data.created || '', count: `${count}건`,
       selection: `선택된 증거: ${count}건`, 'selected-count': `선택 증거 ${count}건`,
-      summary: summary(data), status: itemsFor(data).every((item) => item.statusCode === 'MATCH') && count ? '✓ 모두 일치' : '검증 상태 확인 필요',
+      summary: summary(data), status: count && items.length === count && items.every(item => item.statusCode === 'MATCH') ? '✓ 모두 일치' : '검증 상태 확인 필요',
       'preview-description': `선택한 ${count}건의 증거와 보고서에 포함되는 정보를 최종 확인하세요.`,
-      'document-description': `등록된 디지털 증거 ${count}건의 수집 기록과 선택한 보고서 항목을 정리합니다.`,
+      'document-description': `선택한 증거 ${count}건의 보고서 항목을 표시합니다.`,
       'complete-description': `선택한 증거 ${count}건으로 보고서를 생성했습니다.`,
       'progress-description': `선택한 ${count}건의 증거와 무결성 검증 정보를 문서에 포함하고 있습니다.`,
-      'custody-description': `증거 ${count}건의 수집 및 처리 이력을 보고서와 함께 보존합니다.`,
-      'author-date': `작성자 ${data.author} · 작성일 ${data.date}`,
+      'author-date': `작성자 ${data.author || '작성자 미기록'} · 작성일 (${data.legacyTime ? '시간대 미기록' : 'KST'}) ${data.date}`,
       footer: `EVIDENCE · ${data.id || '미리보기'}`
     };
     all('[data-report-value]').forEach((element) => { element.textContent = values[element.dataset.reportValue] ?? ''; });
   }
 
   function renderEvidence(data) {
-    const container = select('[data-report-detail-evidence-list]') || select('[data-report-document]');
+    const container = select('[data-report-detail-evidence-list]');
     if (!container) return;
-    const preview = container.hasAttribute('data-report-document');
-    container.querySelectorAll('[data-report-preview-evidence], [data-report-detail-evidence]').forEach((card) => card.remove());
-    if (preview) {
-      Array.from(container.children).filter((child) => ['hash', 'custody'].includes(child.dataset.reportOptionSection)).forEach((child) => child.remove());
-    }
     const items = itemsFor(data);
-    const resultSection = preview ? Array.from(container.children).find((child) => child.dataset.reportOptionSection === 'results') : null;
     items.forEach((item, index) => {
       const card = document.createElement('section');
       card.className = 'report-extra-evidence';
       card.dataset.status = item.statusCode;
-      card.dataset[preview ? 'reportPreviewEvidence' : 'reportDetailEvidence'] = String(index);
+      card.dataset.reportDetailEvidence = String(index);
       const heading = document.createElement('strong');
       heading.textContent = item.name;
       card.append(heading);
@@ -199,21 +356,24 @@
         card.append(line);
       };
       addLine(`증거 ID: ${item.id} · 원본 파일: ${item.filename || item.name}`, 'basic');
-      addLine(`${item.type} · ${formatSize(item.size)} · 수집 일시 ${item.date}`, 'basic');
-      addLine(`검증 상태: ${item.status}${item.lastVerification?.completedAt ? ` · 마지막 검증 ${formatDate(item.lastVerification.completedAt)}` : ''}`, 'results');
+      const registered = item.registeredAt ? `${formatDate(item.registeredAt)} (KST)` : `${item.date || '기록 없음'}${data.legacyTime && item.date ? ' (시간대 미기록)' : ''}`;
+      addLine(`${item.type} · ${formatSize(item.size)} · 등록 일시 ${registered}`, 'basic');
+      addLine(`검증 상태: ${item.status}${item.lastVerification?.completedAt ? ` · 마지막 검증 ${formatDate(item.lastVerification.completedAt)} (KST)` : ''}`, 'results');
       addLine(`수집 출처: ${item.source || '기록 없음'} · MIME: ${item.mime || '기록 없음'}`, 'metadata');
       addLine(`등록 SHA-256: ${item.sha256 || '기록 없음'}`, 'hash');
       addLine(`검증 SHA-256: ${item.lastVerification?.currentHash || '검증 기록 없음'}`, 'hash');
       if (item.lastVerification?.reason) addLine(`검증 결과 설명: ${item.lastVerification.reason}`, 'results');
-      if (preview) container.insertBefore(card, resultSection);
-      else container.append(card);
+      const snapshot = item.custodySnapshot;
+      const reference = typeof snapshot === 'string' ? snapshot
+        : [snapshot?.sequenceNo, snapshot?.eventHash].filter(value => value != null && value !== '').join(' · ');
+      if (reference) addLine(`관리 이력 기준점: ${reference}`, 'custody');
+      container.append(card);
     });
     if (!items.length) {
       const empty = document.createElement('p');
       empty.className = 'report-empty';
-      empty.textContent = '선택한 증거가 없습니다.';
-      if (preview) container.insertBefore(empty, resultSection);
-      else container.append(empty);
+      empty.textContent = data.id ? '생성 당시 저장된 증거 상세 정보가 없습니다.' : '선택한 증거가 없습니다.';
+      container.append(empty);
     }
     all('[data-report-option-section]').forEach((section) => {
       section.hidden = !data.options.includes(section.dataset.reportOptionSection);
@@ -222,8 +382,7 @@
       const note = document.createElement('div');
       note.className = 'report-draft-note';
       note.textContent = [data.project && `사건 또는 프로젝트명: ${data.project}`, data.description, `포함 항목: ${data.options.map((key) => optionNames[options.indexOf(key)]).join(', ')}`].filter(Boolean).join('\n');
-      if (container.hasAttribute('data-report-detail-evidence-list')) container.before(note);
-      else container.querySelector('[data-report-value="title"]').parentElement.append(note);
+      container.before(note);
     }
   }
 
@@ -233,103 +392,66 @@
   }
 
   renderValues(report);
-  if (page === 'preview' || page === 'detail') renderEvidence(report);
-
-  function setupPreviewNavigation() {
-    if (page !== 'preview') return;
-    const documentPreview = select('[data-report-document]');
-    const tocHeading = all('div').find((element) => element.textContent.trim() === '목차');
-    const toc = tocHeading?.parentElement;
-    if (!documentPreview || !toc) return;
-
-    const overview = select('[data-report-value="title"]')?.parentElement;
-    const evidenceCard = select('[data-report-preview-evidence="0"]');
-    const sections = [
-      { label: '1. 보고서 개요', target: overview },
-      { label: '2. 증거 기본 정보', target: evidenceCard, option: 'basic' },
-      { label: '3. 증거 수집 정보', target: evidenceCard, option: 'basic' },
-      { label: '4. 메타데이터', target: documentPreview.querySelector('[data-report-option-section="metadata"]'), option: 'metadata' },
-      { label: '5. SHA-256 무결성 검증', target: documentPreview.querySelector('[data-report-option-section="hash"]'), option: 'hash' },
-      { label: '6. Chain of Custody', target: documentPreview.querySelector('[data-report-option-section="custody"]'), option: 'custody' },
-      { label: '7. 검증 결과', target: documentPreview.querySelector('[data-report-option-section="results"]'), option: 'results' },
-      { label: '8. 결론', target: select('[data-report-value="footer"]')?.parentElement }
-    ];
-    const buttons = [];
-    sections.forEach((section, index) => {
-      const existing = Array.from(toc.children).find((element) => element.textContent.trim() === section.label);
-      if (!existing) return;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'report-preview-toc';
-      button.textContent = section.label;
-      button.dataset.reportPreviewSection = String(index);
-      button.setAttribute('aria-controls', 'report-preview-document');
-      if (section.option && !report.options.includes(section.option)) button.hidden = true;
-      existing.replaceWith(button);
-      buttons[index] = button;
-    });
-    documentPreview.id = 'report-preview-document';
-
-    const previewHeader = documentPreview.previousElementSibling;
-    const counter = previewHeader && Array.from(previewHeader.children).find((element) => /1\s*\/\s*8/.test(element.textContent));
-    let pageCounter = counter;
-    let previous;
-    let next;
-    if (counter) {
-      const controls = document.createElement('div');
-      controls.className = 'report-preview-controls';
-      previous = document.createElement('button');
-      previous.type = 'button';
-      previous.className = 'report-preview-control';
-      previous.textContent = '이전';
-      pageCounter = document.createElement('span');
-      pageCounter.className = 'report-preview-page';
-      next = document.createElement('button');
-      next.type = 'button';
-      next.className = 'report-preview-control';
-      next.textContent = '다음';
-      controls.append(previous, pageCounter, next);
-      counter.replaceWith(controls);
-    }
-
-    let activeIndex = 0;
-    function availableIndexes() {
-      return sections.map((section, index) => index).filter((index) => sections[index].target && !sections[index].target.hidden);
-    }
-    function adjacentIndex(from, direction) {
-      const available = availableIndexes();
-      const position = available.indexOf(from);
-      if (position < 0) return available[0] ?? from;
-      return available[Math.min(Math.max(position + direction, 0), available.length - 1)];
-    }
-    function selectSection(index, shouldScroll) {
-      const nextIndex = (index + sections.length) % sections.length;
-      const section = sections[nextIndex];
-      if (!section.target || section.target.hidden) return;
-      sections.forEach((item) => item.target?.classList.remove('report-preview-section-focus'));
-      section.target.classList.add('report-preview-section-focus');
-      buttons.forEach((button, buttonIndex) => {
-        if (!button) return;
-        const active = buttonIndex === nextIndex;
-        button.classList.toggle('report-preview-toc--active', active);
-        if (active) button.setAttribute('aria-current', 'page');
-        else button.removeAttribute('aria-current');
-      });
-      activeIndex = nextIndex;
-      if (pageCounter) pageCounter.textContent = `${nextIndex + 1} / ${sections.length}`;
-      const available = availableIndexes();
-      if (previous) previous.disabled = nextIndex === available[0];
-      if (next) next.disabled = nextIndex === available[available.length - 1];
-      if (shouldScroll) section.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
-    buttons.forEach((button, index) => button?.addEventListener('click', () => selectSection(index, true)));
-    previous?.addEventListener('click', () => selectSection(adjacentIndex(activeIndex, -1), true));
-    next?.addEventListener('click', () => selectSection(adjacentIndex(activeIndex, 1), true));
-    selectSection(0, false);
+  if (page === 'detail') {
+    renderEvidence(report);
+    if (isCurrent && report.options.includes('custody')) renderCustody(report);
+    window.ReportPackages.show(report.id, Boolean(profile));
   }
 
-  setupPreviewNavigation();
+  function renderCustody(data) {
+    const list = select('[data-report-custody-events]');
+    function add(action, subject, time, actor) {
+      const line = document.createElement('li');
+      line.textContent = [action, subject, time, actor || '이름 미기록'].filter(Boolean).join(' · ');
+      list.append(line);
+    }
+    for (const item of data.evidenceSnapshot) {
+      if (!data.selected.includes(item.id)) continue;
+      if (item.registeredAt) add('증거 등록', item.name, formatDate(item.registeredAt) + ' (KST)', item.registeredBy);
+      const check = item.lastVerification;
+      if (check?.completedAt) add('마지막 검증', item.name, formatDate(check.completedAt) + ' (KST)', check.performedBy);
+    }
+    if (data.created) add('보고서 생성', '', data.created + (data.legacyTime ? ' (시간대 미기록)' : ' (KST)'), data.author);
+    select('[data-report-custody-empty]').hidden = list.children.length > 0;
+  }
+
+  async function reportBlob(data) {
+    const { createReportPdf } = await import('./report-pdf.js');
+    return createReportPdf(data, itemsFor(data), formatDate);
+  }
+
+  if (page === 'preview') {
+    const status = select('[data-pdf-status]');
+    let previewBusy = false;
+    let previewUrl = null;
+    async function loadPreview() {
+      if (previewBusy) return;
+      previewBusy = true;
+      const unlock = lockReportControls(all('[data-report-generate], [data-report-download]'));
+      status.hidden = false;
+      status.setAttribute('role', 'status');
+      status.textContent = 'PDF 미리보기를 만들고 있습니다.';
+      message('', null);
+      try {
+        const blob = await reportBlob(report);
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = URL.createObjectURL(blob);
+        const link = select('[data-open-preview]');
+        link.href = previewUrl;
+        link.hidden = false;
+        const frame = select('[data-pdf-preview]');
+        frame.src = previewUrl + '#view=FitH';
+        frame.hidden = false;
+        status.hidden = true;
+      } catch (error) {
+        status.textContent = 'PDF 미리보기를 열지 못했습니다.';
+        status.setAttribute('role', 'alert');
+        message('미리보기를 열지 못했습니다. ' + error.message, loadPreview, '미리보기 다시 만들기');
+      } finally { previewBusy = false; unlock(); }
+    }
+    loadPreview();
+    window.addEventListener('pagehide', event => { if (!event.persisted && previewUrl) URL.revokeObjectURL(previewUrl); });
+  }
 
   function renderSelectionRows() {
     if (page !== 'select') return;
@@ -340,7 +462,7 @@
     const statusFilter = select('[data-report-filter="status"]');
     typeFilter.replaceChildren(new Option('전체 유형', ''), ...[...new Set(evidence.map((item) => item.type))].sort().map((type) => new Option(type, type)));
     statusFilter.replaceChildren(new Option('전체 상태', ''), ...Object.entries(statusNames).map(([code, label]) => new Option(label, code)));
-    evidence.forEach((item) => {
+    evidence.forEach((item, index) => {
       const row = document.createElement('div');
       row.className = 'report-local-row';
       row.dataset.reportEvidenceRow = item.id;
@@ -364,11 +486,18 @@
       const title = document.createElement('strong'); title.textContent = item.name;
       name.append(title);
       if (item.filename && item.filename !== item.name) { const filename = document.createElement('small'); filename.textContent = item.filename; name.append(filename); }
-      const addCell = (value, className) => { const cell = document.createElement('div'); cell.className = className; cell.textContent = value; row.append(cell); };
-      row.append(selection, name);
-      addCell(item.type, 'report-local-type');
-      addCell(item.date, 'report-local-date');
-      addCell(item.id, 'report-local-id');
+      const type = document.createElement('div');
+      type.className = 'report-local-type';
+      type.textContent = item.type;
+      const registration = registrationById.get(item.id);
+      const time = document.createElement('time');
+      time.className = 'report-local-date';
+      time.textContent = registration.text;
+      if (registration.dateTime) time.dateTime = registration.dateTime;
+      const idCell = document.createElement('div');
+      idCell.className = 'report-local-id';
+      window.EvidenceListDisplay.renderEvidenceId(idCell, item.id, index);
+      row.append(selection, name, type, time, idCell);
       const badge = document.createElement('span');
       badge.className = 'report-local-badge';
       badge.dataset.status = item.statusCode;
@@ -386,7 +515,8 @@
   renderSelectionRows();
 
   all('[data-report-new]').forEach((link) => link.addEventListener('click', (event) => {
-    draft = defaults();
+    draft = { ...defaults(), author: draftAuthor };
+    if (server) draft.options = server.draftOptions.slice();
     remove(GENERATION_KEY);
     if (!saveDraft()) event.preventDefault();
   }));
@@ -401,15 +531,35 @@
   all('[data-report-evidence]').forEach((input) => {
     input.checked = draft.selected.includes(input.dataset.reportEvidence);
     input.addEventListener('change', () => {
-      draft.selected = all('[data-report-evidence]:checked').map((item) => item.dataset.reportEvidence);
+      const id = input.dataset.reportEvidence;
+      draft.selected = draft.selected.filter(selectedId => selectedId !== id);
+      if (input.checked) draft.selected.push(id);
       saveDraft(); renderValues(draft);
     });
   });
 
   all('[data-report-option]').forEach((input) => {
+    if (pendingOptions.has(input.dataset.reportOption)) {
+      input.checked = false;
+      input.disabled = true;
+      // A stale checked property or synthetic event must not re-enable a pending option.
+      input.addEventListener('change', () => {
+        input.checked = false;
+        input.disabled = true;
+        saveDraft();
+      });
+      return;
+    }
     input.checked = draft.options.includes(input.dataset.reportOption);
+    if (server && !server.draftOptions.includes(input.dataset.reportOption)) {
+      input.disabled = true;
+      const note = document.createElement('small');
+      note.textContent = '서버 연동 방식 미정';
+      input.closest('.report-option').lastElementChild.append(note);
+      return;
+    }
     input.addEventListener('change', () => {
-      draft.options = all('[data-report-option]:checked').map((item) => item.dataset.reportOption);
+      draft.options = availableDraftOptions(all('[data-report-option]:checked').map((item) => item.dataset.reportOption));
       saveDraft();
     });
     input.closest('.report-option').addEventListener('click', (event) => {
@@ -430,87 +580,166 @@
   all('[data-report-next]').forEach((link) => link.addEventListener('click', (event) => {
     if (!valid() || !saveDraft()) event.preventDefault();
   }));
+  function generationContents(author = draft.author) {
+    return JSON.stringify([author, draft.title, draft.project, draft.description, draft.selected, draft.options, draft.date]);
+  }
+
+  let generationStarting = false;
   all('[data-report-generate]').forEach((link) => link.addEventListener('click', (event) => {
-    if (!valid() || !saveDraft() || !write(GENERATION_KEY, { started: Date.now() })) event.preventDefault();
+    if (generationStarting) { event.preventDefault(); return; }
+    if (!valid() || !saveDraft()) { event.preventDefault(); return; }
+    const contents = generationContents();
+    let saved;
+    if (server) {
+      const previous = read(GENERATION_KEY);
+      // Returning to preview must not erase an unresolved request for the same content.
+      saved = previous?.contents === contents && previous.sent
+        ? true : write(GENERATION_KEY, { contents, author: draft.author });
+    } else {
+      const previous = read(GENERATION_KEY);
+      saved = previous?.contents === contents && previous.key
+        ? true : write(GENERATION_KEY, { key: crypto.randomUUID(), contents, author: draft.author });
+    }
+    if (!saved) { event.preventDefault(); return; }
+    generationStarting = true;
+    lockReportControls(all('[data-report-generate]'));
   }));
 
   if (page === 'progress') {
-    if (!read(GENERATION_KEY) || !valid()) { location.replace('report_preview.html'); return; }
-    let percent = 68;
+    const generation = read(GENERATION_KEY);
+    if (server) {
+      if (!generation || generation.contents !== generationContents(generation.author) || !valid()) { location.replace('report_preview.html'); return; }
+      try {
+        await server.generate(draft, profile.id, generation, value => write(GENERATION_KEY, value), value => write(RESULT_KEY, value));
+      } catch (error) { message(error.message, () => location.reload(), '진행 상태 다시 확인'); }
+      return;
+    }
+    if (!generation?.key || generation.contents !== generationContents(generation.author) || !valid()) { location.replace('report_preview.html'); return; }
+    const reportId = 'RPT-' + generation.key.replace(/-/g, '');
+    if (result?.id === reportId) { location.replace('report_complete.html'); return; }
     let cancelled = false;
-    // Preserve the existing frontend demo generation while giving it its own route.
-    const timer = window.setInterval(() => {
-      if (cancelled) return;
-      percent = Math.min(100, percent + 4);
-      select('progress').value = percent;
-      select('[data-report-percent]').textContent = `${percent}%`;
-      if (percent === 100) {
+    let busy = false;
+    let timer;
+    const meter = select('progress');
+    const status = select('.report-progress-status');
+    const card = select('.report-progress-card');
+    function runDemo() {
+      if (busy || cancelled) return;
+      busy = true;
+      card.setAttribute('aria-busy', 'true');
+      let percent = 68;
+      meter.hidden = false;
+      status.setAttribute('role', 'status');
+      status.textContent = '보고서를 생성하고 있습니다.';
+      message('', null);
+      timer = window.setInterval(async () => {
+        if (cancelled) return;
+        percent = Math.min(100, percent + 4);
+        meter.value = percent;
+        select('[data-report-percent]').textContent = `${percent}%`;
+        if (percent !== 100) return;
         clearInterval(timer);
-        const now = new Date();
-        const completed = { ...draft, evidenceSnapshot: itemsFor(draft), id: `RPT-${date(now).replace(/\//g, '')}-${now.getTime().toString().slice(-6)}`, created: `${date(now)} ${now.toLocaleTimeString('en-GB', { hour12: false })}` };
-        if (write(RESULT_KEY, completed)) {
-          remove(GENERATION_KEY);
+        try {
+          const current = await window.EvidenceApi.profile(true);
+          if (current?.id !== profile?.id) throw new Error('로그인 계정이 변경되었습니다. 원래 계정으로 돌아가거나 미리보기에서 다시 확인해 주세요.');
+          if (cancelled) return;
+          const completed = { ...draft, author: current?.name ?? 'user', evidenceSnapshot: itemsFor(draft), id: reportId, created: formatDate(new Date(), true) };
+          if (!write(RESULT_KEY, completed)) throw new Error('보고서 저장에 실패했습니다. 브라우저 저장소 설정을 확인한 뒤 다시 시도해 주세요.');
           location.replace('report_complete.html');
-        }
-      }
-    }, 400);
+        } catch (error) {
+          meter.hidden = true;
+          status.setAttribute('role', 'alert');
+          status.textContent = '보고서를 생성하지 못했습니다. 작성 내용은 유지됩니다.';
+          message(error.message, runDemo, '보고서 생성 다시 시도');
+        } finally { busy = false; card.setAttribute('aria-busy', 'false'); }
+      }, 400);
+    }
+    runDemo();
     select('[data-report-cancel]').addEventListener('click', () => { cancelled = true; clearInterval(timer); remove(GENERATION_KEY); });
     window.addEventListener('pagehide', () => { cancelled = true; clearInterval(timer); });
-    window.addEventListener('pageshow', (event) => { if (event.persisted) location.replace('report_preview.html'); });
   }
 
-  function downloadPdf(data) {
-    // This is the existing small demonstration PDF, not a server-generated evidence report.
-    const lines = ['EVIDENCE - LOCAL REPORT', 'Digital Evidence Verification Report', `Report ID: ${data.id || 'preview'}`, `Included evidence: ${data.selected.length}`, ...itemsFor(data).flatMap((item) => [`Evidence: ${item.id}`, `File: ${item.filename || item.name}`, `SHA-256: ${item.sha256 || 'unavailable'}`, `Verification: ${item.statusCode}`])];
-    const escapePdf = (value) => value.replace(/[^\x20-\x7E]/g, '?').replace(/([\\()])/g, '\\$1');
-    const stream = `BT /F1 12 Tf 72 760 Td ${lines.map((line, i) => `${i ? '0 -24 Td ' : ''}(${escapePdf(line)}) Tj`).join(' ')} ET`;
-    const objects = [
-      '<< /Type /Catalog /Pages 2 0 R >>',
-      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
-      `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
-      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'
-    ];
-    let pdf = '%PDF-1.4\n';
-    const offsets = [];
-    objects.forEach((object, index) => { offsets.push(pdf.length); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
-    const xref = pdf.length;
-    pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-    offsets.forEach((offset) => { pdf += `${String(offset).padStart(10, '0')} 00000 n \n`; });
-    pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-    const url = URL.createObjectURL(new Blob([pdf], { type: 'application/pdf' }));
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `${data.title.replace(/[\\/:*?"<>|]/g, '_')}.pdf`;
-    document.body.append(anchor); anchor.click(); anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  let downloading = false;
+  async function downloadPdf(data, button) {
+    if (downloading) return;
+    downloading = true;
+    const unlock = lockReportControls([...all('[data-report-download]'), button]);
+    message('PDF 파일을 준비하고 있습니다.', null, '', true);
+    try {
+      const pdf = server ? await server.downloadPdf(data.id) : await reportBlob(data);
+      const url = URL.createObjectURL(pdf);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = data.filename || (data.title.replace(/[\\/:*?"<>|]/g, '_') || '증거 보고서') + '.pdf';
+      document.body.append(anchor);
+      anchor.click(); anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      message('', null);
+    } catch (error) {
+      message('PDF를 다운로드하지 못했습니다. ' + error.message, () => downloadPdf(data, button), 'PDF 다운로드 다시 시도');
+    } finally { downloading = false; unlock(); }
   }
 
-  all('[data-report-download]').forEach((button) => button.addEventListener('click', () => downloadPdf(report)));
-  if (page === 'list' && result && result.id) {
-    const data = clean(result);
-    const row = select('[data-report-row]').cloneNode(true);
+  all('[data-report-download]').forEach((button) => button.addEventListener('click', event => downloadPdf(report, event.currentTarget)));
+  function renderRow(data, status, count, description) {
+    const row = select('#report-list-row').content.firstElementChild.cloneNode(true);
     const cells = Array.from(row.children);
-    const status = listStatus(data);
     cells[0].lastElementChild.textContent = data.title;
-    cells[1].textContent = `${itemsFor(data).length}건`;
-    cells[2].textContent = data.created;
+    cells[1].textContent = `${count}건`;
+    cells[2].textContent = `${data.created} (${data.legacyTime ? '시간대 미기록' : 'KST'})`;
     const badge = cells[3].firstElementChild;
     badge.classList.add('report-status-badge');
     badge.dataset.status = status.code;
-    badge.title = summary(data);
-    badge.setAttribute('aria-label', `${status.label}. ${summary(data)}`);
+    badge.title = description;
+    badge.setAttribute('aria-label', `${status.label}. ${description}`);
     badge.firstElementChild.textContent = status.label;
-    row.querySelector('a').href = 'report_detail.html?report=current';
-    row.querySelector('[data-report-download]').addEventListener('click', () => downloadPdf(data));
-    select('[data-report-row]').before(row);
+    row.querySelector('a').href = server ? server.reportUrl('detail', data.id) : 'report_detail.html?report=current';
+    row.querySelector('[data-report-download]').addEventListener('click', event => downloadPdf(data, event.currentTarget));
+    return row;
+  }
+  if (page === 'list') {
+    const empty = select('[data-report-list-empty]');
+    if (server) {
+      let listBusy = false;
+      let renderedRows = [];
+      async function reloadList() {
+        if (listBusy) return;
+        listBusy = true;
+        empty.parentElement.setAttribute('aria-busy', 'true');
+        if (!renderedRows.length) { empty.hidden = false; empty.textContent = '보고서 목록을 불러오고 있습니다.'; }
+        message('', null);
+        try {
+          const list = await server.loadList();
+          const rows = list.map(data => renderRow(data, data.listStatus, data.evidenceCount, countSummary(data.summary || {})));
+          renderedRows.forEach(row => row.remove());
+          rows.forEach(row => empty.before(row));
+          renderedRows = rows;
+          empty.hidden = rows.length > 0;
+          empty.textContent = '생성한 보고서가 없습니다.';
+        } catch (error) {
+          if (!renderedRows.length) empty.textContent = '보고서 목록을 불러오지 못했습니다.';
+          message(error.message, reloadList, '목록 다시 불러오기');
+        } finally { listBusy = false; empty.parentElement.setAttribute('aria-busy', 'false'); }
+      }
+      reloadList();
+    } else {
+      select('[data-report-sample]').hidden = false;
+      select('[data-report-list-heading]').textContent = '이 탭에서 최근 생성한 보고서';
+      if (result?.id) {
+        const data = clean(result);
+        empty.replaceWith(renderRow(data, listStatus(data), itemsFor(data).length, summary(data)));
+      } else empty.textContent = '이 탭에서 생성한 보고서가 없습니다.';
+    }
   }
   all('[data-report-delete]').forEach((button) => button.addEventListener('click', () => {
     if (!isCurrent) { message('이 화면은 기존 보고서의 상세 보기 예시입니다.'); return; }
     if (window.confirm('이 보고서를 삭제하시겠습니까? 원본 증거는 유지됩니다.')) {
-      remove(RESULT_KEY); location.href = 'report.html';
+      remove(RESULT_KEY); remove(GENERATION_KEY); location.href = 'report.html';
     }
   }));
-  }
-  boot().catch((error) => message(`보고서를 표시할 수 없습니다: ${error.message}`));
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    if (page === 'progress') location.replace('report_preview.html');
+    else location.reload();
+  });
 })();

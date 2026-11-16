@@ -4,62 +4,48 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>영상·음성 증거 등록 완료 | EVIDENCE</title>
-  <link rel="stylesheet" href="app.css">
-  <script src="navigation.js" defer></script>
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="account.css?v=operation-feedback-1">
+  <link rel="stylesheet" href="app.css?v=operation-feedback-1">
+  <script src="app.js?v=evidence-list-1" defer></script>
 <link rel="stylesheet" href="responsive.css">
 </head>
 <body class="layout-page">
   <div class="completion-shell layout-shell">
-    <header class="completion-header">
-      <div class="completion-brand">
-        <span class="completion-brand__mark" aria-hidden="true"></span>
-        <span class="completion-brand__name">EVIDENCE</span>
-        <span class="completion-brand__description">디지털 증거 플랫폼</span>
-      </div>
-      <nav class="completion-nav" aria-label="주요 메뉴">
-        <span>대시보드</span>
-        <span class="completion-nav__active">증거 관리</span>
-        <span>검증</span>
-        <span>보고서</span>
-        <span class="completion-nav__mypage">My page</span>
+    <header class="account-header completion-header">
+      <a class="account-brand" href="index_home.html">
+        <img src="assets/report/1befa.svg" width="32" height="36" alt="">
+        <span class="account-brand__name">EVIDENCE</span>
+        <span class="account-brand__detail">디지털 증거 플랫폼</span>
+      </a>
+      <nav class="account-nav completion-nav" aria-label="주 메뉴">
+        <a href="Dashboard.html">대시보드</a>
+        <a href="evidence.html" aria-current="location">증거 관리</a>
+        <a href="verification.html">검증</a>
+        <a href="report.html">보고서</a>
+        <a class="account-nav__mypage" href="mypage.html">My page</a>
       </nav>
     </header>
-
     <main class="completion-main">
-      <div class="completion-breadcrumb" aria-label="현재 위치">
-        <span>증거 관리</span><span>&gt;</span><span>증거 등록</span><span>&gt;</span><span>영상·음성 증거</span><span>&gt;</span><strong>등록 완료</strong>
-      </div>
-
-      <section class="completion-intro">
-        <div class="completion-check" aria-hidden="true">✓</div>
+      <nav class="completion-breadcrumb" aria-label="현재 위치">
+        <a href="evidence.html">증거 관리</a><span aria-hidden="true">&gt;</span>
+        <a href="chose_evidence.html">증거 등록</a><span aria-hidden="true">&gt;</span>
+        <a href="evidence_video.html">영상·음성 증거</a><span aria-hidden="true">&gt;</span>
+        <span aria-current="page">등록 완료</span>
+      </nav>
+      <section class="completion-intro" data-state="loading" aria-labelledby="completion-title" aria-live="polite">
+        <span class="completion-check" aria-hidden="true">…</span>
         <div>
-          <h1>영상·음성 증거가 등록되었습니다.</h1>
-          <p>원본 파일과 미디어 정보, 메타데이터 및 무결성 기록이 함께 보존되었습니다.</p>
+          <h1 id="completion-title">등록 정보를 확인하고 있습니다.</h1>
+          <p></p>
         </div>
       </section>
-
-      <section class="completion-card" aria-label="등록된 증거 정보">
-        <div class="completion-details">
-          <div><span>증거 ID</span><strong>EV-20261008-008</strong></div>
-          <div><span>파일</span><strong data-evidence-filename>evidence_video_001.mp4</strong></div>
-          <div><span>SHA-256</span><strong>a8f5f167...9c21</strong></div>
-          <div><span>수집 시간</span><strong>2026/10/08 15:32:21</strong></div>
-        </div>
-
-        <div class="completion-status">
-          <span class="completion-status__label">처리 완료</span>
-          <span>✓ 원본 파일 보존</span>
-          <span>✓ 미디어 정보 추출</span>
-          <span>✓ 메타데이터 추출</span>
-          <span>✓ SHA-256 생성</span>
-          <span>✓ Chain of Custody 기록</span>
-        </div>
+      <section class="completion-card" aria-labelledby="completion-info" hidden>
+        <h2 id="completion-info">등록 정보</h2>
+        <dl class="completion-details" data-completion-details></dl>
       </section>
-
       <div class="completion-actions">
-        <button type="button" class="completion-button">증거 관리로 이동</button>
-        <button type="button" class="completion-button completion-button--primary">증거 상세보기</button>
+        <a class="account-button" href="evidence.html">증거 관리로 이동</a>
+        <button class="account-button account-button--primary" type="button" data-completion-detail disabled>증거 상세보기</button>
       </div>
     </main>
   </div>

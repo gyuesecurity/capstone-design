@@ -1,6 +1,6 @@
 # EVIDENCE
 
-디지털 증거 파일을 등록하고 SHA-256으로 원본 일치 여부를 재검증하는 캡스톤 프로젝트입니다. 소유자는 증거를 다른 사용자에게 공유하고 보기·다운로드·검증 권한을 따로 부여할 수 있습니다. 증거 관리, 검증, 감사 기록과 Chain of Custody는 같은 서버 데이터베이스를 사용합니다.
+디지털 증거 파일을 등록하고 SHA-256으로 원본 일치 여부를 재검증하는 캡스톤 프로젝트입니다. 소유자는 증거 상세의 **공유 관리**에서 가입한 이메일로 조회를 허용하고, 원본 다운로드와 검증 권한을 각각 부여하거나 회수할 수 있습니다. 증거 관리, 검증, 보고서·패키지, 감사 기록과 Chain of Custody는 같은 서버 데이터베이스를 사용합니다.
 
 ## 기술과 실행
 
@@ -8,6 +8,8 @@
 - 서버: Python 3.11+, FastAPI, SQLite
 - 암호화 파일 저장: `data/files/`, 메타데이터와 이력: `data/evidence.sqlite3`
 - 암호화 키: Docker secret 또는 저장소 밖의 키링 파일로 주입 (명시적 로컬 개발 모드에서만 `data/keys/` 사용)
+
+이미 실행 환경이 준비된 PC에서는 `start-server.cmd`를 더블 클릭하면 됩니다. 이 실행 파일은 프로젝트의 `.deps` 라이브러리가 있으면 우선 사용합니다. 사이트를 사용하는 동안 서버 창을 열어 두세요. 처음 설치하는 경우에는 아래 명령을 사용합니다.
 
 ```powershell
 cd D:\CDamerica\capstone-design
@@ -31,7 +33,9 @@ python scripts/dev_proxy.py --frontend . --port 5500 --backend http://127.0.0.1:
 7. 증거별 Chain of Custody는 등록·다운로드·검증·공유·접근 거부 이벤트를 추가 전용 SHA-256 사슬로 저장하고 번호 누락, 연결 단절과 해시 불일치를 검사합니다.
 8. 소유자는 이메일로 증거를 공유하고 VIEW·DOWNLOAD·VERIFY 권한을 조합해 부여하거나 회수할 수 있습니다.
 
-`mypage.html`은 `/api/me`, `/api/evidence`, `/api/audit`를 읽어 가입 시 입력한 이름·이메일·가입일, 증거·검증 건수, 최근 이용 내역을 표시합니다. `profile_edit.html`에서 이름을 바꾸면 서버 계정에도 저장되고 다음 로그인에도 유지됩니다. 최근 활동에는 현재 사용자의 서버 작업만 표시됩니다. 보고서 생성은 아직 브라우저 시연 기능이므로 마이페이지의 서버 활동 건수에 포함되지 않습니다.
+`mypage.html`은 `/api/me`, `/api/evidence`, `/api/audit`를 읽어 가입 시 입력한 이름·이메일·가입일, 증거·검증 건수, 최근 이용 내역을 표시합니다. `profile_edit.html`에서 이름을 바꾸면 서버 계정에도 저장되고 다음 로그인에도 유지됩니다. 최근 활동에는 서버가 기록한 현재 사용자의 작업이 표시됩니다.
+
+로그인한 사용자의 보고서 화면은 `/api/reports`에서 보고서를 생성·조회하고 서버에 저장된 PDF를 내려받습니다. **보고서 상세 → 패키지 생성 → ZIP 다운로드**로 해당 보고서의 증거 원본과 PDF, 검증·관리 이력을 받을 수 있습니다. 비로그인 시연에서는 브라우저에서 보고서와 예시 PDF를 확인할 수 있습니다.
 
 등록 해시와 재검증 해시의 일치는 서버에 저장된 파일 바이트가 등록 시점과 같다는 뜻입니다. 등록 이전의 조작 여부나 내용의 진실성까지 증명하지는 않습니다. 읽기 전용 파일 권한은 일반적인 실수에 의한 수정을 줄이지만 서버 관리자나 파일 시스템 관리자의 변경까지 막지는 못합니다.
 
@@ -93,8 +97,10 @@ docker compose up --build
 | `POST /api/evidence/{id}/verify`, `GET /api/audit` | 재검증, 작업 이력 |
 | `GET /api/evidence/{id}/custody`, `GET /api/evidence/{id}/custody/verify` | 관리 이력 조회·사슬 검사 |
 | `GET/POST/PUT/DELETE /api/evidence/{id}/shares` | 공유 현황·권한 부여·수정·회수 |
+| `POST/GET /api/reports`, `GET /api/reports/{id}`, `GET /api/reports/{id}/download` | 보고서 생성·목록·상세·PDF 다운로드 |
+| `POST/GET /api/packages`, `GET /api/packages/{id}`, `GET /api/packages/{id}/download` | 증거 패키지 생성·목록·상세·ZIP 다운로드 |
 
-인증이 필요한 API에는 `Authorization: Bearer <token>` 헤더를 보냅니다. 업로드는 `multipart/form-data`의 `file`, `name`, `kind`, `source`, `description`, `memo`, `client_selected_at`을 받습니다. `client_selected_at`은 사용자 화면의 파일 선택 시각이고 `registeredAt`은 서버가 부여한 등록 시각입니다. API 문서는 서버 실행 후 `/docs`에서 볼 수 있습니다.
+인증이 필요한 API에는 `Authorization: Bearer <token>` 헤더를 보냅니다. 업로드는 `multipart/form-data`의 `file`, `name`, `kind`, `source`, `description`, `memo`를 받습니다. 증거 등록 시각은 서버가 부여하며 응답의 `registeredAt`으로 제공합니다. API 문서는 서버 실행 후 `/docs`에서 볼 수 있습니다.
 
 ```mermaid
 flowchart LR
@@ -120,6 +126,9 @@ erDiagram
 
 ## 테스트와 시연
 
+- [Netlify 배포용 ZIP](deploy/netlify-demo.zip)을 내려받아 배포하면 브라우저 저장소를 쓰는 프런트엔드 시연본을 열 수 있습니다.
+- [무결성 시연 폴더](demo/integrity)에서 `검증_시연.html`을 브라우저로 열고 가상 거래기록의 원본과 수정본을 번갈아 검증하면 SHA-256 일치·불일치 결과를 비교할 수 있습니다.
+
 ```powershell
 python -m pip install -r requirements-dev.txt
 ruff check server d_package tests scripts
@@ -138,7 +147,7 @@ npm run test:browser
 ## 현재 보류한 범위
 
 - 이메일 인증코드는 화면 시연용이며 실제 메일은 발송하지 않습니다. 메일 공급자와 발송 계정 설정 후 서버에서 코드를 발급·검증해야 합니다.
-- URL 수집은 기존 프런트엔드 시연 범위입니다. PDF 렌더러와 ZIP 작성기는 구현됐지만 보고서·패키지 API, 저장, 권한 및 Custody 연결은 아직 통합 대상입니다.
+- URL 수집은 기존 프런트엔드 시연 범위입니다.
 - 파일 시그니처 검사는 확장자 위장 업로드를 줄이지만 악성코드 판정 기능은 아닙니다. 운영 환경에서는 별도 백신 또는 샌드박스 검사가 필요합니다.
 - 감사 해시 체인은 저장된 행의 변경과 중간 삭제를 탐지하지만, 마지막 행 삭제까지 독립적으로 증명하려면 외부 앵커 또는 TSA가 필요합니다.
 - 정적 페이지의 기존 Figma 생성 인라인 스타일·중복 헤더·일부 예시 콘텐츠는 전면 리팩터링 전 상태입니다. 핵심 파일 흐름 화면에는 공통 CSS, 반응형 규칙과 동적 실제 데이터 표시가 적용되었습니다.

@@ -70,3 +70,7 @@
 .auth-dialog { max-width: calc(100% - 32px); border: 1px solid var(--evidence-line); border-radius: 16px; padding: 24px; color: var(--evidence-ink); font: 14px/1.6 "Noto Sans KR", Arial, sans-serif; }
 .auth-dialog::backdrop { background: rgba(24,36,58,.38); }
 @media (max-width: 600px) { .auth-card { padding: 32px 24px; } .auth-close { right: 24px; } .auth-heading h1 { font-size: 24px; } .auth-card--terms .auth-heading p { margin-top: 8px; } .auth-agreement { font-size: 12px; } .auth-actions .auth-button { min-width: 0; flex: 1; padding: 0 12px; } }
+
+.auth-status[data-state="error"] { padding: 12px 14px; border-radius: 8px; background: #fff0ef; color: #b43d3d; overflow-wrap: anywhere; }
+.auth-status[data-state="processing"] { color: #2454c6; }
+.auth-page form[aria-busy="true"] .auth-button { cursor: wait; }

@@ -45,7 +45,7 @@
   function formatTime(value) {
     const time = new Date(value);
     return Number.isNaN(time.getTime()) ? '시간 기록 없음' : new Intl.DateTimeFormat('ko-KR', {
-      month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
+      month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul'
     }).format(time);
   }
 
@@ -55,7 +55,8 @@
   }
 
   function renderRecent(records) {
-    const recent = records.slice().sort((a, b) => (b.registeredAt || '').localeCompare(a.registeredAt || '')).slice(0, 3);
+    const recent = records.map(record => ({ record, registration: window.EvidenceListDisplay.registrationTime(record) }))
+      .sort((a, b) => b.registration.timestamp - a.registration.timestamp).slice(0, 3);
     setText('[data-dashboard-recent-count]', `${recent.length}건`);
     if (!recent.length) {
       const empty = element('p', '등록된 증거가 없습니다. 증거를 등록하면 이곳에 표시됩니다.', 'dashboard-empty');
@@ -63,7 +64,7 @@
       return;
     }
     let anchor = recentHeader;
-    recent.forEach((record) => {
+    recent.forEach(({ record, registration }) => {
       const link = element('a', undefined, 'dashboard-recent-row');
       link.dataset.dashboardRecentRow = record.id;
       link.href = `evidence.html?id=${encodeURIComponent(record.id)}`;
@@ -71,8 +72,8 @@
       name.append(element('strong', record.name || record.filename || record.id));
       if (record.filename && record.filename !== record.name) name.append(element('small', record.filename));
       const type = element('span', record.type || '기타', 'dashboard-recent-type');
-      const time = element('time', formatTime(record.registeredAt), 'dashboard-recent-time');
-      if (record.registeredAt) time.dateTime = record.registeredAt;
+      const time = element(registration.dateTime ? 'time' : 'span', registration.text, 'dashboard-recent-time');
+      if (registration.dateTime) time.dateTime = registration.dateTime;
       const code = labels[record.verificationStatus] ? record.verificationStatus : 'NOT_VERIFIED';
       const status = element('span', labels[code], 'dashboard-recent-status');
       status.dataset.status = code;
@@ -137,7 +138,7 @@
 
   async function refresh() {
     const version = ++refreshVersion;
-    setText('[data-dashboard-date]', new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()));
+    setText('[data-dashboard-date]', new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Seoul' }).format(new Date()));
     try {
       const records = await readRecords();
       if (version === refreshVersion) render(records);
