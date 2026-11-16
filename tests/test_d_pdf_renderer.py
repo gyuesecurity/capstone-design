@@ -1,7 +1,9 @@
 import copy
 import io
 import json
+import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -10,6 +12,7 @@ from d_package import pdf_renderer
 from d_package.pdf_renderer import PdfRenderError, ReportBundleError, render_report_pdf
 
 try:
+    import weasyprint
     from pypdf import PdfReader
     from weasyprint import urls
 
@@ -43,6 +46,33 @@ def page_texts(pdf):
 
 def flat(text):
     return ' '.join(text.split())
+
+
+def template_html(bundle):
+    return pdf_renderer._env.get_template('report_template.html').render(**bundle)
+
+
+PAGE_MARGIN_PX = 20 / 25.4 * 96  # @page margin 20mm
+
+
+def overflowing_text(bundle):
+    """본문 오른쪽 경계를 넘는 글자 상자 (WeasyPrint 레이아웃 내부 값, weasyprint<71 고정 전제)."""
+    doc = weasyprint.HTML(
+        string=template_html(bundle), base_url=pdf_renderer.TEMPLATE_DIR.as_uri() + '/',
+        url_fetcher=pdf_renderer._template_only_fetcher(urls),
+    ).render()
+    over = []
+
+    def walk(box, limit):
+        text = getattr(box, 'text', None)
+        if text and text.strip() and box.position_x + box.width > limit + 0.5:
+            over.append(text[:20])
+        for child in getattr(box, 'children', None) or ():
+            walk(child, limit)
+
+    for page in doc.pages:
+        walk(page._page_box, page.width - PAGE_MARGIN_PX)
+    return over
 
 
 class TemplateAssetRuleTests(unittest.TestCase):
@@ -172,6 +202,55 @@ class PdfRendererTests(unittest.TestCase):
         for pdf in (first, second):
             self.assertTrue(pdf.startswith(b'%PDF-'))
             self.assertIn(f'EVIDENCE {self.report_id}', page_texts(pdf)[0])
+
+    def test_long_values_wrap_inside_page(self):
+        item = self.bundle['evidence'][0]
+        item['name'] = '가' * 100 + 'A' * 100  # 200자, 공백 없음
+        item['filename'] = 'x' * 150 + '.png'
+        item['verification']['reason'] = '암호화 파일 또는 인증 태그가 변경되어 AES-GCM 인증에 실패했습니다. ' * 2
+        self.assertEqual(overflowing_text(self.bundle), [])
+        text = flat(''.join(page_texts(render_report_pdf(self.bundle))))
+        self.assertIn(item['sha256'], text)  # 해시는 여전히 한 줄
+
+    def test_renders_from_outside_repo_cwd(self):
+        cwd = os.getcwd()
+        with tempfile.TemporaryDirectory() as outside:
+            os.chdir(outside)
+            try:
+                pdf = render_report_pdf(self.bundle)
+            finally:
+                os.chdir(cwd)
+        self.assertTrue(pdf.startswith(b'%PDF-'))
+
+    def test_evidence_printed_in_given_order(self):
+        first = self.bundle['evidence'][0]
+        second = copy.deepcopy(first)
+        second['id'] = 'EV-' + '9' * 32
+        for order in ([first, second], [second, first]):
+            with self.subTest(first=order[0]['id']):
+                self.bundle['evidence'] = order
+                text = '\n'.join(page_texts(render_report_pdf(self.bundle)))
+                self.assertLess(text.index(order[0]['id']), text.index(order[1]['id']))
+
+    def test_people_values_printed(self):
+        self.bundle['report']['author'] = '작성자갑'
+        item = self.bundle['evidence'][0]
+        item['registeredBy'] = '등록자을'
+        item['verification']['performedBy'] = '검증자병'
+        text = '\n'.join(page_texts(render_report_pdf(self.bundle)))
+        for value in ('작성자갑', '등록자을', '검증자병'):
+            self.assertIn(value, text)
+
+    def test_status_text_printed_as_given_and_flagged_without_color(self):
+        for status in ('일치', '불일치', '검증 불가', '미검증'):
+            with self.subTest(status=status):
+                self.bundle['evidence'][0]['status'] = status
+                text = page_texts(render_report_pdf(self.bundle))[0]
+                self.assertIn(f'검증 상태 {status}', flat(text))
+                # 일치가 아니면 굵은 글자·테두리(색 없음) 클래스
+                html = template_html(self.bundle)
+                flagged = f'<span class="status status-flag">{status}</span>' in html
+                self.assertEqual(flagged, status != '일치')
 
     def test_conversion_failure_raises_render_error(self):
         with mock.patch('weasyprint.HTML.write_pdf', side_effect=RuntimeError(SECRET)), \
