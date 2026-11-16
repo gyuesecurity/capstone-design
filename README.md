@@ -78,6 +78,16 @@ AAD v1은 `schema: "v1"`, 증거 ID, 소유자 ID, 증거 이름, 파일명, 종
 
 백엔드와 암호화 모듈 사이의 확정된 함수, 메타데이터, 실패 코드와 테스트 벡터는 [`docs/crypto-interface-v1.md`](docs/crypto-interface-v1.md)를 따릅니다. 해시 비교와 상태 기록은 백엔드가 담당하고, 암호화 모듈은 인증이 끝난 평문만 반환합니다.
 
+### 보고서 PDF를 만들려면 (Pango 설치)
+
+보고서 PDF는 D의 렌더러(WeasyPrint)가 만들고, WeasyPrint는 `pip` 패키지 말고 **Pango** 프로그램이 따로 필요합니다. Pango가 없어도 서버는 켜지고 다른 기능은 모두 동작하며, 보고서 만들기만 500 "PDF 생성기를 사용할 수 없어 보고서를 만들지 못했습니다."가 됩니다. 패키지는 이미 만든 보고서 PDF를 다시 쓰므로 Pango가 필요 없습니다. 그래서 **보고서를 시연하는 PC에만** 설치하면 됩니다. Docker 이미지에는 이미 포함되어 있습니다. 자세한 내용은 [`d_package/README.md`](d_package/README.md)를 참고합니다.
+
+- Windows: [MSYS2](https://www.msys2.org/) 설치 → MSYS2 UCRT64 창에서 `pacman -S mingw-w64-ucrt-x86_64-pango` → DLL을 못 찾으면 `$env:WEASYPRINT_DLL_DIRECTORIES = "C:\msys64\ucrt64\bin"`
+- Debian/Ubuntu: `apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0`
+- 확인: `python -m weasyprint --info`
+
+Pango가 없는 PC에서는 실제 PDF를 만드는 테스트만 자동으로 건너뜁니다. 보고서·패키지 API 테스트는 가짜 PDF로 돌아갑니다.
+
 ### Docker 실행
 
 ```bash
@@ -96,11 +106,11 @@ docker compose up --build
 | `GET /api/evidence/{id}`, `GET /api/evidence/{id}/download` | 상세, 원본 다운로드 |
 | `POST /api/evidence/{id}/verify`, `GET /api/audit` | 재검증, 작업 이력 |
 | `GET /api/evidence/{id}/custody`, `GET /api/evidence/{id}/custody/verify` | 관리 이력 조회·사슬 검사 |
-| `GET/POST/PUT/DELETE /api/evidence/{id}/shares` | 공유 현황·권한 부여·수정·회수 |
+| `GET/PUT /api/evidence/{id}/shares`, `DELETE /api/evidence/{id}/shares/{userId}` | 공유 현황, 권한 부여·수정, 회수 |
 | `POST/GET /api/reports`, `GET /api/reports/{id}`, `GET /api/reports/{id}/download` | 보고서 생성·목록·상세·PDF 다운로드 |
 | `POST/GET /api/packages`, `GET /api/packages/{id}`, `GET /api/packages/{id}/download` | 증거 패키지 생성·목록·상세·ZIP 다운로드 |
 
-인증이 필요한 API에는 `Authorization: Bearer <token>` 헤더를 보냅니다. 업로드는 `multipart/form-data`의 `file`, `name`, `kind`, `source`, `description`, `memo`를 받습니다. 증거 등록 시각은 서버가 부여하며 응답의 `registeredAt`으로 제공합니다. API 문서는 서버 실행 후 `/docs`에서 볼 수 있습니다.
+인증이 필요한 API에는 `Authorization: Bearer <token>` 헤더를 보냅니다. 업로드는 `multipart/form-data`의 `file`, `name`, `kind`, `source`, `description`, `memo`를 받습니다. 증거 등록 시각은 서버가 부여하며 응답의 `registeredAt`으로 제공합니다. API 문서는 서버 실행 후 `/docs`에서 볼 수 있고, 화면 개발용 요청·응답 모양과 오류 문구는 [`docs/backend-api.md`](docs/backend-api.md)에 정리되어 있습니다.
 
 ```mermaid
 flowchart LR
