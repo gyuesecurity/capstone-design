@@ -71,7 +71,12 @@ async function checkGeometry(page, label) {
     await checkGeometry(page, 'Successful upload');
 
     let cases = 0;
-    const files = fs.readdirSync(root).filter(file => file.endsWith('.html'));
+    const source = path.join(root, 'versions', 'previous');
+    const files = fs.readdirSync(source, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
+      .flatMap(entry => fs.readdirSync(path.join(source, entry.name)).filter(name => name.endsWith('.html')));
+    assert.ok(files.length >= 29, 'Expected all 29 original screens');
+    assert.equal(new Set(files).size, files.length, 'Screen URLs must be unique');
     for (const file of files) {
       await page.goto(base + file, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(150);

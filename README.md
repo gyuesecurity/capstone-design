@@ -1,5 +1,12 @@
 # EVIDENCE
 
+## 웹 화면 버전
+
+| 버전 | 저장 위치 | 상태 |
+| --- | --- | --- |
+| 기존 버전 | [기능별 화면과 소스](versions/previous/) | 현재 실행·시연하는 버전 |
+| Page 4 | [개정본 폴더](versions/page4/) | 수정본 업로드 예정 |
+
 디지털 증거 파일을 등록하고 SHA-256으로 원본 일치 여부를 재검증하는 캡스톤 프로젝트입니다. 소유자는 증거 상세의 **공유 관리**에서 가입한 이메일로 조회를 허용하고, 원본 다운로드와 검증 권한을 각각 부여하거나 회수할 수 있습니다. 증거 관리, 검증, 대시보드, 보고서 증거 선택 화면은 같은 서버 데이터베이스를 사용합니다.
 
 ## Windows 로컬 실행
@@ -22,7 +29,14 @@
 python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
 ```
 
-브라우저에서 `http://127.0.0.1:8000/`을 엽니다. `python -m http.server`나 GitHub Pages로 열면 서버 API 대신 이전 IndexedDB 시연 모드가 실행됩니다. 로그인 화면의 시연 링크로 진입할 수 있지만 실제 계정은 생성되지 않습니다. 실제 서버 저장 기능은 위 명령으로 확인해야 합니다. 외부 공개 시에는 HTTPS, 백업, 운영용 메일 인증과 배포 설정이 필요합니다. `EVIDENCE_DATA_DIR` 환경 변수로 데이터 폴더를 바꿀 수 있습니다. `data/`는 Git에서 제외됩니다.
+브라우저에서 `http://127.0.0.1:8000/`을 엽니다. 화면 주소는 기존과 같습니다. 외부 공개 시에는 HTTPS, 백업, 운영용 메일 인증과 배포 설정이 필요합니다. `EVIDENCE_DATA_DIR` 환경 변수로 데이터 폴더를 바꿀 수 있습니다. `data/`는 Git에서 제외됩니다.
+
+정적 시연은 프로젝트 루트에서 다음 두 명령을 차례로 실행하고 로그인 화면의 시연 링크로 들어갑니다. 증거는 브라우저의 IndexedDB에 저장됩니다. GitHub Pages 등 정적 호스팅에 올릴 때는 생성된 `.build/previous/` 폴더의 내용을 사용합니다.
+
+```powershell
+python -m server.web_files
+python -m http.server 8000 --directory .build/previous
+```
 
 ## 주요 기능
 
@@ -93,4 +107,4 @@ node tests/browser_smoke.cjs
 - 정적 페이지의 기존 Figma 생성 인라인 스타일·중복 헤더·일부 예시 콘텐츠는 전면 리팩터링 전 상태입니다. 핵심 파일 흐름 화면에는 공통 CSS, 반응형 규칙과 동적 실제 데이터 표시가 적용되었습니다.
 - GitHub Pages는 정적 파일만 호스팅하므로 FastAPI와 원본 저장소를 실행할 수 없습니다. 배포용 서버가 준비되기 전에는 Pages 브랜치를 `main`으로 바꾸어도 서버 저장 기능이 작동하지 않습니다.
 
-디자인 출처: [Figma 원본](https://www.figma.com/design/KTur9ZdEVI0DtyJmqPagru). 로그인·회원가입 SVG와 DM Sans 글꼴은 `assets/auth/`에 있으며 글꼴 라이선스도 함께 포함되어 있습니다.
+디자인 출처: [Figma 원본](https://www.figma.com/design/KTur9ZdEVI0DtyJmqPagru). 로그인·회원가입 SVG, DM Sans 글꼴과 라이선스는 [인증 화면 자산 폴더](versions/previous/auth/assets/)에 있습니다.

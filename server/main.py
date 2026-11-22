@@ -17,6 +17,8 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadF
 from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 
+from .web_files import public_files
+
 
 ROOT = Path(__file__).resolve().parent.parent
 MAX_FILE_SIZE = 50 * 1024 * 1024
@@ -425,24 +427,16 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
                      "evidenceName": row["evidence_name"], "evidenceFilename": row["evidence_filename"],
                      "createdAt": row["created_at"]} for row in rows]
 
+    web_files = public_files()
+
     @app.get("/")
     def home():
         return RedirectResponse("/index.html")
 
     @app.get("/{file_path:path}", include_in_schema=False)
     def static_file(file_path: str):
-        requested = Path(file_path)
-        if requested.is_absolute() or ".." in requested.parts:
-            raise HTTPException(404)
-        if len(requested.parts) == 1 and requested.suffix.lower() in {".html", ".css", ".js"}:
-            target = ROOT / requested.name
-        elif requested.as_posix() == "assets/report/pdfmake.min.js":
-            target = ROOT / requested
-        elif len(requested.parts) == 3 and requested.parts[0] == "assets" and requested.suffix.lower() in {".svg", ".ttf", ".txt"}:
-            target = ROOT.joinpath(*requested.parts)
-        else:
-            raise HTTPException(404)
-        if not target.is_file():
+        target = web_files.get(file_path)
+        if target is None or not target.is_file():
             raise HTTPException(404)
         return FileResponse(target)
 
