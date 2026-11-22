@@ -1,0 +1,49 @@
+@font-face {
+  font-family: "CredOc DM Sans";
+  src: url("assets/auth/DM-Sans.ttf") format("truetype");
+  font-weight: 100 1000;
+  font-display: swap;
+}
+
+.landing-page {
+  margin: 0;
+  background: #f2f3f0;
+  color: #22313e;
+  font-family: "CredOc DM Sans", "Malgun Gothic", sans-serif;
+}
+.landing-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 88px; background: #20313f; }
+.landing-brand { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 4px; padding-block: 8px; text-decoration: none; }
+.landing-brand img { display: block; filter: brightness(0) invert(1); }
+.landing-brand span { color: #b8c3c9; font-size: 10px; letter-spacing: .07em; }
+.landing-header nav { display: flex; align-items: center; gap: 32px; }
+.landing-header nav a { display: inline-flex; align-items: center; min-height: 40px; color: #e5ebe8; text-decoration: none; font-size: 14px; }
+.landing-header nav .landing-login { justify-content: center; min-width: 94px; padding: 8px 16px; border-radius: 8px; color: #20313f; background: #e8edeb; }
+.landing-header a:focus-visible { outline: 2px solid #e6d8bd; outline-offset: 3px; }
+.landing-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+  padding: 9px clamp(16px, 2.65vw, 38px);
+  border: 1px solid #20313f;
+  border-radius: 8px;
+  background: #20313f;
+  color: #fff;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 700;
+}
+.landing-button--secondary { border-color: #dce1df; background: #fff; color: #22313e; }
+.landing-button:hover { background: #314654; color: #fff; }
+.landing-page .layout-product-preview > :first-child { min-height: 50px; padding-block: 12px; }
+.landing-page .layout-product-preview > :first-child > :last-child:empty { visibility: hidden; }
+.landing-page .layout-grid--3 > div { padding-top: 82px !important; }
+.landing-page #guide, .landing-page #features { scroll-margin-top: 24px; }
+
+@media (max-width: 760px) {
+  .landing-header { flex-wrap: wrap; padding-block: 10px; gap: 4px 16px; }
+  .landing-header nav { gap: 14px; flex-wrap: wrap; }
+  .landing-header nav a { font-size: 13px; }
+  .landing-header nav .landing-login { min-width: 0; }
+  .landing-page .layout-grid--3 > div { padding-top: 24px !important; }
+}

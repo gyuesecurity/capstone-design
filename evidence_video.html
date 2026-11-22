@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0">
-  <title>캡디아메리카</title>
+  <title>영상·음성 증거 등록 | CredOc</title>
   <link rel="stylesheet" href="app.css?v=operation-feedback-1">
   <script src="navigation.js" defer></script>
   <script src="registration-steps.js?v=media-steps-1" defer></script>
@@ -13,37 +13,27 @@
 <link rel="stylesheet" href="media-upload.css?v=media-preview-1">
 <link rel="stylesheet" href="responsive.css">
 <link rel="stylesheet" href="registration-steps.css?v=media-steps-1">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="page4-details.css">
 </head>
-<body class="layout-page">
+<body class="layout-page page4-workspace">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html" aria-current="location">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
 
   <!-- 여기에 피그마에서 복사한 HTML 코드 넣기 -->
 <div style="width: 1440px; min-height: 1024px; background: #F6F8FB; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex" class="layout-fluid layout-shell">
   <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
-    <div style="align-self: stretch; height: 88px; padding-left: 96px; padding-right: 96px; background: white; overflow: hidden; border-bottom: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex" class="layout-header layout-section">
-      <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex" class="layout-brand layout-wrap">
-        <div style="width: 32px; height: 36px; overflow: hidden; justify-content: center; align-items: center; display: flex"><img src="assets/report/1befa.svg" alt="" aria-hidden="true" width="32" height="36" style="display: block; flex-shrink: 0"></div>
-        <div style="color: #18243A; font-size: 23px; font-family: Inter; font-weight: 400; word-wrap: break-word">EVIDENCE</div>
-        <div style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">디지털 증거 플랫폼</div>
-      </div>
-      <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 32px; display: flex" class="layout-nav layout-wrap">
-        <div style="height: 88px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
-          <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">대시보드</div>
-        </div>
-        <div style="height: 88px; position: relative; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
-          <div style="color: #2E63E8; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">증거 관리</div>
-          <div style="width: 52px; height: 3px; left: 0px; top: 85px; position: absolute; background: #2E63E8"></div>
-        </div>
-        <div style="height: 88px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
-          <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">검증</div>
-        </div>
-        <div style="height: 88px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
-          <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">보고서</div>
-        </div>
-        <div style="height: 40px; padding-left: 16px; padding-right: 16px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: flex-start; align-items: center; display: flex">
-          <div style="color: #2454C6; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">My page</div>
-        </div>
-      </div>
-    </div>
     <div style="align-self: stretch; padding-top: 32px; padding-bottom: 24px; padding-left: 96px; padding-right: 96px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex" class="layout-section">
       <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: inline-flex">
         <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">증거 관리</div>
@@ -64,35 +54,35 @@
           <div style="color: #2454C6; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">파일 선택</div>
         </div>
         <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
-          <div style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-right" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m9 5 7 7-7 7"/></svg></div>
+          <div class="workspace-ornament" style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-right" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m9 5 7 7-7 7"/></svg></div>
           <div style="width: 26px; height: 26px; background: #2E63E8; overflow: hidden; border-radius: 100px; justify-content: center; align-items: center; display: flex">
             <div style="color: white; font-size: 12px; font-family: Inter; font-weight: 600; word-wrap: break-word">2</div>
           </div>
           <div style="color: #2454C6; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">미디어 확인</div>
         </div>
         <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
-          <div style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-right" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m9 5 7 7-7 7"/></svg></div>
+          <div class="workspace-ornament" style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-right" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m9 5 7 7-7 7"/></svg></div>
           <div style="width: 26px; height: 26px; background: white; overflow: hidden; border-radius: 100px; justify-content: center; align-items: center; display: flex">
             <div style="color: #2454C6; font-size: 12px; font-family: Inter; font-weight: 600; word-wrap: break-word">3</div>
           </div>
           <div style="color: #2454C6; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">정보 자동 추출</div>
         </div>
         <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
-          <div style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-right" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m9 5 7 7-7 7"/></svg></div>
+          <div class="workspace-ornament" style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-right" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m9 5 7 7-7 7"/></svg></div>
           <div style="width: 26px; height: 26px; background: white; overflow: hidden; border-radius: 100px; justify-content: center; align-items: center; display: flex">
             <div style="color: #2454C6; font-size: 12px; font-family: Inter; font-weight: 600; word-wrap: break-word">4</div>
           </div>
           <div style="color: #2454C6; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">증거 정보 입력</div>
         </div>
         <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
-          <div style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-right" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m9 5 7 7-7 7"/></svg></div>
+          <div class="workspace-ornament" style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-right" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m9 5 7 7-7 7"/></svg></div>
           <div style="width: 26px; height: 26px; background: white; overflow: hidden; border-radius: 100px; justify-content: center; align-items: center; display: flex">
             <div style="color: #2454C6; font-size: 12px; font-family: Inter; font-weight: 600; word-wrap: break-word">5</div>
           </div>
           <div style="color: #2454C6; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">무결성 정보 확인</div>
         </div>
         <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
-          <div style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-right" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m9 5 7 7-7 7"/></svg></div>
+          <div class="workspace-ornament" style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-right" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m9 5 7 7-7 7"/></svg></div>
           <div style="width: 26px; height: 26px; background: white; overflow: hidden; border-radius: 100px; justify-content: center; align-items: center; display: flex">
             <div style="color: #2454C6; font-size: 12px; font-family: Inter; font-weight: 600; word-wrap: break-word">6</div>
           </div>
@@ -109,7 +99,7 @@
           <span data-media-badge class="media-upload-badge" aria-live="polite">파일 선택 대기</span>
         </div>
         <div data-media-empty class="media-upload-empty evidence-drop-zone">
-          <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2E63E8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3M8 9v6m3-6v6"/></svg>
+          <svg class="workspace-ornament" aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2E63E8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3M8 9v6m3-6v6"/></svg>
           <h3>영상 또는 음성 파일을 선택하세요</h3>
           <p>파일을 이곳으로 드래그하거나 파일을 선택하세요.</p>
           <button type="button" class="media-upload-button" style="background: #2E63E8; color: white">파일 선택</button>
@@ -161,7 +151,7 @@
           <div style="color: #18243A; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">수집 출처</div>
           <div style="align-self: stretch; height: 44px; padding-left: 14px; padding-right: 14px; background: white; overflow: hidden; border-radius: 8px; outline: 1px #E2E7EF solid; outline-offset: -1px; justify-content: flex-start; align-items: center; gap: 12px; display: inline-flex" class="layout-wrap">
             <div style="flex: 1 1 0; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">직접 수집</div>
-            <div style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-down" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m5 9 7 7 7-7"/></svg></div>
+            <div class="workspace-ornament" style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="chevron-down" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#647187" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="m5 9 7 7 7-7"/></svg></div>
           </div>
           <div style="align-self: stretch; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">파일을 수집한 경로를 선택하세요.</div>
         </div>

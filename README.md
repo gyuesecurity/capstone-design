@@ -1,4 +1,6 @@
-# EVIDENCE
+# CredOc (EVIDENCE)
+
+[Figma Page 4](https://www.figma.com/design/KTur9ZdEVI0DtyJmqPagru/CredOc?node-id=339-207)의 CredOc 로고, 남색 메뉴, 증거 상태 색상을 웹 화면에 적용했습니다. 서버 실행본과 [Netlify 시연본](deploy/netlify-demo.zip) 모두에서 확인할 수 있습니다.
 
 디지털 증거 파일을 등록하고 SHA-256으로 원본 일치 여부를 재검증하는 캡스톤 프로젝트입니다. 소유자는 증거 상세의 **공유 관리**에서 가입한 이메일로 조회를 허용하고, 원본 다운로드와 검증 권한을 각각 부여하거나 회수할 수 있습니다. 증거 관리, 검증, 대시보드, 보고서 증거 선택 화면은 같은 서버 데이터베이스를 사용합니다.
 
