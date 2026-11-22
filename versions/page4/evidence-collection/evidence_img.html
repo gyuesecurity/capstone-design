@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>이미지 증거 등록 | CredOc</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="evidence-collection.css">
+  <script src="registration-steps.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body class="layout-page page4-workspace registration-page">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html" aria-current="location">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+  <div class="layout-shell">
+    <main class="reg-main reg-img">
+      <nav class="reg-breadcrumb" aria-label="현재 위치">
+        <a href="evidence.html">증거 관리</a><span aria-hidden="true">›</span>
+        <a href="chose_evidence.html">증거 등록</a><span aria-hidden="true">›</span><span aria-current="page">이미지 증거</span>
+      </nav>
+      <header class="reg-intro"><h1>이미지 증거 등록</h1><p>등록할 이미지를 선택하고 증거 이름과 수집 출처를 입력하세요.</p></header>
+      <div data-registration-steps></div>
+      <div class="reg-pair reg-entry-pair">
+        <section class="reg-panel reg-upload reg-upload-img">
+
+          <div data-registration-drop class="reg-drop-surface">
+            <div data-image-empty class="reg-drop-prompt">
+              <img class="reg-icon" src="assets/evidence/image.svg" width="32" height="32" alt="">
+              <h2>이미지를 선택하세요</h2>
+              <p>이미지를 이곳으로 드래그하거나 파일을 선택하세요.</p>
+              <button type="button" class="reg-button reg-primary" data-registration-primary>이미지 선택</button>
+              <small>JPG · JPEG · PNG · GIF · WEBP · 최대 50 MB</small>
+            </div>
+            <div data-image-card class="reg-selected" hidden>
+              <img class="reg-preview" data-image-preview alt="선택한 이미지 미리보기" hidden>
+              <div class="reg-selection-info">
+                <div><strong data-image-filename></strong><small data-image-summary></small></div>
+                <div class="reg-selection-actions"><button type="button" class="reg-button reg-small">이미지 변경</button><button type="button" class="reg-button reg-small">삭제</button></div>
+              </div>
+            </div>
+          </div>
+          <span class="reg-sr" data-image-badge role="status"></span>
+          <p class="reg-warning" data-image-error role="alert" hidden></p>
+        </section>
+        <section class="reg-panel reg-attributes">
+          <div class="reg-panel-title"><h2>이미지 정보</h2><span>읽기 전용</span></div>
+          <dl class="reg-meta-list"><div><dt>파일명</dt><dd data-image-meta="filename">파일 선택 후 표시</dd></div>
+            <div><dt>파일 형식</dt><dd data-image-meta="type">파일 선택 후 표시</dd></div>
+            <div><dt>파일 크기</dt><dd data-image-meta="size">파일 선택 후 표시</dd></div>
+            <div><dt>해상도</dt><dd data-image-meta="resolution">파일 선택 후 표시</dd></div>
+            <div><dt>색상 공간</dt><dd data-image-meta="color">파일 선택 후 표시</dd></div>
+          </dl>
+          <div class="reg-exif"><strong>EXIF 정보</strong><span class="reg-tag">준비 중</span><p>촬영 일시·카메라·GPS 정보 추출 기능을 준비 중입니다.</p></div>
+        </section>
+      </div>
+      <section class="reg-panel reg-information">
+          <div class="reg-panel-title"><h2>증거 정보</h2></div>
+          <p class="reg-caption">증거의 이름과 수집 맥락을 입력하세요.</p>
+          <div class="reg-fields">
+            <div class="reg-field"><label for="registration-name">증거 이름</label><input type="text" data-evidence-field="name" id="registration-name" name="name" placeholder="현장 사진"></div>
+            <div class="reg-field"><label for="registration-source">수집 출처</label><select data-evidence-field="source" id="registration-source" name="source"><option>직접 수집</option><option>제공 받음</option><option>웹에서 수집</option></select></div>
+            <div class="reg-field"><label for="registration-description">설명</label><textarea data-evidence-field="description" id="registration-description" name="description" rows="2" placeholder="출입구 주변을 촬영한 현장 사진입니다."></textarea></div>
+            <div class="reg-field"><label for="registration-memo">메모</label><textarea data-evidence-field="memo" id="registration-memo" name="memo" rows="2" placeholder="필요한 내용을 입력하세요"></textarea></div>
+          </div>
+        </section>
+      <section class="reg-panel reg-integrity reg-integrity-img">
+        <div class="reg-panel-title"><h2>무결성 정보</h2><span>읽기 전용</span></div>
+        <dl class="reg-meta-tiles"><div><dt>SHA-256 자동 생성</dt><dd data-image-meta="hash" class="reg-hash">파일 선택 후 표시</dd><button type="button" class="reg-button reg-small" data-hash-copy disabled aria-label="SHA-256 복사">복사</button><span role="status" class="reg-sr" data-hash-copy-status></span></div>
+          <div><dt>파일 선택 시간</dt><dd data-image-meta="time">파일 선택 후 표시</dd></div>
+          <div><dt>Chain of Custody</dt><dd data-image-meta="custody">파일 선택 후 표시</dd></div>
+        </dl>
+        <p class="reg-footnote">해시와 파일 선택 시간은 시스템이 자동 생성하며 직접 수정할 수 없습니다.</p>
+      </section>
+      <p class="registration-feedback" role="alert" data-registration-error hidden></p>
+      <footer class="reg-actions">
+        <a class="reg-button" href="chose_evidence.html" data-navigation-ready="true" title="취소">취소</a>
+        <div><small>이미지와 메타데이터를 확인한 후 등록하세요.</small>
+        <button type="button" class="reg-button reg-primary" data-registration-primary data-image-submit disabled>이미지 증거 등록</button></div>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

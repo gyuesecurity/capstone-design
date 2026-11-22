@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>파일 증거 등록 | CredOc</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="evidence-collection.css">
+  <script src="registration-steps.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body class="layout-page page4-workspace registration-page">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html" aria-current="location">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+  <div class="layout-shell">
+    <main class="reg-main reg-file">
+      <nav class="reg-breadcrumb" aria-label="현재 위치">
+        <a href="evidence.html">증거 관리</a><span aria-hidden="true">›</span>
+        <a href="chose_evidence.html">증거 등록</a><span aria-hidden="true">›</span><span aria-current="page">파일 증거</span>
+      </nav>
+      <header class="reg-intro"><h1>파일 증거 등록</h1><p>선택한 파일과 증거 정보를 확인한 후 등록하세요.</p></header>
+      <div data-registration-steps></div>
+      <div class="reg-pair reg-entry-pair">
+        <section class="reg-panel reg-upload reg-upload-file">
+          <div class="reg-panel-title"><h2>파일 업로드</h2></div>
+          <div data-registration-drop class="reg-drop-surface">
+            <div data-upload-empty class="reg-drop-prompt">
+              <img class="reg-icon" src="assets/evidence/file.svg" width="32" height="32" alt="">
+              <h3>증거 파일을 선택하세요</h3>
+              <p>파일을 이곳으로 드래그하거나 파일을 선택하세요.</p>
+              <button type="button" class="reg-button reg-primary" data-registration-primary>파일 선택</button>
+              <small>PDF · DOCX · XLSX · ZIP · TXT · HTML · 기타 파일</small>
+            </div>
+            <div data-upload-card class="reg-selected" hidden>
+              <div class="reg-drop-prompt">
+                <img class="reg-icon" src="assets/evidence/file.svg" width="32" height="32" alt=""><h3>파일을 선택했습니다</h3>
+                <p>바꾸려면 다른 파일을 끌어놓거나 선택하세요.</p>
+                <button type="button" class="reg-button reg-primary" >다른 파일 선택</button><small>PDF · DOCX · XLSX · ZIP · TXT · HTML · 기타 파일</small>
+              </div>
+              <div class="reg-selection-info">
+                <div><strong data-upload-filename></strong><small data-upload-summary></small></div>
+                <div class="reg-selection-actions"><span class="reg-tag">등록 대기</span><button type="button" class="reg-button reg-small">삭제</button></div>
+              </div>
+            </div>
+          </div>
+          <span class="reg-sr" data-upload-badge role="status"></span>
+
+        </section>
+        <section class="reg-panel reg-information">
+          <div class="reg-panel-title"><h2>증거 정보</h2></div>
+
+          <div class="reg-fields reg-fields-stack">
+            <div class="reg-field"><label for="registration-name">증거 이름</label><input type="text" data-evidence-field="name" id="registration-name" name="name" placeholder="출입 기록"></div>
+            <div class="reg-field"><label for="registration-description">설명</label><textarea data-evidence-field="description" id="registration-description" name="description" rows="2" placeholder="사건 당일 출입 기록을 정리한 자료입니다."></textarea></div>
+            <div class="reg-field"><label for="registration-source">수집 출처</label><select data-evidence-field="source" id="registration-source" name="source"><option>직접 수집</option><option>제공 받음</option><option>웹에서 수집</option></select></div>
+            <div class="reg-field"><label for="registration-memo">메모</label><textarea data-evidence-field="memo" id="registration-memo" name="memo" rows="2" placeholder="필요한 내용을 입력하세요"></textarea></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="reg-panel reg-integrity reg-integrity-file">
+        <div class="reg-panel-title"><h2>자동 기록 정보</h2><span>읽기 전용</span></div>
+        <dl class="reg-meta-tiles"><div><dt>파일 선택 시간</dt><dd data-upload-meta="time">파일 선택 후 표시</dd></div>
+          <div><dt>SHA-256</dt><dd data-upload-meta="hash" class="reg-hash">파일 선택 후 표시</dd></div>
+          <div><dt>파일 크기</dt><dd data-upload-meta="size">파일 선택 후 표시</dd></div>
+          <div><dt>파일 유형</dt><dd data-upload-meta="type">파일 선택 후 표시</dd></div>
+          <div><dt>Chain of Custody</dt><dd data-upload-meta="custody">파일 선택 후 표시</dd></div>
+        </dl>
+        <p class="reg-footnote">파일 선택 시간은 이 기기 기준입니다. SHA-256은 선택한 원본 파일에서 계산합니다.</p>
+      </section>
+      <p class="registration-feedback" role="alert" data-registration-error hidden></p>
+      <footer class="reg-actions">
+        <a class="reg-button" href="chose_evidence.html" data-navigation-ready="true" title="취소">취소</a>
+        <div><small>등록 후 검증 화면에서 무결성을 확인할 수 있습니다.</small>
+        <button type="button" class="reg-button reg-primary" data-registration-primary>증거 등록</button></div>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

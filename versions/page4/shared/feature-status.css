@@ -1,0 +1,7 @@
+/* Compact notices for features whose implementation is still pending. */
+.feature-pending-card { width: 100%; min-width: 0; padding: 24px 28px; border: 1px solid #e2e7ef; border-radius: 16px; background: #fff; color: #18243a; font-family: "Noto Sans KR", "DM Sans", Arial, sans-serif; }
+.feature-pending-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; }
+.feature-pending-heading h2 { margin: 0; font-size: 20px; font-weight: 500; line-height: 1.5; }
+.feature-pending-badge { display: inline-flex; flex: none; align-items: center; padding: 5px 10px; border-radius: 100px; background: #f1f4f8; color: #647187; font: 500 12px/1.5 "Noto Sans KR", Arial, sans-serif; white-space: nowrap; }
+.feature-pending-description { margin: 14px 0 0; color: #647187; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+@media (max-width: 640px) { .feature-pending-card { padding: 20px; } }

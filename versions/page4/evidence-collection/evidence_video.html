@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>영상·음성 증거 등록 | CredOc</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="evidence-collection.css">
+  <script src="registration-steps.js" defer></script>
+  <script src="media-upload.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body class="layout-page page4-workspace registration-page">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html" aria-current="location">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+  <div class="layout-shell">
+    <main class="reg-main reg-video">
+      <nav class="reg-breadcrumb" aria-label="현재 위치">
+        <a href="evidence.html">증거 관리</a><span aria-hidden="true">›</span>
+        <a href="chose_evidence.html">증거 등록</a><span aria-hidden="true">›</span><span aria-current="page">영상·음성 증거</span>
+      </nav>
+      <header class="reg-intro"><h1>영상·음성 증거 등록</h1><p>영상 또는 음성 파일을 선택하고 증거 이름과 수집 출처를 입력하세요.</p></header>
+      <div data-registration-steps></div>
+      <div class="reg-pair reg-entry-pair">
+        <section class="reg-panel reg-upload reg-upload-video">
+          <div class="reg-panel-title"><h2>영상·음성 미리보기</h2></div>
+          <div data-registration-drop class="reg-drop-surface">
+            <div data-media-empty class="reg-drop-prompt">
+              <img class="reg-icon" src="assets/evidence/media.svg" width="32" height="32" alt="">
+              <h3>영상 또는 음성 파일을 선택하세요</h3>
+              <p>파일을 이곳으로 드래그하거나 파일을 선택하세요.</p>
+              <button type="button" class="reg-button reg-primary" data-registration-primary>파일 선택</button>
+              <small>MP4 · MOV · WEBM · MP3 · WAV · M4A · 최대 50 MB</small>
+            </div>
+            <div data-media-card class="reg-selected" hidden>
+              <video class="reg-preview" data-media-video controls playsinline preload="metadata" hidden></video>
+              <audio data-media-audio controls preload="metadata" hidden></audio>
+              <div class="reg-selection-info">
+                <div><strong data-media-filename></strong><small data-media-summary></small></div>
+                <div class="reg-selection-actions"><button type="button" class="reg-button reg-small">파일 변경</button><button type="button" class="reg-button reg-small">삭제</button></div>
+              </div>
+            </div>
+          </div>
+          <span class="reg-sr" data-media-badge role="status"></span>
+          <p class="reg-warning" data-media-error role="alert" hidden></p>
+        </section>
+        <section class="reg-panel reg-attributes">
+          <div class="reg-panel-title"><h2>미디어 정보</h2><span>읽기 전용</span></div>
+          <dl class="reg-meta-list"><div><dt>파일명</dt><dd data-media-meta="filename">파일 선택 후 표시</dd></div>
+            <div><dt>파일 형식</dt><dd data-media-meta="type">파일 선택 후 표시</dd></div>
+            <div><dt>파일 크기</dt><dd data-media-meta="size">파일 선택 후 표시</dd></div>
+            <div><dt>재생 시간</dt><dd data-media-meta="duration">파일 선택 후 표시</dd></div>
+            <div><dt>영상 해상도</dt><dd data-media-meta="resolution">파일 선택 후 표시</dd></div>
+          </dl>
+          <p class="reg-inline-note">미리보기 재생 여부는 브라우저와 파일 형식에 따라 달라질 수 있습니다.</p>
+        </section>
+      </div>
+      <section class="reg-panel reg-information">
+          <div class="reg-panel-title"><h2>증거 정보</h2></div>
+
+          <div class="reg-fields">
+            <div class="reg-field"><label for="registration-name">증거 이름</label><input type="text" data-evidence-field="name" id="registration-name" name="name" placeholder="현장 영상"></div>
+            <div class="reg-field"><label for="registration-source">수집 출처</label><select data-evidence-field="source" id="registration-source" name="source"><option>직접 수집</option><option>제공 받음</option><option>웹에서 수집</option></select></div>
+            <div class="reg-field"><label for="registration-description">설명</label><textarea data-evidence-field="description" id="registration-description" name="description" rows="2" placeholder="현장 카메라의 기록 영상입니다."></textarea></div>
+            <div class="reg-field"><label for="registration-memo">메모</label><textarea data-evidence-field="memo" id="registration-memo" name="memo" rows="2" placeholder="필요한 내용을 입력하세요"></textarea></div>
+          </div>
+        </section>
+      <section class="reg-panel reg-integrity reg-integrity-video">
+        <div class="reg-panel-title"><h2>무결성 정보</h2><span>읽기 전용</span></div>
+        <dl class="reg-meta-tiles"><div><dt>SHA-256</dt><dd data-media-meta="hash" class="reg-hash">파일 선택 후 표시</dd></div>
+          <div><dt>파일 선택 시간</dt><dd data-media-meta="time">파일 선택 후 표시</dd></div>
+        </dl>
+        <p class="reg-footnote">파일 선택 시 SHA-256을 계산합니다. 등록 후 검증 화면에서 다시 비교할 수 있습니다.</p>
+      </section>
+      <p class="registration-feedback" role="alert" data-registration-error hidden></p>
+      <footer class="reg-actions">
+        <a class="reg-button" href="chose_evidence.html" data-navigation-ready="true" title="취소">취소</a>
+        <div>
+        <button type="button" class="reg-button reg-primary" data-registration-primary data-media-submit disabled>영상·음성 증거 등록</button></div>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

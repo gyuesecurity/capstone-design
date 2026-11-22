@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PDF 생성 완료 | CredOc</title>
+<link href="app.css?v=operation-feedback-1" rel="stylesheet"/>
+<script defer="" src="navigation.js"></script>
+<script defer="" src="app.js?v=evidence-list-1"></script>
+<link href="report.css?v=operation-feedback-1" rel="stylesheet"/><script defer="" src="report.js?v=evidence-list-1"></script><link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="page4-details.css">
+  <link rel="stylesheet" href="report-page4.css">
+</head>
+<body data-report-page="complete" class="layout-page page4-workspace">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html" aria-current="location">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+<div class="report-shell layout-shell" style="width: 100%; min-height: 100vh; background: #F6F8FB; display: flex; flex-direction: column"><main class="report-main layout-section">
+<section data-report-screen="complete" class="rp-screen">
+<header class="rp-heading"><div class="rp-heading-text"><div class="rp-title-row"><h1>보고서 생성 완료</h1></div></div></header><div class="rp-card rp-detail-card"><header class="rp-detail-toolbar"><h2><span data-report-value="filename"></span></h2><span class="rp-stage"><span data-report-value="status"></span></span></header>
+<dl class="rp-meta"><div><dt>보고서 ID</dt><dd><span data-report-value="id"></span></dd></div><div><dt><span data-report-value="created-label"></span></dt><dd><span data-report-value="created"></span></dd></div><div><dt>포함 증거</dt><dd><span data-report-value="count"></span></dd></div><div><dt>검증 결과</dt><dd><span data-report-value="summary"></span></dd></div></dl>
+<footer class="rp-footer"><a class="report-action" href="evidence.html" >증거 관리로 이동</a><div class="rp-actions"><a class="report-action" href="report_detail.html?report=current" data-report-detail-link>보고서 보기</a><button class="report-action rp-primary" type="button" data-report-download>PDF 다운로드</button></div></footer></div>
+</section>
+</main></div></body>
+</html>

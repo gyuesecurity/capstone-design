@@ -1,0 +1,9 @@
+.dashboard-page {
+  --dashboard-canvas: var(--page4-canvas);
+  --dashboard-card: #fff;
+  --dashboard-ink: var(--page4-ink);
+  --dashboard-muted: var(--page4-muted);
+  --dashboard-line: var(--page4-line);
+  --dashboard-navy: var(--page4-navy);
+}
+.dashboard-frame { width: 100%; min-width: 0; }

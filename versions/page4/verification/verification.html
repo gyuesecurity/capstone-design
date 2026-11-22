@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+  <title>무결성 검증 | CredOc</title>
+  <link rel="stylesheet" href="app.css?v=evidence-list-1">
+  <script src="navigation.js" defer></script>
+  <script src="verification-local.js?v=evidence-list-1" defer></script>
+  <script src="app.js?v=evidence-list-1" defer></script>
+<link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="page4-details.css">
+  <link rel="stylesheet" href="verification.css?v=page4-layout">
+</head>
+<body class="verification-page layout-page page4-workspace">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html">증거 관리</a>
+    <a href="verification.html" aria-current="page">검증</a>
+    <a href="report.html">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+
+<div class="layout-shell">
+  <main id="local-verification" class="verification-main">
+    <div class="verification-heading">
+      <div><h1>무결성 검증</h1><p data-verification-storage>저장된 파일의 현재 SHA-256을 등록 당시 해시와 비교합니다.</p></div>
+      <button type="button" class="verification-secondary" data-verification-restart hidden>다른 증거 검증</button>
+    </div>
+    <p class="verification-notice">해시가 일치하면 현재 파일이 등록 당시 파일과 같다는 뜻입니다. 등록 전 조작 여부나 내용의 진위는 판단할 수 없습니다.</p>
+    <div data-verification-feedback class="verification-feedback" role="status" aria-live="polite" aria-atomic="true" hidden>
+      <p data-verification-feedback-message></p>
+      <div class="verification-feedback-actions">
+        <button data-verification-load-retry type="button" class="verification-secondary" hidden>목록 다시 불러오기</button>
+        <button data-verification-retry type="button" class="verification-secondary" hidden>실패 항목 다시 검증</button>
+      </div>
+    </div>
+    <section class="verification-panel" data-verification-picker aria-labelledby="verification-picker-title">
+      <div class="verification-panel-head">
+        <div class="verification-card-heading"><h2 id="verification-picker-title" tabindex="-1">검증할 증거 선택</h2><span id="verification-count">불러오는 중</span></div>
+        <div class="verification-filters">
+          <label class="verification-search-label" for="verification-search">증거 검색<input id="verification-search" type="search" placeholder="증거명, 파일명 또는 증거 ID" disabled></label>
+          <label for="verification-type">유형<select id="verification-type" disabled><option value="">전체 유형</option></select></label>
+          <label for="verification-status">상태<select id="verification-status" disabled><option value="">전체 상태</option><option value="NOT_VERIFIED">미검증</option><option value="MATCH">일치</option><option value="MISMATCH">불일치</option><option value="UNAVAILABLE">검증 불가</option></select></label>
+        </div>
+      </div>
+      <div class="verification-table-scroll">
+        <table class="verification-table">
+          <thead><tr><th><input id="verification-select-all" type="checkbox" aria-label="표시된 증거 전체 선택" disabled></th><th>증거명</th><th>유형</th><th>등록 일시 (KST)</th><th>증거 ID</th><th>현재 상태</th></tr></thead>
+          <tbody id="verification-rows"><tr><td colspan="6" class="verification-empty">등록한 파일을 불러오고 있습니다.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="verification-panel-footer"><span>검색 결과 밖의 증거도 선택이 유지됩니다.</span>
+        <div class="verification-footer-actions"><button id="verification-clear" type="button" class="verification-secondary" disabled>선택 해제</button>
+          <button type="button" class="verification-primary" data-run-verification disabled>선택한 증거 검증</button></div></div>
+    </section>
+    <section class="verification-panel verification-padded" data-verification-picker aria-labelledby="verification-target-title">
+      <div class="verification-card-heading"><h2 id="verification-target-title">검증 대상 증거</h2></div>
+      <div id="verification-targets"><p class="verification-empty">검증할 파일을 목록에서 선택해 주세요.</p></div>
+    </section>
+    <section class="verification-panel verification-padded" data-verification-result-panel hidden aria-labelledby="verification-result-title">
+      <h2 id="verification-result-title" tabindex="-1">검증 결과</h2>
+      <p id="verification-message" role="status" aria-live="polite">등록한 파일을 불러오고 있습니다.</p>
+      <div id="verification-results"><p class="verification-empty">아직 이번 화면에서 실행한 검증이 없습니다.</p></div>
+    </section>
+    <section class="verification-panel verification-padded" aria-labelledby="verification-history-title">
+      <h2 id="verification-history-title">최근 검증 이력</h2><p>최근 20건 · 다시 검증해도 이전 기록은 보존됩니다.</p>
+      <div id="verification-history"></div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

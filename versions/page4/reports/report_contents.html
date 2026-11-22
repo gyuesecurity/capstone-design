@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>포함 내용 | CredOc</title>
+<link href="app.css?v=operation-feedback-1" rel="stylesheet"/>
+<script defer="" src="navigation.js"></script>
+<script defer="" src="app.js?v=evidence-list-1"></script>
+<link href="report.css?v=operation-feedback-1" rel="stylesheet"/><script defer="" src="report.js?v=evidence-list-1"></script><link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="page4-details.css">
+  <link rel="stylesheet" href="report-page4.css">
+</head>
+<body data-report-page="contents" class="layout-page page4-workspace">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html" aria-current="location">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+<div class="report-shell layout-shell" style="width: 100%; min-height: 100vh; background: #F6F8FB; display: flex; flex-direction: column"><main class="report-main layout-section">
+<section data-report-screen="contents" class="rp-screen">
+<header class="rp-heading"><div class="rp-heading-text"><div class="rp-title-row"><h1>보고서 포함 항목</h1><span class="rp-stage">3 / 4단계</span></div><p>보고서에 포함할 증거 정보와 검증 항목을 선택하세요.</p></div></header>
+<section class="rp-card rp-form-card"><div class="rp-options"><div class="report-option"><label class="report-checkbox"><input type="checkbox" data-report-option="basic" aria-label="증거 기본 정보" aria-describedby="report-option-basic-note"><span class="report-checkbox-mark"><img src="assets/report/b1e8d.svg" alt=""></span></label><div><h3>증거 기본 정보</h3><p id="report-option-basic-note">파일명, 유형, 크기, 증거 ID, 등록 일시</p></div></div>
+<div class="report-option"><label class="report-checkbox"><input type="checkbox" data-report-option="preview" aria-label="증거 미리보기" aria-describedby="report-option-preview-note"><span class="report-checkbox-mark"><img src="assets/report/b1e8d.svg" alt=""></span></label><div><h3>증거 미리보기</h3><p id="report-option-preview-note">이미지, 영상 또는 문서 미리보기</p></div></div>
+<div class="report-option"><label class="report-checkbox"><input type="checkbox" data-report-option="metadata" aria-label="메타데이터" aria-describedby="report-option-metadata-note"><span class="report-checkbox-mark"><img src="assets/report/b1e8d.svg" alt=""></span></label><div><h3>메타데이터</h3><p id="report-option-metadata-note">파일 및 미디어 메타데이터</p></div></div>
+<div class="report-option" data-report-pending="exif"><label class="report-checkbox"><input type="checkbox" data-report-option="exif" aria-label="EXIF 정보" aria-describedby="report-option-exif-note" disabled><span class="report-checkbox-mark"><img src="assets/report/b1e8d.svg" alt=""></span></label><div><h3>EXIF 정보 <span class="report-option-pending-badge">준비 중</span></h3><p id="report-option-exif-note">촬영 일시, 카메라와 GPS 정보</p></div></div>
+<div class="report-option"><label class="report-checkbox"><input type="checkbox" data-report-option="hash" aria-label="SHA-256" aria-describedby="report-option-hash-note"><span class="report-checkbox-mark"><img src="assets/report/b1e8d.svg" alt=""></span></label><div><h3>SHA-256</h3><p id="report-option-hash-note">등록 당시 해시와 현재 해시</p></div></div>
+<div class="report-option"><label class="report-checkbox"><input type="checkbox" data-report-option="results" aria-label="무결성 검증 결과" aria-describedby="report-option-results-note"><span class="report-checkbox-mark"><img src="assets/report/b1e8d.svg" alt=""></span></label><div><h3>무결성 검증 결과</h3><p id="report-option-results-note">일치 · 미검증 · 불일치 · 검증 불가</p></div></div>
+<div class="report-option" data-report-pending="custody"><label class="report-checkbox"><input type="checkbox" data-report-option="custody" aria-label="Chain of Custody" aria-describedby="report-option-custody-note" disabled><span class="report-checkbox-mark"><img src="assets/report/b1e8d.svg" alt=""></span></label><div><h3>Chain of Custody <span class="report-option-pending-badge">준비 중</span></h3><p id="report-option-custody-note">증거를 관리한 사람과 작업 시점</p></div></div>
+<div class="report-option"><label class="report-checkbox"><input type="checkbox" data-report-option="url" aria-label="URL 수집 정보" aria-describedby="report-option-url-note"><span class="report-checkbox-mark"><img src="assets/report/b1e8d.svg" alt=""></span></label><div><h3>URL 수집 정보</h3><p id="report-option-url-note">원본 URL, HTML, 캡처 정보</p></div></div></div><p class="rp-server-note" data-report-server-note hidden>증거 미리보기와 URL 수집 정보는 서버 연동 방식을 준비 중입니다.</p>
+<footer class="rp-footer"><a class="report-action" href="report_info.html" >이전</a><div class="rp-actions"><a class="report-action rp-primary" href="report_preview.html" data-report-next>다음: 미리보기</a></div></footer></section>
+</section>
+</main></div></body>
+</html>

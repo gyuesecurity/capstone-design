@@ -92,7 +92,14 @@ function textFits(element) {
         assert.equal(actual.outer, baseline.outer, label + ' changed the physical window');
         assert.ok(Math.abs(actual.inner * zoom - baseline.inner) <= 5, label + ' did not change the layout viewport');
         const issues = await page.evaluate(inspectLayout);
-        if (file === 'index_home.html?demo=1') {
+        if (file === 'index_home.html?demo=1' && await page.locator('.service-home-grid').count()) {
+          const nav = await page.locator('.workspace-sidebar').boundingBox();
+          const cards = await page.locator('.service-home-grid').boundingBox();
+          assert.equal(await page.locator('.service-home-card').count(), 4, label);
+          assert.ok(nav && cards, label + ' navigation and cards should be visible');
+          if (actual.inner > 840) assert.ok(cards.x >= nav.x + nav.width, label + ' cards overlap the sidebar');
+          else assert.ok(cards.y >= nav.y + nav.height, label + ' cards overlap the mobile navigation');
+        } else if (file === 'index_home.html?demo=1') {
           const shell = page.locator('.layout-shell');
           const header = await shell.locator(':scope > header').boundingBox();
           const main = await shell.locator(':scope > main').boundingBox();

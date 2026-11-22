@@ -9,6 +9,7 @@ catch (_) {
 const assert = require('node:assert/strict');
 
 const base = process.env.EVIDENCE_TEST_URL || 'http://127.0.0.1:8177/';
+const apiBase = new URL('/api/', base);
 
 async function runSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 1366, height: 900 }, timezoneId: 'America/Los_Angeles' });
@@ -83,6 +84,10 @@ async function runSmoke(browser) {
   const evidenceId = await uploadFile('actual.txt');
   assert.match(evidenceId, /^EV-/);
   await page.locator('.completion-card').getByText('서버', { exact: true }).waitFor();
+  if (new URL(base).pathname.startsWith('/page4/')) {
+    await page.goto(new URL('/evidence.html?id=' + encodeURIComponent(evidenceId), base).href);
+    await page.getByRole('dialog').filter({ hasText: 'actual.txt' }).waitFor();
+  }
 
   await page.goto(base + 'evidence.html');
   await page.waitForFunction(() => document.querySelector('[data-evidence-count="total"]').textContent === '1개');
@@ -104,8 +109,9 @@ async function runSmoke(browser) {
     await page.unroute(downloadUrl);
   }
   await page.goto(base + 'verification.html');
-  await page.waitForFunction(() => document.querySelector('#verification-count').textContent.includes('1 / 1개'));
-  assert.match(await page.locator('.verification-notice').innerText(), /서버/);
+  const countText = await page.locator('body.page4-workspace').count() ? '전체 1건 · 0건 선택' : '1 / 1개';
+  await page.waitForFunction(text => document.querySelector('#verification-count').textContent.includes(text), countText);
+  assert.match(await page.locator('[data-verification-storage]').innerText(), /서버/);
   await page.getByRole('checkbox', { name: 'actual.txt 선택' }).check();
   await page.locator('[data-run-verification]').first().click();
   await page.waitForFunction(() => document.querySelector('#verification-message').textContent.includes('결과 저장'));
@@ -126,7 +132,7 @@ async function runSmoke(browser) {
   await page.route('**/api/reports**', async route => {
     const req = route.request();
     const headers = { Authorization: req.headers().authorization };
-    const me = await context.request.get(base + 'api/me', { headers });
+    const me = await context.request.get(new URL('me', apiBase).href, { headers });
     assert.equal(me.status(), 200);
     const user = await me.json();
     const suffix = new URL(req.url()).pathname.slice('/api/reports'.length);
@@ -199,7 +205,7 @@ async function runSmoke(browser) {
   assert.ok(!reports.find(report => report.id === secondId).options.includes('custody'));
   assert.equal(await page.locator('[data-report-custody-events] li:visible').count(), 0);
   const otherEmail = `other-${email}`;
-  const registered = await context.request.post(base + 'api/auth/register', {
+  const registered = await context.request.post(new URL('auth/register', apiBase).href, {
     data: { name: '다른 작성자', email: otherEmail, password: 'Strong!123' }
   });
   assert.equal(registered.status(), 201);
@@ -235,7 +241,7 @@ async function runSmoke(browser) {
   // Enter the demo while this account is still signed in.
   assert.ok(await page.evaluate(() => sessionStorage.getItem('evidence-auth-token')));
   await page.goto(base + 'login.html');
-  const demoLink = page.getByRole('link', { name: '화면 시연 계속하기' });
+  const demoLink = page.locator('a[data-demo-entry]');
   await demoLink.click();
   await page.waitForURL('**/index_home.html?demo=1');
   assert.equal(await page.evaluate(() => sessionStorage.getItem('evidence-auth-token')), null);

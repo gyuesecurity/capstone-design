@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>증거 등록 | CredOc</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="evidence-collection.css">
+  <script src="app.js" defer></script>
+</head>
+<body class="layout-page page4-workspace registration-page">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html" aria-current="location">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+  <div class="layout-shell">
+    <main class="reg-main reg-chose">
+      <nav class="reg-breadcrumb" aria-label="현재 위치">
+        <a href="evidence.html">증거 관리</a><span aria-hidden="true">›</span>
+        <span aria-current="page">증거 등록</span>
+      </nav>
+      <header class="reg-intro"><h1>증거 등록</h1><p>등록할 디지털 증거의 유형을 선택하세요.</p></header>
+      <div class="reg-choice-grid">
+        <a class="reg-choice" href="evidence_file.html">
+          <div class="reg-choice-head"><img class="reg-icon" src="assets/evidence/file.svg" width="28" height="28" alt=""><h2>파일 증거</h2><small>PDF · DOCX · ZIP</small></div>
+          <p>PDF, 문서, 압축 파일 등<br>디지털 파일을 증거로 등록합니다.</p><span class="reg-choice-action">파일 등록<span aria-hidden="true">→</span></span>
+        </a>
+        <a class="reg-choice" href="evidence_img.html">
+          <div class="reg-choice-head"><img class="reg-icon" src="assets/evidence/image.svg" width="28" height="28" alt=""><h2>이미지 증거</h2><small>JPG · PNG · WEBP</small></div>
+          <p>현장 사진이나 캡처 이미지를<br>원본 파일 그대로 등록합니다.</p><span class="reg-choice-action">이미지 등록<span aria-hidden="true">→</span></span>
+        </a>
+        <a class="reg-choice" href="evidence_url.html">
+          <div class="reg-choice-head"><img class="reg-icon" src="assets/evidence/url.svg" width="28" height="28" alt=""><h2>URL 수집</h2><small>웹페이지</small></div>
+          <p>웹페이지 주소의 형식을 확인합니다.<br>원본 수집과 저장은 준비 중입니다.</p><span class="reg-choice-action">URL 수집<span aria-hidden="true">→</span></span>
+        </a>
+        <a class="reg-choice" href="evidence_video.html">
+          <div class="reg-choice-head"><img class="reg-icon" src="assets/evidence/media.svg" width="28" height="28" alt=""><h2>영상·음성 증거</h2><small>MP4 · MOV · MP3 · WAV</small></div>
+          <p>영상 및 음성 파일을 증거로 등록합니다.</p><span class="reg-choice-action">미디어 등록<span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+      <aside class="reg-choice-help">
+        <h2>증거 유형에 따라 수집되는 정보가 다를 수 있습니다.</h2>
+        <p>유형에 맞는 정보가 자동으로 기록됩니다.</p>
+        <dl><div><dt>파일 증거</dt><dd>파일 정보 · SHA-256</dd></div>
+          <div><dt>이미지 증거</dt><dd>파일 정보 · 해상도 · SHA-256 · EXIF 준비 중</dd></div>
+          <div><dt>URL 수집</dt><dd>주소 형식 확인 · 원본 수집 및 저장 준비 중</dd></div>
+        </dl>
+      </aside>
+    </main>
+  </div>
+</body>
+</html>

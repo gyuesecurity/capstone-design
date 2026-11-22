@@ -71,7 +71,8 @@ async function checkGeometry(page, label) {
     await checkGeometry(page, 'Successful upload');
 
     let cases = 0;
-    const source = path.join(root, 'versions', 'previous');
+    const edition = await page.locator('.page4-workspace').count() ? 'page4' : 'previous';
+    const source = path.join(root, 'versions', edition);
     const files = fs.readdirSync(source, { withFileTypes: true })
       .filter(entry => entry.isDirectory())
       .flatMap(entry => fs.readdirSync(path.join(source, entry.name)).filter(name => name.endsWith('.html')));

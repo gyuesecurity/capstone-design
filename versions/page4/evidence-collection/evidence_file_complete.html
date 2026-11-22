@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>파일 증거 등록 완료 | CredOc</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="evidence-collection.css">
+  <script src="app.js" defer></script>
+</head>
+<body class="layout-page page4-workspace registration-page">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html" aria-current="location">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+
+  <div class="completion-shell layout-shell">
+    <main class="completion-main">
+      <nav class="completion-breadcrumb" aria-label="현재 위치">
+        <a href="evidence.html">증거 관리</a><span aria-hidden="true">&gt;</span>
+        <a href="chose_evidence.html">증거 등록</a><span aria-hidden="true">&gt;</span>
+        <a href="evidence_file.html">파일 증거</a><span aria-hidden="true">&gt;</span>
+        <span aria-current="page">등록 완료</span>
+      </nav>
+      <section class="completion-intro" data-state="loading" aria-labelledby="completion-title" aria-live="polite">
+        <span class="completion-check" aria-hidden="true">…</span>
+        <div>
+          <h1 id="completion-title">등록 정보를 확인하고 있습니다.</h1>
+          <p></p>
+        </div>
+      </section>
+      <section class="completion-card" aria-labelledby="completion-info" hidden>
+        <h2 id="completion-info">등록 정보</h2>
+        <dl class="completion-details" data-completion-details></dl>
+      </section>
+      <div class="completion-actions">
+        <a class="account-button" href="evidence.html">증거 관리로 이동</a>
+        <button class="account-button account-button--primary" type="button" data-completion-detail disabled>증거 상세보기</button>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

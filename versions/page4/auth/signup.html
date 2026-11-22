@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CredOc - 회원가입</title>
+<link rel="stylesheet" href="app.css?v=operation-feedback-1"><link rel="stylesheet" href="auth.css?v=page4">
+<script src="auth.js?v=operation-feedback-1" defer></script>
+<link rel="stylesheet" href="responsive.css">
+<link rel="stylesheet" href="auth-layout.css">
+</head><body class="auth-page layout-page">
+<main class="auth-card auth-card--signup" data-node-id="11:831">
+<img class="auth-wordmark" src="assets/brand/credoc-wordmark.svg" alt="CredOc" width="142" height="30">
+<header class="auth-heading"><h1>회원가입</h1></header>
+<form id="signup-form"><div class="auth-fields">
+<div class="auth-field"><label for="name">이름 <span>*</span></label><div class="auth-input"><input id="name" type="text" placeholder="김하늘" autocomplete="name" maxlength="100" required></div></div>
+<div class="auth-field"><label for="email">이메일 <span>*</span></label><div class="auth-input-row"><div class="auth-input"><input id="email" type="email" placeholder="haneul@example.com" autocomplete="email" aria-describedby="email-verification-note" required></div><button id="send-verification-code" class="auth-button auth-button--verification" type="button">인증코드 보내기</button></div></div>
+<div class="auth-field"><label for="verification-code">이메일 인증코드 <span>*</span></label><div class="auth-input-row"><div class="auth-input"><input id="verification-code" type="text" placeholder="6자리 인증코드" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" aria-describedby="email-verification-status" disabled required></div><button id="verify-email-code" class="auth-button auth-button--verification" type="button" disabled>확인</button></div><p id="email-verification-note" class="auth-field-note">현재는 화면 시연용이며, 실제 이메일은 발송되지 않습니다.</p><p id="email-verification-status" class="auth-field-status" role="status" aria-live="polite" aria-atomic="true"></p></div>
+<div class="auth-field"><label for="password">비밀번호 <span>*</span></label><div class="auth-input"><input id="password" type="password" placeholder="비밀번호를 입력하세요" autocomplete="new-password" minlength="8" maxlength="16" aria-describedby="password-condition" required></div></div>
+<div class="auth-strength"><div class="auth-strength-bars" aria-hidden="true" hidden><i></i><i></i><i></i><i></i></div><p id="password-strength" hidden></p><p id="password-condition">비밀번호는 8~16자이며, 영문·숫자·특수문자를 모두 포함해야 합니다.</p></div>
+<div class="auth-field"><label for="password-confirm">비밀번호 확인 <span>*</span></label><div class="auth-input"><input id="password-confirm" type="password" placeholder="비밀번호를 다시 입력하세요" autocomplete="new-password" required></div></div>
+</div>
+<div class="agreement-row"><label class="auth-agreement"><input id="signup-agreement" type="checkbox" required><span>이용약관 및 개인정보 처리방침에 동의합니다</span></label><a href="signup_terms.html?view=terms" target="_blank" rel="noopener" aria-label="약관 보기 (새 창)">약관 보기</a></div>
+<div class="auth-actions"><a class="auth-button" href="login.html">로그인</a><button class="auth-button auth-button--primary" type="submit">가입하기</button></div>
+</form><a class="auth-close" href="index.html" aria-label="회원가입 창 닫기">닫기</a></main></body></html>

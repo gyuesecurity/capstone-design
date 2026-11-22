@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>미리보기 | CredOc</title>
+<link href="app.css?v=operation-feedback-1" rel="stylesheet"/>
+<script defer="" src="navigation.js"></script>
+<script defer="" src="app.js?v=evidence-list-1"></script>
+<link href="report.css?v=operation-feedback-1" rel="stylesheet"/><script defer="" src="report.js?v=evidence-list-1"></script><link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="page4-details.css">
+  <link rel="stylesheet" href="report-page4.css">
+</head>
+<body data-report-page="preview" class="layout-page page4-workspace">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html" aria-current="location">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+<div class="report-shell layout-shell" style="width: 100%; min-height: 100vh; background: #F6F8FB; display: flex; flex-direction: column"><main class="report-main layout-section">
+<section data-report-screen="preview" class="rp-screen">
+<header class="rp-heading"><div class="rp-heading-text"><div class="rp-title-row"><h1>보고서 미리보기</h1><span class="rp-stage">4 / 4단계</span></div><p><span data-report-value="preview-description"></span></p></div></header>
+<div class="rp-preview-switch" aria-label="미리보기 형식" role="group"><button type="button" aria-pressed="false" data-preview-mode="summary" aria-controls="preview-summary">핵심 내용 요약</button><button type="button" aria-pressed="true" data-preview-mode="pdf" aria-controls="preview-pdf">PDF 미리보기</button></div>
+<div id="preview-summary" class="rp-preview-summary" hidden><nav class="rp-card rp-toc" aria-label="보고서 목차"><h2>목차</h2><ol data-summary-toc></ol><p><span data-report-value="selected-count"></span></p></nav>
+<section class="rp-summary-wrap"><header class="rp-summary-tools"><strong>핵심 내용 요약</strong><div><button type="button" data-summary-prev>이전</button><span data-summary-position></span><button type="button" data-summary-next>다음</button></div></header>
+<article class="rp-paper" data-report-document><small>디지털 증거 보고서</small><h2><span data-report-value="title"></span></h2><p><span data-report-value="id-prefixed"></span></p><p data-summary-author></p><div data-summary-body></div><footer>CredOc · 미리보기</footer></article></section></div>
+<section class="report-pdf-panel" id="preview-pdf"><div class="report-pdf-toolbar"><span data-report-value="author-date"></span><a data-open-preview hidden target="_blank" rel="noopener">새 탭에서 PDF 열기</a></div><p data-pdf-status role="status">미리보기 PDF를 준비하고 있습니다.</p><iframe title="생성할 증거 보고서 PDF" data-pdf-preview hidden></iframe></section>
+<div class="rp-card"><footer class="rp-footer"><a class="report-action" href="report_contents.html" >이전</a><div class="rp-actions"><small>원본 증거는 변경되지 않습니다.</small><a class="report-action rp-primary" href="report_progress.html" data-report-generate>PDF 보고서 생성</a></div></footer></div>
+</section>
+</main></div></body>
+</html>

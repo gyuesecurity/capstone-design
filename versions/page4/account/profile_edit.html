@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CredOc - 프로필 수정</title>
+  <link rel="stylesheet" href="app.css?v=operation-feedback-1">
+  <link rel="stylesheet" href="account.css?v=operation-feedback-1">
+  <script src="navigation.js" defer></script>
+  <script src="account.js?v=operation-feedback-1" defer></script>
+<link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="page4-details.css">
+</head>
+<body class="layout-page page4-workspace">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html">보고서</a>
+    <a href="mypage.html" aria-current="location">My page</a>
+  </nav>
+</header>
+
+  <div class="account-shell layout-shell">
+    <main class="account-main">
+      <nav class="account-breadcrumb" aria-label="경로"><a href="mypage.html">My page</a><span>/</span><strong>프로필 수정</strong></nav>
+      <section class="account-card" aria-labelledby="profile-title">
+        <div class="account-card__title"><h1 id="profile-title">프로필 수정</h1></div>
+
+        <form id="profile-edit-form" class="account-form">
+          <label class="account-field">이름<input name="name" type="text" required maxlength="100" autocomplete="name"></label>
+          <label class="account-field">이메일<input name="email" type="email" autocomplete="email" readonly></label>
+          <p class="account-help">이메일 변경은 현재 지원하지 않습니다.</p>
+          <div class="account-actions"><a class="account-button" href="mypage.html">취소</a><button class="account-button account-button--primary" type="submit">저장</button></div>
+        </form>
+        <p class="account-status" data-account-status role="status" hidden></p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

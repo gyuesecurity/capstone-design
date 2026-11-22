@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>보고서 정보 | CredOc</title>
+<link href="app.css?v=operation-feedback-1" rel="stylesheet"/>
+<script defer="" src="navigation.js"></script>
+<script defer="" src="app.js?v=evidence-list-1"></script>
+<link href="report.css?v=operation-feedback-1" rel="stylesheet"/><script defer="" src="report.js?v=evidence-list-1"></script><link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="page4-details.css">
+  <link rel="stylesheet" href="report-page4.css">
+</head>
+<body data-report-page="info" class="layout-page page4-workspace">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html" aria-current="location">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+<div class="report-shell layout-shell" style="width: 100%; min-height: 100vh; background: #F6F8FB; display: flex; flex-direction: column"><main class="report-main layout-section">
+<section data-report-screen="info" class="rp-screen">
+<header class="rp-heading"><div class="rp-heading-text"><div class="rp-title-row"><h1>보고서 정보</h1><span class="rp-stage">2 / 4단계</span></div><p>보고서의 제목과 작성 정보를 입력하세요.</p></div></header>
+<div class="rp-card rp-form-card"><div class="rp-fields">
+<label class="rp-field"><span>보고서 제목</span><input class="report-field" type="text" data-report-field="title" maxlength="150" placeholder="디지털 증거 검증 보고서" required></label>
+<div class="rp-field"><div>작성자 <span class="rp-readonly">읽기 전용</span></div><div class="rp-readonly-value"><span data-report-value="author"></span></div><small data-report-author-note></small></div>
+<label class="rp-field"><span>사건 또는 프로젝트명</span><input class="report-field" type="text" data-report-field="project" maxlength="200" placeholder="사건명 또는 프로젝트명을 입력하세요."></label>
+<div class="rp-field"><div><span data-report-value="date-label"></span> <span class="rp-readonly">읽기 전용</span></div><div class="rp-readonly-value"><span data-report-value="date"></span></div></div>
+<label class="rp-field rp-wide"><span>보고서 설명</span><textarea class="report-field" rows="3" data-report-field="description" maxlength="4000" placeholder="보고서에 대한 설명을 입력하세요."></textarea></label></div>
+<footer class="rp-footer"><a class="report-action" href="report_select.html" >이전</a><div class="rp-actions"><a class="report-action rp-primary" href="report_contents.html" data-report-next>다음: 포함 내용 확인</a></div></footer></div>
+</section>
+</main></div></body>
+</html>

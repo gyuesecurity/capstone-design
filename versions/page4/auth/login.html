@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CredOc - 로그인</title>
+<link rel="stylesheet" href="app.css?v=operation-feedback-1"><link rel="stylesheet" href="auth.css?v=page4">
+<script src="auth.js?v=operation-feedback-1" defer></script>
+<link rel="stylesheet" href="responsive.css">
+<link rel="stylesheet" href="auth-layout.css">
+</head><body class="auth-page layout-page">
+<main class="auth-card auth-card--login" data-node-id="10:363">
+<img class="auth-wordmark" src="assets/brand/credoc-wordmark.svg" alt="CredOc" width="142" height="30">
+<header class="auth-heading"><h1>로그인</h1></header>
+<form id="login-form"><div class="auth-fields">
+<div class="auth-field"><label for="email">이메일 <span>*</span></label><div class="auth-input"><input id="email" type="email" placeholder="haneul@example.com" autocomplete="username" required></div></div>
+<div class="auth-field"><label for="password">비밀번호 <span>*</span></label><div class="auth-input"><input id="password" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password" required></div></div>
+</div>
+<button class="auth-button auth-button--primary auth-button--full" type="submit">로그인</button>
+<p id="auth-status" class="auth-status" role="status" hidden></p>
+<nav class="auth-links" aria-label="계정 도움말"><button type="button" data-recovery="id">아이디 찾기</button><span>|</span><button type="button" data-recovery="password">비밀번호 찾기</button><span>|</span><a href="signup.html">회원가입</a></nav>
+</form>
+<p class="auth-status"><a data-demo-entry href="index_home.html?demo=1">로그인 없이 시연 화면 보기</a></p>
+<a class="auth-close" href="index.html" aria-label="로그인 창 닫기">닫기</a></main>
+<dialog id="recovery-dialog" class="auth-dialog"><h2>계정 찾기 안내</h2><p>계정 찾기는 인증 서버 연결 후 이용할 수 있습니다.</p><form method="dialog"><button class="auth-button auth-button--primary">확인</button></form></dialog>
+</body></html>

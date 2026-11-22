@@ -428,10 +428,16 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
                      "createdAt": row["created_at"]} for row in rows]
 
     web_files = public_files()
+    web_files.update({f"page4/{url}": source for url, source in public_files("page4").items()})
 
     @app.get("/")
     def home():
         return RedirectResponse("/index.html")
+
+    @app.get("/page4", include_in_schema=False)
+    @app.get("/page4/", include_in_schema=False)
+    def page4_home():
+        return RedirectResponse("/page4/index.html")
 
     @app.get("/{file_path:path}", include_in_schema=False)
     def static_file(file_path: str):
