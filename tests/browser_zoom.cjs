@@ -93,17 +93,15 @@ function textFits(element) {
         assert.ok(Math.abs(actual.inner * zoom - baseline.inner) <= 5, label + ' did not change the layout viewport');
         const issues = await page.evaluate(inspectLayout);
         if (file === 'index_home.html?demo=1') {
-          const nav = page.locator('.workspace-sidebar');
-          const header = await nav.boundingBox();
-          const cards = await page.locator('main .layout-grid--4').boundingBox();
-          const account = await nav.getByRole('link', { name: 'My page' }).boundingBox();
-          assert.ok(header && cards && account, label + ' workspace navigation and cards must be visible');
-          if (await nav.evaluate(element => getComputedStyle(element).position === 'fixed')) {
-            assert.ok(cards.x >= header.x + header.width - 2, label + ' sidebar covers the cards');
-            assert.ok(account.x + account.width <= header.x + header.width + 2, label + ' account link is outside the sidebar');
-          } else {
-            assert.ok(cards.y >= header.y + header.height - 2, label + ' mobile menu covers the cards');
-            assert.ok(account.x + account.width <= actual.inner + 2, label + ' account link is outside the mobile menu');
+          const shell = page.locator('.layout-shell');
+          const header = await shell.locator(':scope > header').boundingBox();
+          const main = await shell.locator(':scope > main').boundingBox();
+          assert.ok(header && main, label + ' header and cards must share the page container');
+          assert.ok(Math.abs(header.x - main.x) < 2 && Math.abs(header.width - main.width) < 2, label + ' header and body edges differ');
+          if (actual.inner > 1100) {
+            const account = await shell.getByRole('link', { name: 'My page' }).boundingBox();
+            const cards = await shell.locator('main .layout-grid--4').boundingBox();
+            assert.ok(Math.abs(account.x + account.width - cards.x - cards.width) < 2, label + ' menu must align with the rightmost card');
           }
         }
         if (file === 'index.html') {

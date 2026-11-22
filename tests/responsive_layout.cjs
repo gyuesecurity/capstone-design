@@ -33,15 +33,10 @@ async function checkGeometry(page, label) {
       if (box.left < -2 || box.right > width + 2) failures.push('Control outside viewport: ' + (el.getAttribute('aria-label') || el.textContent).trim().slice(0, 50));
       if (el.matches('input:not([type="checkbox"]):not([type="radio"]), select, textarea') && box.width < 40) failures.push('Input collapsed: ' + el.getAttribute('aria-label'));
     }
-    const header = document.querySelector('.workspace-sidebar, .layout-header, .account-header');
+    const header = document.querySelector('.layout-header, .account-header');
     const content = document.querySelector('.report-main, .account-main, .mypage-main, .completion-main');
-    if (header && content) {
-      const menu = header.getBoundingClientRect();
-      const main = content.getBoundingClientRect();
-      const sidebar = header.matches('.workspace-sidebar') && getComputedStyle(header).position === 'fixed';
-      if (sidebar ? main.left < menu.right - 2 : main.top < menu.bottom - 2) {
-        failures.push('Content overlaps navigation');
-      }
+    if (header && content && content.getBoundingClientRect().top < header.getBoundingClientRect().bottom - 2) {
+      failures.push('Content overlaps the header');
     }
     return failures;
   });

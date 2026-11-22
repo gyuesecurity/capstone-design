@@ -4,109 +4,262 @@
   <meta charset="UTF-8">
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0">
-  <title>CredOc - 대시보드</title>
+  <title>캡디아메리카</title>
   <link rel="stylesheet" href="app.css?v=evidence-list-1">
   <script src="navigation.js" defer></script>
   <script src="app.js?v=evidence-list-1" defer></script>
   <script src="dashboard-local.js?v=evidence-list-1" defer></script>
-  <link rel="stylesheet" href="responsive.css">
-  <link rel="stylesheet" href="page4-workspace.css">
-  <link rel="stylesheet" href="dashboard-frame.css">
-  <link rel="stylesheet" href="dashboard-content.css">
+<link rel="stylesheet" href="responsive.css">
 </head>
-<body class="layout-page dashboard-page page4-workspace">
-<header class="workspace-sidebar dashboard-bar">
-    <a class="workspace-brand dashboard-brand" href="index_home.html" aria-label="CredOc 홈">
-      <img src="assets/brand/credoc-wordmark.svg" alt="CredOc" width="132" height="28">
-      <span class="dashboard-tagline">디지털 증거 플랫폼</span>
-    </a>
-    <nav class="workspace-menu dashboard-menu" aria-label="주 메뉴">
-      <a href="Dashboard.html" aria-current="page">
-        대시보드
-      </a>
-      <a href="evidence.html">
-        증거 관리
-      </a>
-      <a href="verification.html">
-        검증
-      </a>
-      <a href="report.html">
-        보고서
-      </a>
-      <a href="mypage.html">
-        My page
-      </a>
-    </nav>
-  </header>
-<div class="layout-shell dashboard-stage">
-<div class="dashboard-frame">
-  <div class="layout-section dashboard-content" role="main">
-    <div class="dashboard-intro">
-      <div class="dashboard-intro-copy">
-        <h1 data-profile-greeting>안녕하세요</h1>
-        <p>디지털 증거의 상태와 최근 활동을 확인하세요.</p>
+<body class="layout-page">
+
+  <!-- 여기에 피그마에서 복사한 HTML 코드 넣기 -->
+<div style="width: 1440px; min-height: 1024px; background: #F6F8FB; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex" class="layout-fluid layout-shell">
+  <div style="align-self: stretch; height: 88px; padding-left: 96px; padding-right: 96px; background: white; overflow: hidden; border-bottom: 1px #E2E7EF solid; justify-content: space-between; align-items: center; display: inline-flex" class="layout-header layout-section">
+    <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex" class="layout-brand layout-wrap">
+      <div style="width: 32px; height: 36px; overflow: hidden; justify-content: center; align-items: center; display: flex">
+        <div style="width: 30px; height: 30px; position: relative; overflow: hidden"><img src="assets/report/1befa.svg" alt="" aria-hidden="true" width="30" height="30" style="display: block; flex-shrink: 0"></div>
       </div>
-      <div class="dashboard-intro-actions">
-        <span data-dashboard-date>—</span>
-        <a class="dashboard-register" href="chose_evidence.html"><span>증거 등록</span></a>
+      <div style="color: #18243A; font-size: 23px; font-family: Inter; font-weight: 400; word-wrap: break-word">EVIDENCE</div>
+      <div style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">디지털 증거 플랫폼</div>
+    </div>
+    <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 32px; display: flex" class="layout-nav layout-wrap">
+      <div style="height: 88px; position: relative; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
+        <div style="color: #2E63E8; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">대시보드</div>
+        <div style="width: 50px; height: 3px; left: 0px; top: 85px; position: absolute; background: #2E63E8; border-radius: 2px"></div>
       </div>
-    </div>
-    <div class="layout-grid layout-grid--4 dashboard-stats">
-      <article class="dashboard-stat layout-panel" data-tone="total">
-        <div class="dashboard-stat-heading"><h2>전체 증거</h2></div>
-        <p class="dashboard-stat-value"><strong data-dashboard-count="total">—</strong> <span>건</span></p>
-        <p class="dashboard-stat-note">등록된 모든 증거</p>
-      </article>
-      <article class="dashboard-stat layout-panel" data-tone="match">
-        <div class="dashboard-stat-heading"><h2>해시 일치</h2></div>
-        <p class="dashboard-stat-value"><strong data-dashboard-count="match">—</strong> <span>건</span></p>
-        <p class="dashboard-stat-note">원본과 해시 일치</p>
-      </article>
-      <article class="dashboard-stat layout-panel" data-tone="pending">
-        <div class="dashboard-stat-heading"><h2>검증 필요</h2></div>
-        <p class="dashboard-stat-value"><strong data-dashboard-count="pending">—</strong> <span>건</span></p>
-        <p class="dashboard-stat-note">미검증 또는 검증 불가</p>
-      </article>
-      <article class="dashboard-stat layout-panel" data-tone="mismatch">
-        <div class="dashboard-stat-heading"><h2>위변조 의심</h2></div>
-        <p class="dashboard-stat-value"><strong data-dashboard-count="mismatch">—</strong> <span>건</span></p>
-        <p class="dashboard-stat-note">변경 여부 확인 필요</p>
-      </article>
-    </div>
-    <div class="layout-grid layout-grid--2 dashboard-details">
-      <section class="dashboard-panel layout-panel">
-        <div class="dashboard-panel-heading"><h2>무결성 검증 현황</h2><span data-dashboard-chart-total>전체 —건</span></div>
-        <div class="dashboard-chart">
-          <div class="dashboard-chart-row" data-tone="match">
-            <div class="dashboard-chart-label"><span>일치</span><small data-dashboard-chart-count="match">—건</small><strong data-dashboard-chart-percent="match">—%</strong></div>
-            <div class="dashboard-chart-track"><div data-dashboard-chart-bar="match"></div></div>
-          </div>
-          <div class="dashboard-chart-row" data-tone="pending">
-            <div class="dashboard-chart-label"><span>검증 필요</span><small data-dashboard-chart-count="pending">—건</small><strong data-dashboard-chart-percent="pending">—%</strong></div>
-            <div class="dashboard-chart-track"><div data-dashboard-chart-bar="pending"></div></div>
-          </div>
-          <div class="dashboard-chart-row" data-tone="mismatch">
-            <div class="dashboard-chart-label"><span>위변조 의심</span><small data-dashboard-chart-count="mismatch">—건</small><strong data-dashboard-chart-percent="mismatch">—%</strong></div>
-            <div class="dashboard-chart-track"><div data-dashboard-chart-bar="mismatch"></div></div>
-          </div>
-        </div>
-      </section>
-      <section class="dashboard-panel layout-panel">
-        <div class="dashboard-panel-heading"><h2>최근 활동</h2><span>최근 기록</span></div>
-        <div data-dashboard-activities></div>
-      </section>
-    </div>
-    <div class="layout-table layout-table--dashboard dashboard-recent">
-      <div class="layout-wrap dashboard-recent-heading">
-        <div><h2>최근 등록된 증거</h2><span data-dashboard-recent-count>—건</span></div>
-        <a class="dashboard-view-all" href="evidence.html"><span>전체 보기</span></a>
+      <div style="height: 88px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
+        <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">증거 관리</div>
       </div>
-      <div data-dashboard-recent-header class="layout-table-row">
-        <div>파일명</div><div>유형</div><div>등록 일시 (KST)</div><div>무결성 상태</div>
+      <div style="height: 88px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
+        <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">검증</div>
+      </div>
+      <div style="height: 88px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
+        <div style="color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">보고서</div>
+      </div>
+      <div style="height: 40px; padding-left: 16px; padding-right: 16px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: flex-start; align-items: center; display: flex">
+        <div style="color: #2454C6; font-size: 14px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">My page</div>
       </div>
     </div>
   </div>
-</div>
+  <div style="align-self: stretch; padding-top: 40px; padding-bottom: 48px; padding-left: 96px; padding-right: 96px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex" class="layout-section">
+    <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 28px; display: flex">
+      <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
+        <div style="width: 720px; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex" class="layout-fluid">
+          <div data-profile-greeting style="align-self: stretch; color: #18243A; font-size: 28px; font-family: DM Sans; font-weight: 500; line-height: 36.40px; word-wrap: break-word">안녕하세요 👋</div>
+          <div style="align-self: stretch; color: #647187; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">디지털 증거의 상태와 최근 활동을 확인하세요.</div>
+        </div>
+        <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 16px; display: flex" class="layout-wrap">
+          <div data-dashboard-date style="color: #647187; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">—</div>
+          <div style="height: 44px; padding-left: 18px; padding-right: 18px; background: #2E63E8; overflow: hidden; border-radius: 8px; outline: 1px #2E63E8 solid; outline-offset: -1px; justify-content: flex-start; align-items: center; gap: 8px; display: flex">
+            <div style="width: 18px; height: 18px; position: relative; overflow: hidden"><svg data-icon="plus" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14"/></svg></div>
+            <div style="color: white; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">증거 등록</div>
+          </div>
+        </div>
+      </div>
+      <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 24px; display: inline-flex" class="layout-grid layout-grid--4">
+        <div style="flex: 1 1 0; height: 156px; padding: 24px; background: white; overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex" class="layout-panel">
+          <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
+            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">전체 증거</div>
+            <div style="width: 34px; height: 34px; background: #EDF3FF; overflow: hidden; border-radius: 10px; justify-content: center; align-items: center; display: flex">
+              <div style="width: 20px; height: 20px; position: relative; overflow: hidden"><svg data-icon="folder" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E63E8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M3 10h18"/></svg></div>
+            </div>
+          </div>
+          <div style="overflow: hidden; justify-content: flex-start; align-items: baseline; gap: 6px; display: inline-flex">
+            <div data-dashboard-count="total" style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">—</div>
+            <div style="color: #8B96A8; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">건</div>
+          </div>
+          <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">등록된 모든 증거</div>
+        </div>
+        <div style="flex: 1 1 0; height: 156px; padding: 24px; background: white; overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex" class="layout-panel">
+          <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
+            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">해시 일치</div>
+            <div style="width: 34px; height: 34px; background: #ECF6F2; overflow: hidden; border-radius: 10px; justify-content: center; align-items: center; display: flex">
+              <div style="width: 20px; height: 20px; position: relative; overflow: hidden"><svg data-icon="shield-check" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#258169" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="M12 3c3 2 5.5 3 8 3v6c0 4.5-3 7.5-8 10-5-2.5-8-5.5-8-10V6c2.5 0 5-1 8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></div>
+            </div>
+          </div>
+          <div style="overflow: hidden; justify-content: flex-start; align-items: baseline; gap: 6px; display: inline-flex">
+            <div data-dashboard-count="match" style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">—</div>
+            <div style="color: #8B96A8; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">건</div>
+          </div>
+          <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">원본과 해시 일치</div>
+        </div>
+        <div style="flex: 1 1 0; height: 156px; padding: 24px; background: white; overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex" class="layout-panel">
+          <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
+            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">검증 필요</div>
+            <div style="width: 34px; height: 34px; background: #FBF5E9; overflow: hidden; border-radius: 10px; justify-content: center; align-items: center; display: flex">
+              <div style="width: 20px; height: 20px; position: relative; overflow: hidden"><svg data-icon="clock" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#AD7A24" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            </div>
+          </div>
+          <div style="overflow: hidden; justify-content: flex-start; align-items: baseline; gap: 6px; display: inline-flex">
+            <div data-dashboard-count="pending" style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">—</div>
+            <div style="color: #8B96A8; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">건</div>
+          </div>
+          <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">미검증 또는 검증 불가</div>
+        </div>
+        <div style="flex: 1 1 0; height: 156px; padding: 24px; background: white; overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex" class="layout-panel">
+          <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
+            <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">위변조 의심</div>
+            <div style="width: 34px; height: 34px; background: #FCF0F0; overflow: hidden; border-radius: 10px; justify-content: center; align-items: center; display: flex">
+              <div style="width: 20px; height: 20px; position: relative; overflow: hidden"><svg data-icon="shield-alert" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C25C5C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="M12 3c3 2 5.5 3 8 3v6c0 4.5-3 7.5-8 10-5-2.5-8-5.5-8-10V6c2.5 0 5-1 8-3Z"/><path d="M12 8v5m0 3h.01"/></svg></div>
+            </div>
+          </div>
+          <div style="overflow: hidden; justify-content: flex-start; align-items: baseline; gap: 6px; display: inline-flex">
+            <div data-dashboard-count="mismatch" style="color: #18243A; font-size: 34px; font-family: Inter; font-weight: 600; line-height: 34px; word-wrap: break-word">—</div>
+            <div style="color: #8B96A8; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">건</div>
+          </div>
+          <div style="color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">변경 여부 확인 필요</div>
+        </div>
+      </div>
+    </div>
+    <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 24px; display: inline-flex" class="layout-grid layout-grid--2">
+      <div style="flex: 1 1 0; height: 296px; padding: 24px; background: white; overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: inline-flex" class="layout-panel">
+        <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
+          <div style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">무결성 검증 현황</div>
+          <div data-dashboard-chart-total style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">전체 —건</div>
+        </div>
+        <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 22px; display: flex">
+          <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: flex">
+            <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: inline-flex" class="layout-wrap">
+              <div style="width: 8px; height: 8px; background: #258169; border-radius: 9999px"></div>
+              <div style="flex: 1 1 0; color: #647187; font-size: 14px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">일치</div>
+              <div data-dashboard-chart-count="match" style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">—건</div>
+              <div data-dashboard-chart-percent="match" style="width: 40px; text-align: right; color: #18243A; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">—%</div>
+            </div>
+            <div style="align-self: stretch; height: 8px; background: #F6F8FB; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div data-dashboard-chart-bar="match" style="width: 0%; height: 8px; background: #258169; border-radius: 100px"></div>
+            </div>
+          </div>
+          <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: flex">
+            <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: inline-flex" class="layout-wrap">
+              <div style="width: 8px; height: 8px; background: #AD7A24; border-radius: 9999px"></div>
+              <div style="flex: 1 1 0; color: #647187; font-size: 14px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">검증 필요</div>
+              <div data-dashboard-chart-count="pending" style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">—건</div>
+              <div data-dashboard-chart-percent="pending" style="width: 40px; text-align: right; color: #18243A; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">—%</div>
+            </div>
+            <div style="align-self: stretch; height: 8px; background: #F6F8FB; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div data-dashboard-chart-bar="pending" style="width: 0%; height: 8px; background: #AD7A24; border-radius: 100px"></div>
+            </div>
+          </div>
+          <div style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 10px; display: flex">
+            <div style="align-self: stretch; overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: inline-flex" class="layout-wrap">
+              <div style="width: 8px; height: 8px; background: #C25C5C; border-radius: 9999px"></div>
+              <div style="flex: 1 1 0; color: #647187; font-size: 14px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">위변조 의심</div>
+              <div data-dashboard-chart-count="mismatch" style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">—건</div>
+              <div data-dashboard-chart-percent="mismatch" style="width: 40px; text-align: right; color: #18243A; font-size: 15px; font-family: Inter; font-weight: 600; word-wrap: break-word">—%</div>
+            </div>
+            <div style="align-self: stretch; height: 8px; background: #F6F8FB; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: flex-start; display: inline-flex">
+              <div data-dashboard-chart-bar="mismatch" style="width: 0%; height: 8px; background: #C25C5C; border-radius: 100px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1 1 0; height: 296px; padding: 24px; background: white; overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: inline-flex" class="layout-panel">
+        <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
+          <div style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">최근 활동</div>
+          <div style="color: #647187; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">최근 기록</div>
+        </div>
+        <div data-dashboard-activities style="align-self: stretch; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
+          <div style="align-self: stretch; height: 65px; overflow: hidden; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex" class="layout-wrap">
+            <div style="width: 38px; height: 38px; background: #EDF3FF; overflow: hidden; border-radius: 10px; justify-content: center; align-items: center; display: flex">
+              <div style="width: 18px; height: 18px; position: relative; overflow: hidden"><svg data-icon="folder" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E63E8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M3 10h18"/></svg></div>
+            </div>
+            <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 5px; display: inline-flex">
+              <div style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">증거 등록 완료</div>
+              <div style="align-self: stretch; color: #647187; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">evidence_001.html</div>
+            </div>
+            <div style="color: #8B96A8; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">10:32</div>
+          </div>
+          <div style="align-self: stretch; height: 65px; overflow: hidden; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex" class="layout-wrap">
+            <div style="width: 38px; height: 38px; background: #ECF6F2; overflow: hidden; border-radius: 10px; justify-content: center; align-items: center; display: flex">
+              <div style="width: 18px; height: 18px; position: relative; overflow: hidden"><svg data-icon="shield-check" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#258169" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="M12 3c3 2 5.5 3 8 3v6c0 4.5-3 7.5-8 10-5-2.5-8-5.5-8-10V6c2.5 0 5-1 8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></div>
+            </div>
+            <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 5px; display: inline-flex">
+              <div style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">무결성 검증 완료</div>
+              <div style="align-self: stretch; color: #647187; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">image_001.png</div>
+            </div>
+            <div style="color: #8B96A8; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">10:21</div>
+          </div>
+          <div style="align-self: stretch; height: 65px; overflow: hidden; justify-content: flex-start; align-items: center; gap: 14px; display: inline-flex" class="layout-wrap">
+            <div style="width: 38px; height: 38px; background: #EDF3FF; overflow: hidden; border-radius: 10px; justify-content: center; align-items: center; display: flex">
+              <div style="width: 18px; height: 18px; position: relative; overflow: hidden"><svg data-icon="file-text" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E63E8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h6"/></svg></div>
+            </div>
+            <div style="flex: 1 1 0; overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 5px; display: inline-flex">
+              <div style="align-self: stretch; color: #18243A; font-size: 14px; font-family: DM Sans; font-weight: 500; line-height: 21.70px; word-wrap: break-word">보고서 생성</div>
+              <div style="align-self: stretch; color: #647187; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">report_001.pdf</div>
+            </div>
+            <div style="color: #8B96A8; font-size: 12px; font-family: Inter; font-weight: 400; word-wrap: break-word">09:45</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="align-self: stretch; background: white; overflow: hidden; border-radius: 16px; outline: 1px #E2E7EF solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex" class="layout-table layout-table--dashboard">
+      <div style="align-self: stretch; height: 70px; padding-left: 24px; padding-right: 24px; overflow: hidden; justify-content: space-between; align-items: center; display: inline-flex" class="layout-wrap">
+        <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 10px; display: flex">
+          <div style="color: #18243A; font-size: 24px; font-family: DM Sans; font-weight: 500; line-height: 31.20px; word-wrap: break-word">최근 등록된 증거</div>
+          <div data-dashboard-recent-count style="color: #8B96A8; font-size: 12px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">—건</div>
+        </div>
+        <div style="overflow: hidden; justify-content: flex-start; align-items: center; gap: 6px; display: flex">
+          <div style="color: #2454C6; font-size: 13px; font-family: Noto Sans KR; font-weight: 500; word-wrap: break-word">전체 보기</div>
+          <div style="width: 16px; height: 16px; position: relative; overflow: hidden"><svg data-icon="arrow-right" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2E63E8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></div>
+        </div>
+      </div>
+      <div data-dashboard-recent-header style="align-self: stretch; height: 44px; padding-left: 24px; padding-right: 24px; background: #F6F8FB; overflow: hidden; justify-content: flex-start; align-items: center; display: inline-flex" class="layout-table-row">
+        <div style="flex: 1 1 0; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">파일명</div>
+        <div style="width: 176px; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">유형</div>
+        <div style="width: 256px; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">등록 일시 (KST)</div>
+        <div style="width: 176px; color: #647187; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 15.60px; word-wrap: break-word">무결성 상태</div>
+      </div>
+      <div style="align-self: stretch; height: 66px; padding-left: 24px; padding-right: 24px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: center; display: inline-flex" class="layout-table-row">
+        <div style="flex: 1 1 0; overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex">
+          <div style="width: 32px; height: 36px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+            <div style="width: 18px; height: 18px; position: relative; overflow: hidden"><svg data-icon="file-text" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E63E8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h6"/></svg></div>
+          </div>
+          <div style="color: #18243A; font-size: 14px; font-family: Inter; font-weight: 500; word-wrap: break-word">evidence_001.html</div>
+        </div>
+        <div style="width: 176px; color: #647187; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">HTML</div>
+        <div style="width: 256px; color: #647187; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">10/06 10:32</div>
+        <div style="width: 176px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
+          <div style="padding-left: 10px; padding-right: 10px; padding-top: 5px; padding-bottom: 5px; background: #ECF6F2; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: center; gap: 6px; display: flex">
+            <div style="width: 5px; height: 5px; background: #258169; border-radius: 9999px"></div>
+            <div style="color: #258169; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">정상</div>
+          </div>
+        </div>
+      </div>
+      <div style="align-self: stretch; height: 66px; padding-left: 24px; padding-right: 24px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: center; display: inline-flex" class="layout-table-row">
+        <div style="flex: 1 1 0; overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex">
+          <div style="width: 32px; height: 36px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+            <div style="width: 18px; height: 18px; position: relative; overflow: hidden"><svg data-icon="image" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E63E8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m21 16-6-6L4 21"/></svg></div>
+          </div>
+          <div style="color: #18243A; font-size: 14px; font-family: Inter; font-weight: 500; word-wrap: break-word">screenshot_001.png</div>
+        </div>
+        <div style="width: 176px; color: #647187; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">PNG</div>
+        <div style="width: 256px; color: #647187; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">10/06 10:21</div>
+        <div style="width: 176px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
+          <div style="padding-left: 10px; padding-right: 10px; padding-top: 5px; padding-bottom: 5px; background: #ECF6F2; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: center; gap: 6px; display: flex">
+            <div style="width: 5px; height: 5px; background: #258169; border-radius: 9999px"></div>
+            <div style="color: #258169; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">정상</div>
+          </div>
+        </div>
+      </div>
+      <div style="align-self: stretch; height: 66px; padding-left: 24px; padding-right: 24px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: flex-start; align-items: center; display: inline-flex" class="layout-table-row">
+        <div style="flex: 1 1 0; overflow: hidden; justify-content: flex-start; align-items: center; gap: 12px; display: flex">
+          <div style="width: 32px; height: 36px; background: #EDF3FF; overflow: hidden; border-radius: 8px; justify-content: center; align-items: center; display: flex">
+            <div style="width: 18px; height: 18px; position: relative; overflow: hidden"><svg data-icon="file-text" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E63E8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display: block" xmlns="http://www.w3.org/2000/svg"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h6"/></svg></div>
+          </div>
+          <div style="color: #18243A; font-size: 14px; font-family: Inter; font-weight: 500; word-wrap: break-word">report_001.pdf</div>
+        </div>
+        <div style="width: 176px; color: #647187; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">PDF</div>
+        <div style="width: 256px; color: #647187; font-size: 13px; font-family: Inter; font-weight: 400; word-wrap: break-word">10/05 18:40</div>
+        <div style="width: 176px; overflow: hidden; justify-content: flex-start; align-items: center; display: flex">
+          <div style="padding-left: 10px; padding-right: 10px; padding-top: 5px; padding-bottom: 5px; background: #FBF5E9; overflow: hidden; border-radius: 100px; justify-content: flex-start; align-items: center; gap: 6px; display: flex">
+            <div style="width: 5px; height: 5px; background: #AD7A24; border-radius: 9999px"></div>
+            <div style="color: #AD7A24; font-size: 11px; font-family: DM Sans; font-weight: 500; line-height: 15.40px; word-wrap: break-word">검증 필요</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 </body>
 </html>
