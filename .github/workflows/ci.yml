@@ -32,11 +32,10 @@ jobs:
         run: |
           export EVIDENCE_DATA_DIR="$(mktemp -d)"
           export EVIDENCE_ALLOW_DEV_KEY_GENERATION=true
-          python -m uvicorn server.main:app --host 127.0.0.1 --port 8178 > /tmp/evidence-server.log 2>&1 &
+          # 서버가 화면과 API를 같은 주소로 제공합니다 (11/22, 화면 파일은 versions/previous/)
+          python -m uvicorn server.main:app --host 127.0.0.1 --port 8177 > /tmp/evidence-server.log 2>&1 &
           server_pid=$!
-          python scripts/dev_proxy.py --frontend . --port 8177 --backend http://127.0.0.1:8178 > /tmp/evidence-proxy.log 2>&1 &
-          proxy_pid=$!
-          trap 'kill "$proxy_pid" "$server_pid" 2>/dev/null || true' EXIT
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:8177/api/health >/dev/null; then break; fi
             sleep 1

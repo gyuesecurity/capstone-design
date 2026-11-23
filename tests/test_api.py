@@ -29,6 +29,22 @@ class EvidenceApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code, 201, response.text)
         return response.json()["token"]
 
+    async def test_both_web_versions_have_separate_entry_points(self):
+        for path, destination, marker in (
+            ("/", "/index.html", "EVIDENCE"),
+            ("/page4/", "/page4/index.html", "처음 등록한 파일"),
+            ("/page4", "/page4/index.html", "처음 등록한 파일"),
+        ):
+            with self.subTest(path=path):
+                entry = await self.client.get(path)
+                self.assertEqual(entry.headers["location"], destination)
+                page = await self.client.get(destination)
+                self.assertEqual(page.status_code, 200)
+                self.assertIn(marker, page.text)
+        self.assertEqual((await self.client.get("/page4/assets/brand/credoc-wordmark.svg")).status_code, 200)
+        for path in ("/assets/brand/credoc-wordmark.svg", "/page4/README.md", "/page4/server/main.py"):
+            self.assertEqual((await self.client.get(path)).status_code, 404)
+
     async def test_upload_verify_access_and_audit(self):
         owner = await self.register("owner@example.com")
         other = await self.register("other@example.com")

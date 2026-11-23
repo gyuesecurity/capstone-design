@@ -9,9 +9,13 @@
 - Strict-Transport-Security              HTTPS로 접속했을 때만
 - Cache-Control: no-store                /api/ 응답은 브라우저에 저장하지 않음
 
-B 코드에서 바꾼 점 (1곳)
+B 코드에서 바꾼 점
 - /docs·/redoc(API 문서 화면)에는 CSP를 붙이지 않습니다. 이 화면은 외부 CDN의 스크립트를 쓰는데,
   CSP가 붙으면 빈 화면이 됩니다. (README에 "/docs에서 API 문서를 볼 수 있다"고 안내하고 있음)
+- 11/22 서버가 화면도 보내게 되면서 CSP에 2가지를 허용했습니다. (모든 화면을 브라우저로 열어 막히는 것을 찾음)
+  frame-src 'self' blob:   보고서 미리보기가 브라우저에서 만든 PDF(blob: 주소)를 iframe으로 보여 줌
+  font-src https://fonts.gstatic.com   보고서 화면(report.css)이 구글 글꼴을 씀.
+                                       A가 글꼴 파일을 assets/report/에 넣으면 이 허용은 지웁니다.
 
 FastAPI의 @app.middleware("http") 대신 ASGI 미들웨어로 만들었습니다. 파일 다운로드(스트리밍) 응답을
 중간에서 모으지 않고 헤더만 덧붙이기 위해서입니다.
@@ -21,7 +25,8 @@ from __future__ import annotations
 
 CONTENT_SECURITY_POLICY = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
-    "img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; "
+    "img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; frame-src 'self' blob:; "
+    "connect-src 'self'; object-src 'none'; "
     "base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
 )
 COMMON_HEADERS = (

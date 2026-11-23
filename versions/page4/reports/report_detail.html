@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>보고서 상세 보기 | CredOc</title>
+<link href="app.css?v=operation-feedback-1" rel="stylesheet"/>
+<script defer="" src="navigation.js"></script>
+<script defer="" src="app.js?v=evidence-list-1"></script>
+<link href="report.css?v=operation-feedback-1" rel="stylesheet"/>
+<link href="report-packages.css?v=operation-feedback-1" rel="stylesheet"/>
+<script defer src="report-packages.js?v=operation-feedback-1"></script>
+<script defer src="report.js?v=evidence-list-1"></script><link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="page4-details.css">
+  <link rel="stylesheet" href="report-page4.css">
+</head>
+<body data-report-page="detail" class="layout-page page4-workspace">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html" aria-current="location">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+<div class="report-shell layout-shell" style="width: 100%; min-height: 100vh; background: #F6F8FB; display: flex; flex-direction: column"><main class="report-main layout-section">
+<section data-report-screen="detail" class="rp-screen">
+<header class="rp-heading"><div class="rp-heading-text"><div class="rp-title-row"><h1>보고서 상세</h1></div></div></header><section class="rp-card rp-detail-card"><header class="rp-detail-toolbar"><div><h2><span data-report-value="title"></span></h2><p><span data-report-value="id"></span></p></div><div class="rp-actions"><button class="report-action rp-primary" type="button" data-report-download>PDF 다운로드</button><button class="report-action" type="button" data-report-delete>보고서 삭제</button></div></header>
+<dl class="rp-meta"><div><dt>작성자</dt><dd><span data-report-value="author"></span></dd></div><div><dt><span data-report-value="created-label"></span></dt><dd><span data-report-value="created"></span></dd></div><div><dt>포함 증거</dt><dd><span data-report-value="count"></span></dd></div><div><dt>검증 상태</dt><dd><span data-report-value="status"></span></dd></div></dl>
+<h2>포함 증거</h2><div class="rp-evidence-grid" data-report-detail-evidence-list></div>
+<section class="rp-custody" data-report-option-section="custody"><h2>Chain of Custody</h2><ul data-report-custody-events></ul><p data-report-custody-empty>이 보고서에는 증거 수집·처리 이력이 기록되어 있지 않습니다.</p></section>
+<div class="rp-result-summary"><strong>검증 결과 요약</strong><span data-report-value="summary"></span></div></section>
+<section class="report-packages" aria-labelledby="package-title" data-report-packages hidden><h2 id="package-title">증거 패키지</h2><p>이 보고서에 포함된 증거 원본, 보고서 PDF, 검증·관리 이력을 ZIP 파일로 묶습니다.</p>
+<div class="package-actions"><button class="package-button" type="button" data-package-create disabled>패키지 생성</button><label data-package-chooser hidden>다운로드할 패키지<select aria-label="다운로드할 패키지"></select></label><button class="package-button" type="button" data-package-download disabled>ZIP 다운로드</button></div>
+<p role="status" aria-live="polite"></p></section><a class="report-back" href="report.html">보고서 목록</a>
+</section>
+</main></div></body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+  <title>서비스 홈 | CredOc</title>
+  <link rel="stylesheet" href="app.css?v=operation-feedback-1">
+  <script src="navigation.js" defer></script>
+  <script src="app.js?v=evidence-list-1" defer></script>
+  <link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="page4-details.css">
+  <link rel="stylesheet" href="service-home.css">
+</head>
+<body class="layout-page page4-workspace">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈" aria-current="page">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+
+<div class="layout-shell" style="background: white">
+  <main class="service-home">
+    <header><p class="service-home-label">서비스 홈</p><h1>디지털 증거 관리</h1><p>필요한 작업을 선택하세요.</p></header>
+    <div class="service-home-grid">
+      <a class="service-home-card" href="chose_evidence.html">
+        <h2>증거 등록</h2><p>파일, 사진, 영상 등 등록할 증거 유형을 선택하세요.</p><span>증거 등록하기</span>
+      </a>
+      <a class="service-home-card" href="evidence_url.html">
+        <h2>URL 수집</h2><p>웹페이지 주소를 입력해 수집 정보를 확인하세요.</p><span>URL 수집하기</span>
+      </a>
+      <a class="service-home-card" href="verification.html">
+        <h2>무결성 검증</h2><p>등록 당시의 해시와 비교해 파일의 변경 여부를 확인하세요.</p><span>검증하기</span>
+      </a>
+      <a class="service-home-card" href="report.html">
+        <h2>보고서</h2><p>선택한 증거와 검증 결과를 보고서로 정리하세요.</p><span>보고서 보기</span>
+      </a>
+    </div>
+  </main>
+  <footer style="padding-top: 48px; padding-bottom: 32px; flex-direction: column; gap: 32px; display: flex" class="layout-section">
+    <div style="align-self: stretch; overflow: hidden; justify-content: space-between; align-items: flex-start; display: inline-flex" class="layout-wrap">
+      <div style="overflow: hidden; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 14px; display: inline-flex">
+        <a class="workspace-footer-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+          <img src="assets/brand/credoc-wordmark.svg" width="112" height="24" alt="CredOc">
+          <span>디지털 증거 플랫폼</span>
+        </a>
+        <div style="color: #647187; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; line-height: 23.40px; word-wrap: break-word">수집한 증거와 검증 기록을, 한곳에서 명확하게.</div>
+      </div>
+      <div style="padding-top: 9px; overflow: hidden; justify-content: flex-start; align-items: flex-start; gap: 32px; display: flex" class="layout-wrap">
+        <div style="color: #647187; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">이용약관</div>
+        <div style="color: #647187; font-size: 13px; font-family: Noto Sans KR; font-weight: 700; word-wrap: break-word">개인정보처리방침</div>
+        <div style="color: #647187; font-size: 13px; font-family: Noto Sans KR; font-weight: 400; word-wrap: break-word">문의하기</div>
+      </div>
+    </div>
+    <div style="align-self: stretch; padding-top: 24px; overflow: hidden; border-top: 1px #E2E7EF solid; justify-content: space-between; align-items: flex-start; display: inline-flex" class="layout-wrap">
+      <div style="color: #8B96A8; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">© 2026 CredOc. 모든 권리 보유.</div>
+      <div style="color: #8B96A8; font-size: 12px; font-family: DM Sans; font-weight: 500; line-height: 18px; word-wrap: break-word">디지털 증거 수집 · 위변조 검증 플랫폼</div>
+    </div>
+  </footer>
+</div>
+</body>
+</html>

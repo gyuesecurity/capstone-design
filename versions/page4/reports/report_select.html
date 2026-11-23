@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>증거 선택 | CredOc</title>
+<link href="app.css?v=evidence-list-1" rel="stylesheet"/>
+<script defer="" src="navigation.js"></script>
+<script defer="" src="app.js?v=evidence-list-1"></script>
+<link href="report.css?v=operation-feedback-1" rel="stylesheet"/><script defer="" src="report.js?v=evidence-list-1"></script><link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="page4-details.css">
+  <link rel="stylesheet" href="report-page4.css">
+</head>
+<body data-report-page="select" class="layout-page page4-workspace">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html" aria-current="location">보고서</a>
+    <a href="mypage.html">My page</a>
+  </nav>
+</header>
+<div class="report-shell layout-shell" style="width: 100%; min-height: 100vh; background: #F6F8FB; display: flex; flex-direction: column"><main class="report-main layout-section">
+<section data-report-screen="select" class="rp-screen">
+<header class="rp-heading"><div class="rp-heading-text"><div class="rp-title-row"><h1>새 보고서 생성</h1></div><p>보고서에 포함할 증거와 정보를 선택하세요.</p></div></header>
+<ol class="rp-stepper" aria-label="보고서 생성 단계"><li aria-current="step"><span>1</span>증거 선택</li><li><span>2</span>보고서 정보</li><li><span>3</span>포함 내용 확인</li><li><span>4</span>보고서 생성</li></ol>
+<section class="rp-card rp-table"><div class="rp-card-heading rp-selection-head"><h2>보고서에 포함할 증거</h2>
+<div class="rp-filters"><input class="report-field" type="search" maxlength="4000" data-report-field="search" aria-label="파일명 또는 증거 ID 검색" placeholder="파일명 또는 증거 ID 검색"><select class="report-filter" data-report-filter="type" aria-label="전체 유형"><option>전체 유형</option></select><select class="report-filter" data-report-filter="status" aria-label="전체 상태"><option>전체 상태</option></select></div></div>
+<div class="rp-select-grid rp-table-labels"><span>선택</span><span>증거명</span><span>유형</span><span>등록 일시 (KST)</span><span>증거 ID</span><span>무결성 상태</span></div>
+<div class="report-local-empty" data-report-evidence-placeholder>등록된 증거를 불러오는 중…</div>
+<p class="report-local-empty" data-report-no-matches role="status" hidden>검색 조건에 맞는 증거가 없습니다.</p>
+<footer class="rp-footer"><strong aria-live="polite"><span data-report-value="selection"></span></strong><div class="rp-actions"><a class="report-action rp-primary" href="report_info.html" data-report-next>다음: 보고서 정보</a></div></footer></section>
+</section>
+</main></div></body>
+</html>

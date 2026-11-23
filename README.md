@@ -1,4 +1,13 @@
-# EVIDENCE
+# 변경된 디자인은 버전/페이지4에 있음!!!
+
+## 웹 화면 버전
+
+| 버전 | 저장 위치 | 서버 실행 후 열기 |
+| --- | --- | --- |
+| 기존 버전 | [기능별 화면과 소스](versions/previous/) | [기존 화면](http://127.0.0.1:8000/) |
+| Page 4 디자인 적용본 | [기능별 화면과 실행 안내](versions/page4/) | [Page 4 화면](http://127.0.0.1:8000/page4/) |
+
+Page 4는 CredOc 로고와 남색 메뉴를 적용한 웹 버전입니다. 두 버전은 같은 계정과 증거 데이터를 사용합니다.
 
 디지털 증거 파일을 등록하고 SHA-256으로 원본 일치 여부를 재검증하는 캡스톤 프로젝트입니다. 소유자는 증거 상세의 **공유 관리**에서 가입한 이메일로 조회를 허용하고, 원본 다운로드와 검증 권한을 각각 부여하거나 회수할 수 있습니다. 증거 관리, 검증, 보고서·패키지, 감사 기록과 Chain of Custody는 같은 서버 데이터베이스를 사용합니다.
 
@@ -9,18 +18,27 @@
 - 암호화 파일 저장: `data/files/`, 메타데이터와 이력: `data/evidence.sqlite3`
 - 암호화 키: Docker secret 또는 저장소 밖의 키링 파일로 주입 (명시적 로컬 개발 모드에서만 `data/keys/` 사용)
 
-이미 실행 환경이 준비된 PC에서는 `start-server.cmd`를 더블 클릭하면 됩니다. 이 실행 파일은 프로젝트의 `.deps` 라이브러리가 있으면 우선 사용합니다. 사이트를 사용하는 동안 서버 창을 열어 두세요. 처음 설치하는 경우에는 아래 명령을 사용합니다.
+이미 실행 환경이 준비된 PC에서는 `start-server.cmd`를 더블 클릭하면 됩니다. 이 실행 파일은 프로젝트의 `.deps` 라이브러리가 있으면 우선 사용합니다. 사이트를 사용하는 동안 서버 창을 열어 두세요.
+
+`start-server.cmd`는 암호화 키도 준비합니다. 키 설정(`EVIDENCE_MASTER_KEYS_FILE` 등)이 없으면 처음 실행할 때 `scripts/generate_demo_key.py`로 이 PC 전용 시연 키링 `secrets/evidence-master-keys.json`을 한 번 만들고, 다음부터는 같은 파일을 씁니다. 이 파일은 데이터 폴더 밖에 있고 Git에 올라가지 않습니다. **지우면 그 키로 저장한 증거를 열 수 없으므로** `secrets/` 폴더는 따로 백업하세요. 처음 설치하는 경우에는 아래 명령을 사용합니다.
 
 ```powershell
 cd D:\CDamerica\capstone-design
 python -m pip install -r requirements.txt
 $env:EVIDENCE_ALLOW_DEV_KEY_GENERATION = "true" # 로컬 개발에서만 사용
 python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
-# 새 터미널에서 실행
-python scripts/dev_proxy.py --frontend . --port 5500 --backend http://127.0.0.1:8000
 ```
 
-브라우저에서 `http://127.0.0.1:5500/index.html`을 엽니다. FastAPI는 API만 제공하고 개발용 프록시가 화면 파일을 제공하면서 `/api/*` 요청을 8000번 포트로 전달합니다. `python -m http.server`나 GitHub Pages로만 열면 서버 API 대신 이전 IndexedDB 시연 모드가 실행됩니다. 외부 공개 시에는 HTTPS와 정적 파일·API를 같은 출처로 묶는 운영용 리버스 프록시가 필요합니다. `EVIDENCE_DATA_DIR` 환경 변수로 데이터 폴더를 바꿀 수 있으며 `data/`는 Git에서 제외됩니다.
+브라우저에서 `http://127.0.0.1:8000/`(기존 버전) 또는 `http://127.0.0.1:8000/page4/`(Page 4)를 엽니다. 서버 하나가 두 버전의 화면 파일과 `/api/*`를 같은 주소로 제공합니다. 기존 버전 화면은 `versions/previous/<기능>/` 폴더에 있고 주소는 예전과 같습니다(`/index.html`, `/evidence.html` 등). Page 4 화면은 `versions/page4/<기능>/`에 있고 주소 앞에 `/page4/`가 붙습니다. 주소와 파일의 대응은 [`server/web_files.py`](server/web_files.py)가 정합니다. 화면 파일 내용을 고치면 새로고침으로 바로 반영되고, 새 파일을 추가했을 때는 서버를 다시 켭니다.
+
+정적 시연은 다음 두 명령을 차례로 실행하고 로그인 화면의 시연 링크로 들어갑니다. 증거는 브라우저의 IndexedDB에 저장되고 서버 API는 쓰지 않습니다. GitHub Pages 등 정적 호스팅에 올릴 때는 생성된 `.build/previous/` 폴더의 내용을 사용합니다.
+
+```powershell
+python -m server.web_files            # Page 4는 python -m server.web_files page4 → .build/page4/
+python -m http.server 8000 --directory .build/previous
+```
+
+`scripts/dev_proxy.py`(개발용 프록시)는 서버와 화면을 다른 곳에서 띄울 때만 씁니다. 새 폴더 구조에서는 `--frontend .build/previous`로 지정합니다. 외부 공개 시에는 HTTPS를 처리하는 운영용 리버스 프록시가 필요합니다. `EVIDENCE_DATA_DIR` 환경 변수로 데이터 폴더를 바꿀 수 있으며 `data/`는 Git에서 제외됩니다.
 
 ## 주요 기능
 
@@ -150,7 +168,7 @@ npm run check:js
 npm run test:browser
 ```
 
-브라우저 테스트는 개발용 프록시가 `127.0.0.1:8177`, API가 `127.0.0.1:8178`에서 실행 중이어야 합니다. 다른 주소를 쓰면 `EVIDENCE_TEST_URL`을 설정합니다. 기본 Chromium 대신 설치된 브라우저를 쓰려면 `EVIDENCE_BROWSER_CHANNEL` 또는 `EVIDENCE_CHROME_PATH`를 지정합니다. API 테스트는 임시 SQLite/파일 저장소를 사용합니다. GitHub Actions는 API·PDF·ZIP·JavaScript·브라우저 전체 흐름을 자동 검사합니다.
+브라우저 테스트는 서버가 `127.0.0.1:8177`에서 실행 중이어야 합니다(`python -m uvicorn server.main:app --port 8177`). 다른 주소를 쓰면 `EVIDENCE_TEST_URL`을 설정합니다. 기본 Chromium 대신 설치된 브라우저를 쓰려면 `EVIDENCE_BROWSER_CHANNEL` 또는 `EVIDENCE_CHROME_PATH`를 지정합니다. API 테스트는 임시 SQLite/파일 저장소를 사용합니다. GitHub Actions는 API·PDF·ZIP·JavaScript·브라우저 전체 흐름을 자동 검사합니다.
 
 시연: 회원가입 → 로그인 → `evidence_file.html`에서 실제 파일 등록 → `evidence.html`에서 상세/선택 → `verification.html`에서 SHA-256 일치 확인 → 대시보드 건수 확인 → `report_select.html`에서 같은 파일 선택 → 검증 기록 다시 확인. 불일치 시연은 테스트 전용 저장소에서 원본 바이트를 변경해 재검증합니다. 실제 운영 증거 파일은 시연을 위해 수정하지 마세요.
 
@@ -163,4 +181,4 @@ npm run test:browser
 - 정적 페이지의 기존 Figma 생성 인라인 스타일·중복 헤더·일부 예시 콘텐츠는 전면 리팩터링 전 상태입니다. 핵심 파일 흐름 화면에는 공통 CSS, 반응형 규칙과 동적 실제 데이터 표시가 적용되었습니다.
 - GitHub Pages는 정적 파일만 호스팅하므로 FastAPI와 원본 저장소를 실행할 수 없습니다. 배포용 서버가 준비되기 전에는 Pages 브랜치를 `main`으로 바꾸어도 서버 저장 기능이 작동하지 않습니다.
 
-디자인 출처: [Figma 원본](https://www.figma.com/design/KTur9ZdEVI0DtyJmqPagru). 로그인·회원가입 SVG와 DM Sans 글꼴은 `assets/auth/`에 있으며 글꼴 라이선스도 함께 포함되어 있습니다.
+디자인 출처: [Figma 원본](https://www.figma.com/design/KTur9ZdEVI0DtyJmqPagru). 로그인·회원가입 SVG, DM Sans 글꼴과 라이선스는 [인증 화면 자산 폴더](versions/previous/auth/assets/)에 있습니다.

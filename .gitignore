@@ -10,6 +10,7 @@ node_modules/
 !.env.example
 secrets/*
 !secrets/*.example.json
+.build/
 *.pyc
 
 # local tooling (not part of the team project)

@@ -1,4 +1,4 @@
-"""API server for the EVIDENCE capstone prototype (serves /api only; no frontend files)."""
+"""API server for the EVIDENCE capstone prototype (serves /api and, since 11/22, the web pages)."""
 
 # 이 파일은 서버를 "조립"만 합니다. 실제 기능은 아래 모듈에 나뉘어 있습니다.
 #   config.py       설정 값 (최대 크기, 허용 확장자, 상태 이름 등)
@@ -13,6 +13,7 @@
 #   login_limits.py · upload_checks.py · security_headers.py
 #                   로그인 실패 제한 · 업로드 형식 확인 · 보안 응답 헤더 (B 코드에서 옮겨 옴)
 #   routers/        기능별 API (health, auth, account, evidence, custody, shares, reports, packages)
+#                   + pages: 화면 파일 (versions/previous/, 주소 목록은 web_files.py) — 11/22 추가
 #
 # 바깥에서 쓰는 이름은 그대로입니다.
 #   - create_app(data_dir): 테스트가 임시 폴더로 서버를 만들 때 사용
@@ -25,7 +26,17 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from .db import open_storage
-from .routers import account, auth, custody, evidence, health, packages, reports, shares
+from .routers import (
+    account,
+    auth,
+    custody,
+    evidence,
+    health,
+    packages,
+    pages,
+    reports,
+    shares,
+)
 from .security_headers import SecurityHeadersMiddleware
 
 
@@ -47,6 +58,8 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
     app.include_router(shares.router)   # 5단계 추가: 증거 공유 (P2, P3, P4)
     app.include_router(reports.router)  # 7단계 추가: 보고서 (R1~R4)
     app.include_router(packages.router)  # 8단계 추가: 증거 패키지 (K1~K4)
+    # 화면 파일 (11/22 추가). 모든 주소를 받는 라우터라서 반드시 맨 마지막에 연결합니다.
+    app.include_router(pages.router)
     return app
 
 

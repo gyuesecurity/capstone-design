@@ -1,0 +1,22 @@
+.auth-page .auth-card { padding: 32px clamp(20px, 4vw, 39px); }
+.auth-page .auth-heading { text-align: left; }
+.auth-page .auth-heading h1 { font-size: 28px; line-height: 1.36; font-weight: 700; }
+.auth-page .auth-wordmark { margin: 0 0 24px; }
+.auth-page .auth-card--login { min-height: 536px; }
+.auth-page .auth-card--login form { margin-top: 22px; }
+.auth-page .auth-card--login .auth-fields { gap: 16px; }
+.auth-page .auth-card--login .auth-button--full { height: 48px; margin-top: 24px; }
+.auth-page .auth-field label { font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: -.02em; }
+.auth-page .auth-button { font-size: 14px; font-weight: 700; }
+.auth-page .auth-links { flex-wrap: wrap; gap: 6px 12px; margin-top: 14px; }
+.auth-page .auth-links :is(a, button) { display: inline-flex; align-items: center; min-height: 30px; font-size: 13px; }
+.auth-page .auth-card--login > .auth-status { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--evidence-line); }
+.auth-page [data-demo-entry] { display: inline-block; padding: 4px; font-size: 14px; text-underline-offset: 3px; }
+.auth-page .agreement-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; margin-top: 18px; }
+.auth-page .agreement-row .auth-agreement { margin: 0; }
+.agreement-row a { color: #365969; font-size: 13px; text-underline-offset: 2px; }
+.auth-page [hidden] { display: none !important; }
+@media (max-width: 600px) {
+  .auth-page .auth-card--login { min-height: auto; }
+  .auth-page .auth-heading h1 { font-size: 25px; }
+}

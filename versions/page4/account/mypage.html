@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CredOc - 마이페이지</title>
+  <link rel="stylesheet" href="app.css?v=operation-feedback-1">
+  <link rel="stylesheet" href="account.css?v=operation-feedback-1">
+  <script src="account.js?v=operation-feedback-1" defer></script>
+  <script src="mypage.js" defer></script>
+<link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="page4-workspace.css">
+  <link rel="stylesheet" href="page4-details.css">
+  <link rel="stylesheet" href="mypage.css">
+</head>
+<body class="layout-page page4-workspace">
+<header class="workspace-sidebar">
+  <a class="workspace-brand" href="index_home.html" aria-label="CredOc 서비스 홈">
+    <img src="assets/brand/credoc-wordmark.svg" width="132" height="28" alt="CredOc">
+    <span>디지털 증거 플랫폼</span>
+  </a>
+  <nav class="workspace-menu" aria-label="주 메뉴">
+    <a href="Dashboard.html">대시보드</a>
+    <a href="evidence.html">증거 관리</a>
+    <a href="verification.html">검증</a>
+    <a href="report.html">보고서</a>
+    <a href="mypage.html" aria-current="page">My page</a>
+  </nav>
+</header>
+
+  <div class="account-shell layout-shell">
+    <main class="mypage-main">
+      <div class="mypage-intro"><h1>My page</h1><p>계정 정보와 서비스 이용 내역을 확인하세요.</p></div>
+      <p class="mypage-message" data-mypage-message role="status" hidden></p>
+
+      <div class="mypage-columns">
+        <section class="mypage-card mypage-profile" aria-labelledby="mypage-profile-title">
+          <div class="mypage-identity"><div><h2 id="mypage-profile-title" data-profile-name>불러오는 중</h2><p data-profile-email>—</p></div>
+            <a class="mypage-outline-button" href="profile_edit.html">프로필 수정</a></div>
+          <dl><div><dt>가입일</dt><dd data-profile-created>—</dd></div><div><dt>최근 로그인</dt><dd data-mypage-last-login>—</dd></div></dl>
+        </section>
+        <section class="mypage-card mypage-settings" aria-labelledby="mypage-settings-title">
+          <h2 id="mypage-settings-title">계정 설정</h2>
+          <a href="password_change.html"><strong>비밀번호 변경</strong></a>
+          <a href="logout_confirm.html"><strong>로그아웃</strong></a>
+        </section>
+      </div>
+
+      <section aria-labelledby="mypage-summary-title">
+        <h2 id="mypage-summary-title" class="mypage-section-title">서비스 이용 현황</h2>
+        <div class="mypage-stats">
+          <div class="mypage-card mypage-stat"><span>전체 증거</span><strong data-mypage-stat="evidence">—</strong></div>
+          <div class="mypage-card mypage-stat"><span>해시 일치</span><strong data-mypage-stat="matched">—</strong></div>
+          <div class="mypage-card mypage-stat"><span>검증 실행</span><strong data-mypage-stat="verifications">—</strong></div>
+          <div class="mypage-card mypage-stat"><span>최근 활동</span><strong class="mypage-stat-date" data-mypage-stat="latest">—</strong></div>
+        </div>
+      </section>
+
+      <section class="mypage-card mypage-activity" aria-labelledby="mypage-activity-title">
+        <div class="mypage-card-heading"><h2 id="mypage-activity-title">최근 활동</h2><span data-mypage-activity-count>불러오는 중</span></div>
+        <div class="mypage-activity-labels" aria-hidden="true"><span>활동</span><span>증거 ID</span><span>일시 (KST)</span></div>
+        <ul data-mypage-activities></ul>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

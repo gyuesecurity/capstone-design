@@ -1,2 +1,5 @@
 # Preserve the exact bytes used by the offline SHA-256 demonstration.
 demo/integrity/*/*.txt -text whitespace=trailing-space,space-before-tab,cr-at-eol
+
+# Windows batch files need CRLF line endings (goto labels can break with LF only).
+*.cmd text eol=crlf
